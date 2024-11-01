@@ -3,77 +3,79 @@
 ```
 citizencardproj3frontend/
 ├── public/                     # 靜態資源
-│   ├── index.html
-│   └── favicon.ico
+│   ├── index.html             # 主HTML文件
+│   └── favicon.ico            # 網站圖標
 ├── src/                       # 源代碼
 │   ├── assets/               # 靜態資源
 │   │   ├── images/          # 圖片資源
-│   │   └── styles/          # 全局樣式
+│   │   │   └── logo.png
+│   │   └── css/            # CSS樣式
+│   │       ├── main.css     # 主要樣式
+│   │       ├── variables.css # CSS變量
+│   │       └── utilities.css # 工具類樣式
 │   ├── components/          # 共用元件
-│   │   ├── common/         # 通用元件
+│   │   ├── layout/         # 布局元件
 │   │   │   ├── Header.vue
 │   │   │   ├── Footer.vue
-│   │   │   ├── Sidebar.vue
-│   │   │   └── Loading.vue
+│   │   │   └── Sidebar.vue
 │   │   ├── auth/           # 認證相關元件
+│   │   │   ├── LoginForm.vue
+│   │   │   └── RegisterForm.vue
 │   │   ├── movie/          # 電影相關元件
-│   │   ├── booking/        # 訂票相關元件
-│   │   └── wallet/         # 電子錢包相關元件
+│   │   │   ├── MovieCard.vue
+│   │   │   └── MovieList.vue
+│   │   └── common/         # 通用元件
+│   │       ├── LoadingSpinner.vue
+│   │       └── AlertMessage.vue
 │   ├── views/              # 頁面視圖
-│   │   ├── auth/          # 認證相關頁面
+│   │   ├── Home.vue       # 首頁
+│   │   ├── auth/          # 認證頁面
 │   │   │   ├── Login.vue
-│   │   │   ├── Register.vue
-│   │   │   └── ForgotPassword.vue
-│   │   ├── movie/         # 電影相關頁面
+│   │   │   └── Register.vue
+│   │   ├── movie/         # 電影頁面
 │   │   │   ├── MovieList.vue
 │   │   │   └── MovieDetail.vue
-│   │   ├── booking/       # 訂票相關頁面
-│   │   │   ├── BookingFlow.vue
-│   │   │   └── BookingHistory.vue
-│   │   ├── wallet/        # 電子錢包相關頁面
-│   │   │   ├── WalletDashboard.vue
-│   │   │   └── TransactionHistory.vue
-│   │   └── user/          # 用戶相關頁面
+│   │   └── user/          # 用戶頁面
 │   │       ├── Profile.vue
-│   │       └── Settings.vue
+│   │       └── Wallet.vue
 │   ├── router/            # 路由配置
 │   │   └── index.js
 │   ├── store/             # Vuex狀態管理
 │   │   ├── index.js
-│   │   ├── modules/
-│   │   │   ├── auth.js
-│   │   │   ├── movie.js
-│   │   │   ├── booking.js
-│   │   │   └── wallet.js
+│   │   └── modules/
+│   │       ├── auth.js
+│   │       └── movie.js
 │   ├── services/          # API服務
-│   │   ├── api.js        # API配置
+│   │   ├── api.config.js  # API配置
 │   │   ├── auth.service.js
-│   │   ├── movie.service.js
-│   │   ├── booking.service.js
-│   │   └── wallet.service.js
+│   │   └── movie.service.js
 │   ├── utils/            # 工具函數
-│   │   ├── axios.js     # Axios配置
-│   │   ├── validators.js
 │   │   └── helpers.js
-│   ├── constants/        # 常量定義
-│   │   └── index.js
 │   ├── App.vue          # 根組件
 │   └── main.js          # 入口文件
 ├── .env                 # 環境變數
-├── .env.development    # 開發環境變數
-├── .env.production     # 生產環境變數
+├── .gitignore          # Git忽略文件
+├── babel.config.js     # Babel配置
+├── jsconfig.json       # JS配置
 ├── package.json        # 項目配置
 └── vue.config.js       # Vue配置
 ```
 
 主要特點：
-1. 清晰的模組化結構
-2. 按功能分類的組件和頁面
-3. 集中管理的API服務
-4. 統一的狀態管理
-5. 可重用的工具函數
-6. 環境變數配置
-7. 統一的樣式管理
+1. 扁平化的目錄結構，易於維護
+2. 按功能模組劃分組件
+3. 集中管理的樣式文件
+4. 清晰的服務層架構
+5. 模組化的狀態管理
+6. 統一的API調用配置
+
+目錄說明：
+- `components/`: 可重用的Vue組件
+- `views/`: 頁面級組件
+- `services/`: API服務層，處理後端通信
+- `store/`: Vuex狀態管理
+- `assets/css/`: 集中管理的CSS文件
+- `router/`: Vue Router路由配置
 
 ## 前端頁面架構：
 
