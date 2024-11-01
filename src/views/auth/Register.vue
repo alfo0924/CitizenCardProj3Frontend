@@ -457,214 +457,204 @@ export default {
 }
 </script>
 
-      <style scoped>
-        .register-container {
-          min - height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: var(--bg-light);
-        padding: 2rem 1rem;
-      }
+<style scoped>
+.register-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-light);
+  padding: 2rem 1rem;
+}
 
-        .register-box {
-          background - color: white;
-        padding: 2rem;
-        border-radius: var(--border-radius-lg);
-        box-shadow: var(--box-shadow);
-        width: 100%;
-        max-width: 500px;
-      }
+.register-box {
+  background-color: white;
+  padding: 2rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow);
+  width: 100%;
+  max-width: 500px;
+}
 
-        .form-group {
-        position: relative;
-        margin-bottom: 1.5rem;
-      }
+.form-group {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
 
-        .input-group-text {
-          background - color: transparent;
-        border-right: none;
-      }
+.input-group-text {
+  background-color: transparent;
+  border-right: none;
+}
 
-        .input-group .form-control {
-          border - left: none;
-      }
+.input-group .form-control {
+  border-left: none;
+}
 
-        .input-group .form-control:focus {
-          border - color: var(--border-color);
-        box-shadow: none;
-      }
+.input-group .form-control:focus {
+  border-color: var(--border-color);
+  box-shadow: none;
+}
 
-        .password-strength {
-          margin - top: 0.5rem;
-      }
+.password-strength {
+  margin-top: 0.5rem;
+}
 
-        .progress {
-        height: 4px;
-        margin-bottom: 0.25rem;
-      }
+.progress {
+  height: 4px;
+  margin-bottom: 0.25rem;
+}
 
-        .progress-bar {
-        transition: width 0.3s ease;
-      }
+.progress-bar {
+  transition: width 0.3s ease;
+}
 
-        .progress-bar.bg-danger {
-          background - color: var(--danger-color) !important;
-      }
+.progress-bar.bg-danger {
+  background-color: var(--danger-color) !important;
+}
 
-        .progress-bar.bg-warning {
-          background - color: var(--warning-color) !important;
-      }
+.progress-bar.bg-warning {
+  background-color: var(--warning-color) !important;
+}
 
-        .progress-bar.bg-success {
-          background - color: var(--success-color) !important;
-      }
+.progress-bar.bg-success {
+  background-color: var(--success-color) !important;
+}
 
-        .form-check {
-          margin - bottom: 0.5rem;
-      }
+.form-check {
+  margin-bottom: 0.5rem;
+}
 
-        .form-check-input:checked {
-          background - color: var(--primary-color);
-        border-color: var(--primary-color);
-      }
+.form-check-input:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
 
-        .btn-primary {
-          background - color: var(--primary-color);
-        border-color: var(--primary-color);
-        transition: all 0.3s ease;
-      }
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  transition: all 0.3s ease;
+}
 
-        .btn-primary:hover {
-          background - color: var(--primary-dark);
-        border-color: var(--primary-dark);
-        transform: translateY(-1px);
-      }
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
 
-        .btn-primary:disabled {
-          background - color: var(--primary-color);
-        border-color: var(--primary-color);
-        opacity: 0.65;
-      }
+.btn-primary:disabled {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  opacity: 0.65;
+}
 
-        .invalid-feedback {
-        display: block;
-        font-size: 0.875rem;
-        color: var(--danger-color);
-      }
+.invalid-feedback {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--danger-color);
+}
 
-        .form-control.is-invalid {
-          border - color: var(--danger-color);
-        background-image: none;
-      }
+.form-control.is-invalid {
+  border-color: var(--danger-color);
+  background-image: none;
+}
 
-        .form-control.is-invalid:focus {
-          border - color: var(--danger-color);
-        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
-      }
+.form-control.is-invalid:focus {
+  border-color: var(--danger-color);
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
 
-        /* 日期輸入框樣式 */
-        input[type="date"] {
-        padding: 0.375rem 0.75rem;
-      }
+input[type="date"] {
+  padding: 0.375rem 0.75rem;
+}
 
-        /* 性別選擇樣式 */
-        .gender-group {
-        display: flex;
-        gap: 1.5rem;
-      }
+.gender-group {
+  display: flex;
+  gap: 1.5rem;
+}
 
-        /* 連結樣式 */
-        a {
-        color: var(--primary-color);
-        text-decoration: none;
-        transition: color 0.3s ease;
-      }
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
 
-        a:hover {
-        color: var(--primary-dark);
-        text-decoration: underline;
-      }
+a:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
 
-        /* 響應式調整 */
-        @media (max-width: 576px) {
-        .register-box {
-        padding: 1.5rem;
-      }
+@media (max-width: 576px) {
+  .register-box {
+    padding: 1.5rem;
+  }
 
-        .gender-group {
-        flex-direction: column;
-        gap: 0.5rem;
-      }
-      }
+  .gender-group {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
 
-        /* 動畫效果 */
-        @keyframes fadeIn {
-        from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-        to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-      }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-        .register-box {
-        animation: fadeIn 0.5s ease-out;
-      }
+.register-box {
+  animation: fadeIn 0.5s ease-out;
+}
 
-        /* 載入動畫 */
-        .spinner-border {
-        width: 1rem;
-        height: 1rem;
-        border-width: 0.15em;
-      }
+.spinner-border {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}
 
-        /* 工具提示 */
-        .tooltip {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        z-index: 1000;
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-        background-color: rgba(0, 0, 0, 0.8);
-        color: white;
-        border-radius: var(--border-radius-sm);
-        display: none;
-      }
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1000;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: var(--border-radius-sm);
+  display: none;
+}
 
-        .form-group:hover .tooltip {
-        display: block;
-      }
+.form-group:hover .tooltip {
+  display: block;
+}
 
-        /* 服務條款連結樣式 */
-        .terms-links {
-          font - size: 0.875rem;
-      }
+.terms-links {
+  font-size: 0.875rem;
+}
 
-        .terms-links a {
-          text - decoration: underline;
-        margin: 0 0.25rem;
-      }
+.terms-links a {
+  text-decoration: underline;
+  margin: 0 0.25rem;
+}
 
-        /* 密碼強度文字樣式 */
-        .password-strength small {
-          font - size: 0.75rem;
-      }
+.password-strength small {
+  font-size: 0.75rem;
+}
 
-        /* 表單驗證提示樣式 */
-        .validation-message {
-          font - size: 0.75rem;
-        margin-top: 0.25rem;
-      }
+.validation-message {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
 
-        .validation-message.success {
-        color: var(--success-color);
-      }
+.validation-message.success {
+  color: var(--success-color);
+}
 
-        .validation-message.error {
-        color: var(--danger-color);
-      }
-      </style>
+.validation-message.error {
+  color: var(--danger-color);
+}
+</style>
