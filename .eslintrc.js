@@ -26,10 +26,15 @@ module.exports = {
         'semi': 'off',
         'dot-notation': 'off',
         'quote-props': 'off',
-
-        // 關閉 console 警告
         'no-console': 'off',
         'no-debugger': 'off',
+        'no-undef': 'off',
+        'no-unused-vars': 'off',
+        'no-mixed-operators': 'off',
+        'no-useless-catch': 'off',
+        'no-new': 'off',
+        'import/first': 'off',
+        'import/order': 'off',
 
         // Vue相關規則
         'vue/html-indent': 'off',
@@ -45,38 +50,15 @@ module.exports = {
         'vue/attribute-hyphenation': 'off',
         'vue/v-on-event-hyphenation': 'off',
         'vue/attributes-order': 'off',
-        'vue/no-v-html': 'off',
-
-        // Import相關規則
-        'import/first': 'off',
-        'import/no-duplicates': 'off',
-        'import/order': ['off', {
-            'groups': [
-                'builtin',
-                'external',
-                'internal',
-                'parent',
-                'sibling',
-                'index'
-            ],
-            'newlines-between': 'always'
-        }]
+        'vue/require-default-prop': 'off',
+        'vue/require-prop-types': 'off',
+        'vue/no-multiple-template-root': 'off'
     },
-    overrides: [
-        {
-            files: [
-                '**/__tests__/*.{j,t}s?(x)',
-                '**/tests/unit/**/*.spec.{j,t}s?(x)'
-            ],
-            env: {
-                jest: true
-            }
-        }
-    ],
     globals: {
         defineProps: 'readonly',
         defineEmits: 'readonly',
         defineExpose: 'readonly',
-        withDefaults: 'readonly'
+        withDefaults: 'readonly',
+        axios: true
     }
 }

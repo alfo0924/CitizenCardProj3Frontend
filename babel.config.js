@@ -5,26 +5,11 @@ module.exports = {
   plugins: [
     // 運行時支援
     ['@babel/plugin-transform-runtime', {
-      corejs: {
-        version: 3,
-        proposals: true
-      },
+      corejs: 3,
       helpers: true,
       regenerator: true,
-      useESModules: false
-    }],
-
-    // 類屬性和私有方法支援
-    ['@babel/plugin-transform-class-properties', {
-      loose: false
-    }],
-
-    ['@babel/plugin-transform-private-methods', {
-      loose: false
-    }],
-
-    ['@babel/plugin-transform-private-property-in-object', {
-      loose: false
+      useESModules: false,
+      version: '^7.22.5'
     }],
 
     // 動態導入支援
@@ -39,20 +24,40 @@ module.exports = {
 
   env: {
     development: {
+      presets: [
+        ['@babel/preset-env', {
+          modules: false,
+          targets: {
+            browsers: [
+              '> 1%',
+              'last 2 versions',
+              'not dead'
+            ]
+          }
+        }]
+      ],
       plugins: [
         'babel-plugin-dynamic-import-node'
-      ],
-      sourceMaps: true
+      ]
     },
 
     production: {
+      presets: [
+        ['@babel/preset-env', {
+          modules: false,
+          targets: {
+            browsers: [
+              '> 1%',
+              'last 2 versions',
+              'not dead'
+            ]
+          }
+        }]
+      ],
       plugins: [
         'babel-plugin-transform-remove-console',
         'babel-plugin-transform-remove-debugger'
-      ],
-      minified: true,
-      comments: false,
-      compact: true
+      ]
     },
 
     test: {
@@ -60,8 +65,7 @@ module.exports = {
         ['@babel/preset-env', {
           targets: {
             node: 'current'
-          },
-          modules: 'commonjs'
+          }
         }]
       ],
       plugins: [
