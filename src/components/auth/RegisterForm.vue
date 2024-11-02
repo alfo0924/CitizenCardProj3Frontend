@@ -313,7 +313,7 @@ export default {
       let isValid = true
 
       // 重置錯誤訊息
-      Object.keys(validationErrors).forEach(key => {
+      Object.keys(validationErrors).forEach((key) => {
         validationErrors[key] = ''
       })
 

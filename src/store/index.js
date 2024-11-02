@@ -1,4 +1,5 @@
 import { createStore } from 'vuex'
+
 import auth from './modules/auth'
 import movie from './modules/movie'
 import wallet from './modules/wallet'
@@ -76,13 +77,13 @@ const store = createStore({
 
     getters: {
         // 獲取載入狀態
-        isLoading: state => state.isLoading,
+        isLoading: (state) => state.isLoading,
 
         // 獲取錯誤信息
-        error: state => state.error,
+        error: (state) => state.error,
 
         // 獲取通知信息
-        notification: state => state.notification
+        notification: (state) => state.notification
     },
 
     modules: {

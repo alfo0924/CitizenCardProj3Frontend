@@ -22,7 +22,7 @@ module.exports = {
         'no-unused-vars': 'warn',
         'no-undef': 'warn',
         'space-before-function-paren': 'off',
-        'indent': 'off',
+        indent: 'off',
         'vue/script-indent': 'off',
         'vue/html-indent': 'off',
 
@@ -41,8 +41,8 @@ module.exports = {
         'vue/no-v-html': 'off',
 
         // 基本風格規則
-        'quotes': ['warn', 'single'],
-        'semi': ['warn', 'never'],
+        quotes: ['warn', 'single'],
+        semi: ['warn', 'never'],
         'comma-dangle': ['warn', 'never'],
         'object-curly-spacing': ['warn', 'always'],
         'arrow-parens': ['warn', 'always'],

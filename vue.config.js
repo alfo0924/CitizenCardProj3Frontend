@@ -1,5 +1,6 @@
-const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
+
+const { defineConfig } = require('@vue/cli-service')
 
 module.exports = defineConfig({
   publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
@@ -55,7 +56,7 @@ module.exports = defineConfig({
     }
   },
 
-  chainWebpack: config => {
+  chainWebpack: (config) => {
     config.resolve.alias
         .set('@', path.resolve(__dirname, 'src'))
 
@@ -65,7 +66,7 @@ module.exports = defineConfig({
         chunks: 'all'
       })
 
-      config.optimization.minimizer('terser').tap(args => {
+      config.optimization.minimizer('terser').tap((args) => {
         args[0].terserOptions.compress.drop_console = true
         args[0].terserOptions.compress.drop_debugger = true
         return args

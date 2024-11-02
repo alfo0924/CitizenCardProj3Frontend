@@ -129,8 +129,9 @@
 <script>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
-import MovieCard from './MovieCard.vue'
 import { debounce } from 'lodash'
+
+import MovieCard from './MovieCard.vue'
 
 export default {
   name: 'MovieList',
@@ -186,7 +187,7 @@ export default {
         }
       }
 
-      range.forEach(i => {
+      range.forEach((i) => {
         if (l) {
           if (i - l === 2) {
             rangeWithDots.push(l + 1)
@@ -206,19 +207,19 @@ export default {
       let result = [...movies.value]
 
       if (searchQuery.value) {
-        result = result.filter(movie =>
+        result = result.filter((movie) =>
             movie.movieName.toLowerCase().includes(searchQuery.value.toLowerCase())
         )
       }
 
       if (selectedCategory.value) {
-        result = result.filter(movie =>
+        result = result.filter((movie) =>
             movie.categoryId === selectedCategory.value
         )
       }
 
       if (selectedStatus.value) {
-        result = result.filter(movie =>
+        result = result.filter((movie) =>
             movie.status === selectedStatus.value
         )
       }

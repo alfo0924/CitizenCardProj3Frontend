@@ -1,4 +1,5 @@
 import { createApp } from 'vue'
+
 import App from './App.vue'
 import router from './router'
 import store from './store'
@@ -14,6 +15,9 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import '@/assets/css/main.css'
 import '@/assets/css/variables.css'
 import '@/assets/css/utilities.css'
+
+// axios 請求攔截器
+import axios from 'axios'
 
 // 創建 Vue 應用實例
 const app = createApp(App)
@@ -41,7 +45,7 @@ app.config.globalProperties.$formatCurrency = (amount) => {
 // 全局導航守衛
 router.beforeEach((to, from, next) => {
     // 檢查路由是否需要認證
-    if (to.matched.some(record => record.meta.requiresAuth)) {
+    if (to.matched.some((record) => record.meta.requiresAuth)) {
         if (!store.getters['auth/isLoggedIn']) {
             next({
                 path: '/login',
@@ -52,7 +56,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // 檢查路由是否需要管理員權限
-    if (to.matched.some(record => record.meta.requiresAdmin)) {
+    if (to.matched.some((record) => record.meta.requiresAdmin)) {
         if (!store.getters['auth/isAdmin']) {
             next({ path: '/' })
             return
@@ -60,7 +64,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // 已登入用戶不能訪問登入/註冊頁
-    if (to.matched.some(record => record.meta.requiresGuest)) {
+    if (to.matched.some((record) => record.meta.requiresGuest)) {
         if (store.getters['auth/isLoggedIn']) {
             next({ path: '/' })
             return
@@ -70,26 +74,23 @@ router.beforeEach((to, from, next) => {
     next()
 })
 
-// axios 請求攔截器
-import axios from 'axios'
-
 axios.interceptors.request.use(
-    config => {
+    (config) => {
         const token = store.getters['auth/token']
         if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`
+            config.headers.Authorization = `Bearer ${token}`
         }
         return config
     },
-    error => {
+    (error) => {
         return Promise.reject(error)
     }
 )
 
 // axios 響應攔截器
 axios.interceptors.response.use(
-    response => response,
-    error => {
+    (response) => response,
+    (error) => {
         if (error.response) {
             switch (error.response.status) {
                 case 401:
@@ -133,10 +134,10 @@ if (process.env.NODE_ENV === 'development') {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
+            .then((registration) => {
                 console.log('ServiceWorker registered:', registration)
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error('ServiceWorker registration failed:', error)
             })
     })

@@ -48,7 +48,7 @@ export default {
     type: {
       type: String,
       default: 'info',
-      validator: value => ['success', 'info', 'warning', 'error'].includes(value)
+      validator: (value) => ['success', 'info', 'warning', 'error'].includes(value)
     },
     // 標題
     title: {

@@ -15,13 +15,13 @@ const state = {
 }
 
 const getters = {
-    balance: state => state.info.balance,
-    cardNumber: state => state.info.cardNumber,
-    isActive: state => state.info.status === 'ACTIVE',
-    transactions: state => state.transactions,
-    totalPages: state => state.totalPages,
-    isLoading: state => state.isLoading,
-    error: state => state.error
+    balance: (state) => state.info.balance,
+    cardNumber: (state) => state.info.cardNumber,
+    isActive: (state) => state.info.status === 'ACTIVE',
+    transactions: (state) => state.transactions,
+    totalPages: (state) => state.totalPages,
+    isLoading: (state) => state.isLoading,
+    error: (state) => state.error
 }
 
 const mutations = {

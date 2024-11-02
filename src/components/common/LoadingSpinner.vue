@@ -30,13 +30,13 @@ export default {
     size: {
       type: String,
       default: 'medium',
-      validator: value => ['small', 'medium', 'large'].includes(value)
+      validator: (value) => ['small', 'medium', 'large'].includes(value)
     },
     // 顏色主題: primary, secondary, success, danger, warning, info
     theme: {
       type: String,
       default: 'primary',
-      validator: value => [
+      validator: (value) => [
         'primary',
         'secondary',
         'success',

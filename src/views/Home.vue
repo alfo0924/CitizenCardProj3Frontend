@@ -165,6 +165,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
+
 import MovieCard from '@/components/movie/MovieCard.vue'
 
 export default {

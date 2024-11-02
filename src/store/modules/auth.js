@@ -10,11 +10,11 @@ const state = {
 
 // getters
 const getters = {
-    isLoggedIn: state => !!state.token,
-    isAdmin: state => state.user && state.user.role === 'ROLE_ADMIN',
-    currentUser: state => state.user,
-    authError: state => state.error,
-    isLoading: state => state.isLoading
+    isLoggedIn: (state) => !!state.token,
+    isAdmin: (state) => state.user && state.user.role === 'ROLE_ADMIN',
+    currentUser: (state) => state.user,
+    authError: (state) => state.error,
+    isLoading: (state) => state.isLoading
 }
 
 // actions
@@ -36,7 +36,7 @@ const actions = {
             commit('SET_USER', user)
 
             // 設置axios的authorization header
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+            axios.defaults.headers.common.Authorization = `Bearer ${token}`
 
             return response
         } catch (error) {
@@ -72,7 +72,7 @@ const actions = {
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            delete axios.defaults.headers.common['Authorization']
+            delete axios.defaults.headers.common.Authorization
             commit('CLEAR_USER')
         }
     },
@@ -160,7 +160,7 @@ const actions = {
 
             localStorage.setItem('token', token)
             commit('SET_TOKEN', token)
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+            axios.defaults.headers.common.Authorization = `Bearer ${token}`
 
             return response
         } catch (error) {

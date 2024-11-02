@@ -279,6 +279,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
+
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
@@ -350,7 +351,7 @@ export default {
         }
       }
 
-      range.forEach(i => {
+      range.forEach((i) => {
         if (l) {
           if (i - l === 2) {
             rangeWithDots.push(l + 1)

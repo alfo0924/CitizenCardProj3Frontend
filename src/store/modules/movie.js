@@ -14,25 +14,25 @@ const state = {
 
 // getters
 const getters = {
-    allMovies: state => state.movies,
-    currentMovie: state => state.currentMovie,
-    movieSchedules: state => state.schedules,
-    movieReviews: state => state.reviews,
-    movieCategories: state => state.categories,
-    totalMovies: state => state.total,
-    isLoading: state => state.isLoading,
-    error: state => state.error,
+    allMovies: (state) => state.movies,
+    currentMovie: (state) => state.currentMovie,
+    movieSchedules: (state) => state.schedules,
+    movieReviews: (state) => state.reviews,
+    movieCategories: (state) => state.categories,
+    totalMovies: (state) => state.total,
+    isLoading: (state) => state.isLoading,
+    error: (state) => state.error,
 
     // 依狀態過濾電影
-    showingMovies: state =>
-        state.movies.filter(movie => movie.status === 'SHOWING'),
+    showingMovies: (state) =>
+        state.movies.filter((movie) => movie.status === 'SHOWING'),
 
-    comingMovies: state =>
-        state.movies.filter(movie => movie.status === 'COMING'),
+    comingMovies: (state) =>
+        state.movies.filter((movie) => movie.status === 'COMING'),
 
     // 依分類過濾電影
-    moviesByCategory: state => categoryId =>
-        state.movies.filter(movie => movie.categoryId === categoryId)
+    moviesByCategory: (state) => (categoryId) =>
+        state.movies.filter((movie) => movie.categoryId === categoryId)
 }
 
 // actions

@@ -254,9 +254,9 @@
 </template>
 
 <script>
-import {ref, reactive, computed} from 'vue'
-import {useStore} from 'vuex'
-import {useRouter} from 'vue-router'
+import { ref, reactive, computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'Register',
@@ -334,7 +334,7 @@ export default {
       let isValid = true
 
       // 重置錯誤訊息
-      Object.keys(validationErrors).forEach(key => {
+      Object.keys(validationErrors).forEach((key) => {
         validationErrors[key] = ''
       })
 

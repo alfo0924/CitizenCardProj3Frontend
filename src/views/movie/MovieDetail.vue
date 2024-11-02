@@ -263,6 +263,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter, useRoute } from 'vue-router'
 import { Modal } from 'bootstrap'
+
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
@@ -320,7 +321,7 @@ export default {
 
     // 可選日期列表
     const availableDates = computed(() => {
-      const dates = new Set(schedules.value.map(s =>
+      const dates = new Set(schedules.value.map((s) =>
           s.showTime.split('T')[0]
       ))
       return Array.from(dates).sort()
@@ -328,7 +329,7 @@ export default {
 
     // 過濾當前選擇日期的場次
     const filteredSchedules = computed(() => {
-      return schedules.value.filter(s =>
+      return schedules.value.filter((s) =>
           s.showTime.startsWith(selectedDate.value)
       )
     })

@@ -1,5 +1,6 @@
 // services/api.config.js
 import axios from 'axios'
+
 import store from '@/store'
 import router from '@/router'
 
@@ -9,21 +10,21 @@ const api = axios.create({
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json'
     }
 })
 
 // 請求攔截器
 api.interceptors.request.use(
-    config => {
+    (config) => {
         // 從localStorage獲取token
         const token = localStorage.getItem('token')
         if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`
+            config.headers.Authorization = `Bearer ${token}`
         }
         return config
     },
-    error => {
+    (error) => {
         console.error('Request error:', error)
         return Promise.reject(error)
     }
@@ -31,10 +32,10 @@ api.interceptors.request.use(
 
 // 響應攔截器
 api.interceptors.response.use(
-    response => {
+    (response) => {
         return response.data
     },
-    error => {
+    (error) => {
         const { response } = error
 
         // 處理錯誤響應

@@ -129,6 +129,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { debounce } from 'lodash'
+
 import MovieCard from '@/components/movie/MovieCard.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
@@ -190,7 +191,7 @@ export default {
         }
       }
 
-      range.forEach(i => {
+      range.forEach((i) => {
         if (l) {
           if (i - l === 2) {
             rangeWithDots.push(l + 1)
@@ -211,19 +212,19 @@ export default {
 
       if (searchQuery.value) {
         const query = searchQuery.value.toLowerCase()
-        result = result.filter(movie =>
+        result = result.filter((movie) =>
             movie.movieName.toLowerCase().includes(query)
         )
       }
 
       if (selectedCategory.value) {
-        result = result.filter(movie =>
+        result = result.filter((movie) =>
             movie.categoryId === selectedCategory.value
         )
       }
 
       if (selectedStatus.value) {
-        result = result.filter(movie =>
+        result = result.filter((movie) =>
             movie.status === selectedStatus.value
         )
       }

@@ -42,6 +42,7 @@
 <script>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+
 import Header from '@/components/layout/Header.vue'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import Footer from '@/components/layout/Footer.vue'

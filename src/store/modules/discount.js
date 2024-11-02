@@ -11,26 +11,26 @@ const state = {
 }
 
 const getters = {
-    allDiscounts: state => state.discounts,
-    currentDiscount: state => state.currentDiscount,
-    totalPages: state => state.totalPages,
-    isLoading: state => state.isLoading,
-    error: state => state.error,
+    allDiscounts: (state) => state.discounts,
+    currentDiscount: (state) => state.currentDiscount,
+    totalPages: (state) => state.totalPages,
+    isLoading: (state) => state.isLoading,
+    error: (state) => state.error,
 
     // 取得有效的優惠
-    validDiscounts: state => {
+    validDiscounts: (state) => {
         const now = new Date()
-        return state.discounts.filter(discount => {
+        return state.discounts.filter((discount) => {
             const endDate = new Date(discount.endDate)
             return endDate >= now && discount.status === 'ACTIVE'
         })
     },
 
     // 取得即將到期的優惠
-    expiringDiscounts: state => {
+    expiringDiscounts: (state) => {
         const now = new Date()
         const thirtyDaysFromNow = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000))
-        return state.discounts.filter(discount => {
+        return state.discounts.filter((discount) => {
             const endDate = new Date(discount.endDate)
             return endDate >= now && endDate <= thirtyDaysFromNow && discount.status === 'ACTIVE'
         })
@@ -57,7 +57,7 @@ const mutations = {
         state.error = error
     },
     UPDATE_DISCOUNT_STATUS(state, { discountId, status }) {
-        const discount = state.discounts.find(d => d.id === discountId)
+        const discount = state.discounts.find((d) => d.id === discountId)
         if (discount) {
             discount.status = status
         }
