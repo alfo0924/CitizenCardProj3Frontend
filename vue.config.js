@@ -1,176 +1,83 @@
 const { defineConfig } = require('@vue/cli-service')
+const path = require('path')
 
 module.exports = defineConfig({
-  // 專案部署的基本路徑
   publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
-
-  // 建構輸出目錄
   outputDir: 'dist',
-
-  // 靜態資源目錄
   assetsDir: 'static',
-
-  // 是否在開發環境下通過 eslint-loader 在每次保存時 lint 代碼
   lintOnSave: process.env.NODE_ENV !== 'production',
-
-  // 生產環境是否生成 sourceMap 文件
   productionSourceMap: false,
 
-  // webpack 配置
   configureWebpack: {
-    // 設置性能提示
-    performance: {
-      hints: false
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src')
+      }
     },
-    // 優化設定
+    performance: {
+      hints: false,
+      maxEntrypointSize: 512000,
+      maxAssetSize: 512000
+    },
     optimization: {
       splitChunks: {
-        chunks: 'all'
+        chunks: 'all',
+        minSize: 20000,
+        maxSize: 250000,
+        minChunks: 1,
+        maxAsyncRequests: 30,
+        maxInitialRequests: 30,
+        automaticNameDelimiter: '~',
+        cacheGroups: {
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            priority: -10,
+            reuseExistingChunk: true
+          },
+          common: {
+            minChunks: 2,
+            priority: -20,
+            reuseExistingChunk: true
+          }
+        }
       }
     }
   },
 
-  // webpack-dev-server 配置
   devServer: {
-    port: 3000, // 開發伺服器端口
-    open: true, // 自動打開瀏覽器
+    port: 3000,
+    open: true,
     proxy: {
-      // 代理設定
       '/api': {
         target: process.env.VUE_APP_API_URL || 'http://localhost:8080',
         changeOrigin: true,
         pathRewrite: {
           '^/api': ''
-        }
+        },
+        ws: true
       }
     },
-    // 開發伺服器安全設定
-    https: false,
-    // 熱更新設定
-    hot: true
+    client: {
+      overlay: {
+        warnings: false,
+        errors: true
+      }
+    }
   },
 
-  // CSS 相關選項
   css: {
-    // 是否使用 css 分離插件
     extract: process.env.NODE_ENV === 'production',
-    // 是否為 CSS 開啟 source map
     sourceMap: false,
-    // CSS 預處理器配置
     loaderOptions: {
       sass: {
         additionalData: `
           @import "@/assets/css/variables.scss";
+          @import "@/assets/css/mixins.scss";
         `
       }
     }
   },
 
-  // PWA 插件配置
-  pwa: {
-    name: '市民卡系統',
-    themeColor: '#007bff',
-    msTileColor: '#000000',
-    appleMobileWebAppCapable: 'yes',
-    appleMobileWebAppStatusBarStyle: 'black',
-    workboxPluginMode: 'GenerateSW',
-    workboxOptions: {
-      skipWaiting: true,
-      clientsClaim: true
-    }
-  },
-
-// 第三方插件配置
-  pluginOptions: {
-    // i18n國際化配置
-    i18n: {
-      locale: 'zh-TW',
-      fallbackLocale: 'en',
-      localeDir: 'locales',
-      enableInSFC: false
-    },
-
-    // PWA配置
-    pwa: {
-      workboxPluginMode: 'GenerateSW',
-      workboxOptions: {
-        skipWaiting: true,
-        clientsClaim: true,
-        runtimeCaching: [
-          {
-            urlPattern: new RegExp('^https://api.example.com/'),
-            handler: 'NetworkFirst',
-            options: {
-              networkTimeoutSeconds: 20,
-              cacheName: 'api-cache',
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
-          }
-        ]
-      }
-    },
-
-    // SASS全局變量配置
-    'style-resources-loader': {
-      preProcessor: 'scss',
-      patterns: [
-        path.resolve(__dirname, './src/assets/css/variables.scss'),
-        path.resolve(__dirname, './src/assets/css/mixins.scss')
-      ]
-    },
-
-    // 自動導入組件配置
-    'vue-cli-plugin-auto-routing': {
-      pages: 'src/views',
-      importPrefix: '@/views/'
-    },
-
-    // 壓縮圖片配置
-    compression: {
-      image: {
-        quality: 80
-      }
-    },
-
-    // 打包分析配置
-    bundleAnalyzer: {
-      openAnalyzer: false,
-      analyzerMode: process.env.NODE_ENV === 'production' ? 'static' : 'disabled'
-    },
-
-    // 多環境配置
-    envs: {
-      development: {
-        API_URL: 'http://localhost:8080'
-      },
-      production: {
-        API_URL: 'https://api.example.com'
-      }
-    },
-
-    // ESLint配置
-    lintOnSave: process.env.NODE_ENV !== 'production',
-
-    // 自動修復配置
-    autoFix: {
-      eslint: true,
-      stylelint: true
-    },
-
-    // 測試配置
-    jest: {
-      moduleFileExtensions: ['js', 'jsx', 'json', 'vue'],
-      transform: {
-        '^.+\\.vue$': 'vue-jest',
-        '.+\\.(css|styl|less|sass|scss|png|jpg|ttf|woff|woff2)$': 'jest-transform-stub',
-        '^.+\\.jsx?$': 'babel-jest'
-      }
-    }
-  },
-
-  // 多頁面配置
   pages: {
     index: {
       entry: 'src/main.js',
@@ -181,35 +88,59 @@ module.exports = defineConfig({
     }
   },
 
-  // 是否使用 thread-loader
-  parallel: require('os').cpus().length > 1,
-
-  // 是否啟用 dll
-  // See https://github.com/vuejs/vue-cli/blob/dev/docs/cli-service.md#dll-mode
-  dll: false,
-
-  // chainWebpack 配置
   chainWebpack: config => {
-    // 設定解析別名
     config.resolve.alias
-        .set('@', require('path').join(__dirname, 'src'))
+        .set('@', path.resolve(__dirname, 'src'))
 
-    // 設定壓縮
     if (process.env.NODE_ENV === 'production') {
+      // 優化生產環境
       config.optimization.minimize(true)
+      config.optimization.splitChunks({
+        chunks: 'all'
+      })
+
+      // 移除console
+      config.optimization.minimizer('terser').tap(args => {
+        args[0].terserOptions.compress.drop_console = true
+        args[0].terserOptions.compress.drop_debugger = true
+        return args
+      })
     }
 
-    // 移除 prefetch 插件
+    // 移除prefetch
     config.plugins.delete('prefetch')
+    config.plugins.delete('preload')
 
-    // 設定圖片壓縮
+    // 處理圖片
     config.module
         .rule('images')
-        .use('image-webpack-loader')
-        .loader('image-webpack-loader')
+        .test(/\.(png|jpe?g|gif|webp)(\?.*)?$/)
+        .use('url-loader')
+        .loader('url-loader')
         .options({
-          bypassOnDebug: true
+          limit: 10000,
+          fallback: {
+            loader: 'file-loader',
+            options: {
+              name: 'img/[name].[hash:8].[ext]'
+            }
+          }
         })
-        .end()
+
+    // 處理字體
+    config.module
+        .rule('fonts')
+        .test(/\.(woff2?|eot|ttf|otf)(\?.*)?$/i)
+        .use('url-loader')
+        .loader('url-loader')
+        .options({
+          limit: 10000,
+          fallback: {
+            loader: 'file-loader',
+            options: {
+              name: 'fonts/[name].[hash:8].[ext]'
+            }
+          }
+        })
   }
 })
