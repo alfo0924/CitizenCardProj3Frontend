@@ -3,7 +3,7 @@
     <div class="container">
       <!-- Logo -->
       <router-link class="navbar-brand" to="/">
-        <img src="@/assets/images/logo.png" alt="市民卡" height="40">
+        <img src="@/assets/images/logo.png" alt="逢甲" height="40">
         市民卡系統
       </router-link>
 
