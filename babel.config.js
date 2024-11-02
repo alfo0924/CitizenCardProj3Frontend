@@ -5,13 +5,16 @@ module.exports = {
   plugins: [
     // 運行時支援
     ['@babel/plugin-transform-runtime', {
-      corejs: 3,
+      corejs: {
+        version: 3,
+        proposals: true
+      },
       helpers: true,
       regenerator: true,
-      useESModules: true
+      useESModules: false
     }],
 
-    // 裝飾器支援
+    // 類屬性和私有方法支援
     ['@babel/plugin-transform-class-properties', {
       loose: false
     }],
@@ -27,53 +30,39 @@ module.exports = {
     // 動態導入支援
     '@babel/plugin-syntax-dynamic-import',
 
-    // Vue 3支援
-    [
-      '@vue/babel-plugin-jsx',
-      {
-        optimize: false,
-        enableObjectSlots: false
-      }
-    ],
-
-    // Element Plus按需導入
-    [
-      'babel-plugin-import',
-      {
-        libraryName: 'element-plus',
-        customStyleName: (name) => {
-          return `element-plus/lib/theme-chalk/${name}.css`
-        },
-        style: true
-      }
-    ]
+    // Vue 3 JSX支援
+    ['@vue/babel-plugin-jsx', {
+      optimize: false,
+      enableObjectSlots: false
+    }]
   ],
+
   env: {
     development: {
       plugins: [
-        'dynamic-import-node'
+        'babel-plugin-dynamic-import-node'
       ],
       sourceMaps: true
     },
+
     production: {
       plugins: [
-        'transform-remove-console',
-        'transform-remove-debugger'
+        'babel-plugin-transform-remove-console',
+        'babel-plugin-transform-remove-debugger'
       ],
       minified: true,
-      comments: false
+      comments: false,
+      compact: true
     },
+
     test: {
       presets: [
-        [
-          '@babel/preset-env',
-          {
-            targets: {
-              node: 'current'
-            },
-            modules: 'commonjs'
-          }
-        ]
+        ['@babel/preset-env', {
+          targets: {
+            node: 'current'
+          },
+          modules: 'commonjs'
+        }]
       ],
       plugins: [
         '@babel/plugin-transform-modules-commonjs'
