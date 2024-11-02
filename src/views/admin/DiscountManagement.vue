@@ -315,7 +315,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
@@ -487,7 +486,7 @@ export default {
       }
     }
 
-// 獲取類型樣式
+    // 獲取類型樣式
     const getTypeBadgeClass = (type) => {
       switch (type) {
         case 'CASH':
@@ -495,13 +494,13 @@ export default {
         case 'PERCENTAGE':
           return 'bg-primary'
         case 'FIXED':
-          return 'bg-warning'
+          return 'bg-info'
         default:
           return 'bg-secondary'
       }
     }
 
-// 獲取類型文字
+    // 獲取類型文字
     const getTypeText = (type) => {
       switch (type) {
         case 'CASH':
@@ -515,7 +514,7 @@ export default {
       }
     }
 
-// 獲取狀態樣式
+    // 獲取狀態樣式
     const getStatusBadgeClass = (status) => {
       switch (status) {
         case 'ACTIVE':
@@ -529,7 +528,7 @@ export default {
       }
     }
 
-// 獲取狀態文字
+    // 獲取狀態文字
     const getStatusText = (status) => {
       switch (status) {
         case 'ACTIVE':
@@ -543,7 +542,7 @@ export default {
       }
     }
 
-// 格式化優惠值
+    // 格式化優惠值
     const formatDiscountValue = (discount) => {
       switch (discount.type) {
         case 'CASH':
@@ -595,7 +594,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .discount-management {
   padding: 2rem 0;
@@ -606,13 +604,70 @@ export default {
   font-weight: 500;
 }
 
+.table {
+  background-color: white;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow);
+}
+
 .table td {
   vertical-align: middle;
+}
+
+.table th {
+  background-color: var(--bg-light);
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .modal-body {
   max-height: calc(100vh - 210px);
   overflow-y: auto;
+}
+
+.filters .form-control,
+.filters .form-select {
+  background-color: white;
+  border: 1px solid var(--border-color);
+}
+
+.filters .form-control:focus,
+.filters .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.pagination {
+  margin-bottom: 0;
+}
+
+.pagination .page-link {
+  padding: 0.5rem 0.75rem;
+  color: var(--primary-color);
+  background-color: white;
+  border: 1px solid var(--border-color);
+}
+
+.pagination .page-link:hover {
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination .page-item.disabled .page-link {
+  color: var(--text-light);
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
 }
 
 @media (max-width: 768px) {
@@ -626,10 +681,41 @@ export default {
 
   .badge {
     padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
   }
 
   .btn-sm {
     padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .modal-body {
+    max-height: calc(100vh - 180px);
+  }
+}
+
+@media (max-width: 576px) {
+  .table {
+    font-size: 0.75rem;
+  }
+
+  .badge {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-sm {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.25rem 0.4rem;
     font-size: 0.75rem;
   }
 }
