@@ -1,19 +1,22 @@
+# 編譯輸出目錄
 .DS_Store
 node_modules
 /dist
+/build
 
-
-# local env files
+# 本地環境檔案
 .env.local
 .env.*.local
+.env.development
+.env.production
 
-# Log files
+# 日誌檔案
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Editor directories and files
+# 編輯器目錄和檔案
 .idea
 .vscode
 *.suo
@@ -21,3 +24,83 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# 測試覆蓋率報告
+/coverage
+
+# Visual Studio Code 設定
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Windows 系統檔案
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS 系統檔案
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Linux 系統檔案
+*~
+.directory
+.Trash-*
+
+# 暫存檔案
+*.log
+*.tmp
+*.temp
+.cache
+
+# 依賴鎖定檔案
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# 單元測試生成的檔案
+/test/unit/coverage/
+
+# E2E測試生成的檔案
+/test/e2e/reports/
+selenium-debug.log
+
+# 打包分析報告
+/stats.html
+/stats.json
+
+# 本地SSL證書
+*.pem
+*.key
+*.crt
+
+# 自動生成的API文檔
+/docs/api/
+
+# 備份檔案
+*.bak
+*.backup
+*.swp
+
+# IDE自動生成的檔案
+.project
+.classpath
+.settings/
+*.iml
+*.ipr
+*.iws
+.idea/
+out/
+.vs/
+
+# 其他
+.DS_Store?
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging

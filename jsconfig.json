@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2020",
     "module": "esnext",
     "baseUrl": "./",
     "moduleResolution": "node",
@@ -14,6 +14,38 @@
       "dom",
       "dom.iterable",
       "scripthost"
-    ]
+    ],
+    "jsx": "preserve",
+    "strict": true,
+    "noEmit": true,
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    "sourceMap": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "src/**/*.js",
+    "src/**/*.jsx",
+    "tests/**/*.ts",
+    "tests/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    ".git",
+    ".github",
+    "coverage"
+  ],
+  "vueCompilerOptions": {
+    "target": 3,
+    "experimentalDisableTemplateSupport": false
   }
 }
