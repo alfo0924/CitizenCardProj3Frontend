@@ -1,5 +1,5 @@
 import { createStore } from 'vuex'
-
+import createPersistedState from 'vuex-persistedstate'
 import auth from './modules/auth'
 import movie from './modules/movie'
 import wallet from './modules/wallet'
@@ -7,83 +7,91 @@ import discount from './modules/discount'
 
 const store = createStore({
     state: {
-        // 全局狀態
         isLoading: false,
         error: null,
-        notification: null
+        notification: null,
+        systemStats: {
+            visitorCount: 0,
+            userCount: 0,
+            movieCount: 0
+        }
     },
 
     mutations: {
-        // 設置載入狀態
         SET_LOADING(state, status) {
             state.isLoading = status
         },
 
-        // 設置錯誤信息
         SET_ERROR(state, error) {
             state.error = error
         },
 
-        // 清除錯誤信息
         CLEAR_ERROR(state) {
             state.error = null
         },
 
-        // 設置通知信息
         SET_NOTIFICATION(state, notification) {
             state.notification = notification
         },
 
-        // 清除通知信息
         CLEAR_NOTIFICATION(state) {
             state.notification = null
+        },
+
+        SET_SYSTEM_STATS(state, stats) {
+            state.systemStats = stats
         }
     },
 
     actions: {
-        // 設置載入狀態
         setLoading({ commit }, status) {
             commit('SET_LOADING', status)
         },
 
-        // 設置錯誤信息
         setError({ commit }, error) {
             commit('SET_ERROR', error)
-            // 5秒後自動清除錯誤信息
             setTimeout(() => {
                 commit('CLEAR_ERROR')
             }, 5000)
         },
 
-        // 清除錯誤信息
         clearError({ commit }) {
             commit('CLEAR_ERROR')
         },
 
-        // 設置通知信息
         setNotification({ commit }, notification) {
             commit('SET_NOTIFICATION', notification)
-            // 3秒後自動清除通知信息
             setTimeout(() => {
                 commit('CLEAR_NOTIFICATION')
             }, 3000)
         },
 
-        // 清除通知信息
         clearNotification({ commit }) {
             commit('CLEAR_NOTIFICATION')
+        },
+
+        // 系統統計數據
+        async fetchSystemStats({ commit }) {
+            try {
+                const response = await fetch('/api/system/stats')
+                const data = await response.json()
+                commit('SET_SYSTEM_STATS', data)
+            } catch (error) {
+                console.error('Error fetching system stats:', error)
+                commit('SET_SYSTEM_STATS', {
+                    visitorCount: 0,
+                    userCount: 0,
+                    movieCount: 0
+                })
+            }
         }
     },
 
     getters: {
-        // 獲取載入狀態
-        isLoading: (state) => state.isLoading,
-
-        // 獲取錯誤信息
-        error: (state) => state.error,
-
-        // 獲取通知信息
-        notification: (state) => state.notification
+        isLoading: state => state.isLoading,
+        error: state => state.error,
+        notification: state => state.notification,
+        systemStats: state => state.systemStats
     },
 
     modules: {
@@ -93,28 +101,54 @@ const store = createStore({
         discount
     },
 
-    // 嚴格模式，在開發環境下開啟
+    plugins: [
+        createPersistedState({
+            paths: ['auth.token', 'auth.user'],
+            storage: window.localStorage
+        })
+    ],
+
     strict: process.env.NODE_ENV !== 'production'
 })
 
-// 請求攔截器，自動設置載入狀態
+// 全局請求攔截器
 store.subscribeAction({
     before: (action) => {
-        store.dispatch('setLoading', true)
+        if (!action.type.includes('setLoading')) {
+            store.dispatch('setLoading', true)
+        }
     },
     after: (action) => {
-        store.dispatch('setLoading', false)
+        if (!action.type.includes('setLoading')) {
+            store.dispatch('setLoading', false)
+        }
     },
     error: (action, error) => {
+        console.error('Action error:', {
+            action: action.type,
+            error
+        })
         store.dispatch('setLoading', false)
         store.dispatch('setError', error.message || '發生錯誤，請稍後再試')
     }
 })
 
 // 初始化時從 localStorage 恢復認證狀態
-const token = localStorage.getItem('token')
-if (token) {
-    store.dispatch('auth/restoreToken', token)
+const initializeStore = async () => {
+    const token = localStorage.getItem('token')
+    if (token) {
+        try {
+            await store.dispatch('auth/restoreToken', token)
+        } catch (error) {
+            console.error('Failed to restore auth state:', error)
+            localStorage.removeItem('token')
+        }
+    }
+
+    // 獲取系統統計數據
+    store.dispatch('fetchSystemStats')
 }
+
+initializeStore()
 
 export default store
