@@ -248,6 +248,15 @@
           <span class="text-muted">已經有帳號？</span>
           <router-link to="/login" class="text-primary ms-1">立即登入</router-link>
         </div>
+        <!-- 返回按鈕 -->
+        <div class="back-button">
+          <button class="btn btn-outline-secondary" @click="goBack">
+            <i class="fas fa-arrow-left"></i> 返回
+          </button>
+          <button class="btn btn-outline-primary ms-2" @click="goHome">
+            <i class="fas fa-home"></i> 回到首頁
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -437,6 +446,14 @@ export default {
       alert('隱私政策內容將在新視窗開啟')
       // 或者使用modal顯示
     }
+    // 返回和首頁導航
+    const goBack = () => {
+      router.back()
+    }
+
+    const goHome = () => {
+      router.push('/')
+    }
 
     // 返回所有需要的響應式數據和方法
     return {
@@ -451,10 +468,14 @@ export default {
       handleSubmit,
       togglePasswordVisibility,
       showTerms,
-      showPrivacy
+      showPrivacy,
+      goBack,
+      goHome
     }
   }
+
 }
+
 </script>
 
 <style scoped>
@@ -656,5 +677,26 @@ a:hover {
 
 .validation-message.error {
   color: var(--danger-color);
+}
+
+.back-button {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.back-button .btn {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.back-button .btn:hover {
+  transform: translateY(-1px);
 }
 </style>

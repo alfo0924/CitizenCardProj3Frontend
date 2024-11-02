@@ -1,9 +1,11 @@
 <template>
   <div class="login-container">
+
+
     <div class="login-box">
       <h2 class="text-center mb-4">會員登入</h2>
 
-      <!-- 錯誤訊息顯示 -->
+      <!-- 錯誤提示 -->
       <div v-if="error" class="alert alert-danger" role="alert">
         {{ error }}
       </div>
@@ -92,7 +94,7 @@
           <span class="text-muted">或</span>
         </div>
 
-        <!-- 社群登入按鈕 -->
+        <!-- 社交登入按鈕 -->
         <div class="social-login">
           <button
               type="button"
@@ -117,9 +119,20 @@
           <span class="text-muted">還沒有帳號？</span>
           <router-link to="/register" class="text-primary ms-1">立即註冊</router-link>
         </div>
+        <!-- 返回按鈕 -->
+
       </form>
+      <div class="back-button">
+        <button class="btn btn-outline-secondary" @click="goBack">
+          <i class="fas fa-arrow-left"></i> 返回
+        </button>
+        <button class="btn btn-outline-primary ms-2" @click="goHome">
+          <i class="fas fa-home"></i> 回到首頁
+        </button>
+      </div>
     </div>
   </div>
+
 </template>
 
 <script>
@@ -141,7 +154,7 @@ export default {
       rememberMe: false
     })
 
-    // 狀態控制
+    // 狀態管理
     const isLoading = ref(false)
     const error = ref('')
     const showPassword = ref(false)
@@ -206,7 +219,7 @@ export default {
       showPassword.value = !showPassword.value
     }
 
-    // 社群登入處理
+    // 社交登入處理
     const handleGoogleLogin = async () => {
       try {
         isLoading.value = true
@@ -241,6 +254,15 @@ export default {
       }
     }
 
+    // 返回和首頁導航
+    const goBack = () => {
+      router.back()
+    }
+
+    const goHome = () => {
+      router.push('/')
+    }
+
     return {
       formData,
       isLoading,
@@ -250,7 +272,9 @@ export default {
       handleSubmit,
       togglePasswordVisibility,
       handleGoogleLogin,
-      handleFacebookLogin
+      handleFacebookLogin,
+      goBack,
+      goHome
     }
   }
 }
@@ -264,6 +288,7 @@ export default {
   justify-content: center;
   background-color: var(--bg-light);
   padding: 1rem;
+  position: relative;
 }
 
 .login-box {
@@ -308,9 +333,53 @@ export default {
   transform: translateY(-1px);
 }
 
+.form-check-label {
+  user-select: none;
+}
+
+.invalid-feedback {
+  display: block;
+}
+
+/* 更新返回按鈕樣式 */
+.back-button {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.back-button .btn {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.back-button .btn i {
+  font-size: 0.875rem;
+}
+
+.back-button .btn:hover {
+  transform: translateY(-1px);
+}
+
 @media (max-width: 576px) {
   .login-box {
     padding: 1.5rem;
+  }
+
+  .back-button {
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+
+  .back-button .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
   }
 }
 </style>
