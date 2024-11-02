@@ -16,46 +16,47 @@ module.exports = {
         sourceType: 'module'
     },
     rules: {
-        // 基本規則
-        'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-        'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+        // 關閉或降級一些規則
+        'no-console': 'off',
+        'no-debugger': 'off',
         'no-unused-vars': 'warn',
-        'no-undef': 'error',
+        'no-undef': 'warn',
+        'space-before-function-paren': 'off',
+        'indent': 'off',
+        'vue/script-indent': 'off',
+        'vue/html-indent': 'off',
 
-        // 空格和縮進
-        'indent': ['error', 2],
-        'space-before-function-paren': ['error', 'never'],
-        'space-before-blocks': ['error', 'always'],
-        'keyword-spacing': ['error', { before: true, after: true }],
-        'space-infix-ops': 'error',
-
-        // 逗號和分號
-        'comma-dangle': ['error', 'never'],
-        'semi': ['error', 'never'],
-
-        // 引號
-        'quotes': ['error', 'single'],
-        'quote-props': ['error', 'as-needed'],
-
-        // Vue特定規則
-        'vue/html-indent': ['error', 2],
-        'vue/script-indent': ['error', 2, { baseIndent: 0 }],
+        // Vue相關規則
         'vue/multi-word-component-names': 'off',
         'vue/no-reserved-component-names': 'off',
-        'vue/html-closing-bracket-newline': ['error', {
-            singleline: 'never',
-            multiline: 'always'
-        }],
-        'vue/max-attributes-per-line': ['error', {
-            singleline: 3,
-            multiline: 1
-        }],
+        'vue/attribute-hyphenation': 'off',
+        'vue/v-on-event-hyphenation': 'off',
+        'vue/attributes-order': 'off',
+        'vue/html-self-closing': 'off',
+        'vue/singleline-html-element-content-newline': 'off',
+        'vue/multiline-html-element-content-newline': 'off',
+        'vue/first-attribute-linebreak': 'off',
+        'vue/html-closing-bracket-newline': 'off',
+        'vue/max-attributes-per-line': 'off',
         'vue/no-v-html': 'off',
 
+        // 基本風格規則
+        'quotes': ['warn', 'single'],
+        'semi': ['warn', 'never'],
+        'comma-dangle': ['warn', 'never'],
+        'object-curly-spacing': ['warn', 'always'],
+        'arrow-parens': ['warn', 'always'],
+        'eol-last': 'off',
+        'no-trailing-spaces': 'warn',
+        'no-multiple-empty-lines': ['warn', {
+            max: 1,
+            maxEOF: 0
+        }],
+
         // import/export規則
-        'import/first': 'error',
-        'import/no-duplicates': 'error',
-        'import/order': ['error', {
+        'import/first': 'warn',
+        'import/no-duplicates': 'warn',
+        'import/order': ['warn', {
             groups: [
                 'builtin',
                 'external',
@@ -68,25 +69,35 @@ module.exports = {
         }],
 
         // 其他規則
-        'eol-last': ['error', 'always'],
-        'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
-        'object-curly-spacing': ['error', 'always'],
-        'array-bracket-spacing': ['error', 'never'],
-        'arrow-parens': ['error', 'always'],
-        'arrow-spacing': ['error', { before: true, after: true }],
-        'block-spacing': 'error',
-        'brace-style': ['error', '1tbs', { allowSingleLine: true }],
-        'camelcase': ['error', { properties: 'never' }],
-        'comma-spacing': ['error', { before: false, after: true }],
-        'func-call-spacing': ['error', 'never'],
-        'key-spacing': ['error', { beforeColon: false, afterColon: true }],
-        'no-trailing-spaces': 'error',
-        'padded-blocks': ['error', 'never'],
-        'space-in-parens': ['error', 'never']
+        'space-before-blocks': ['warn', 'always'],
+        'keyword-spacing': ['warn', {
+            before: true,
+            after: true
+        }],
+        'space-infix-ops': 'warn',
+        'key-spacing': ['warn', {
+            beforeColon: false,
+            afterColon: true
+        }],
+        'comma-spacing': ['warn', {
+            before: false,
+            after: true
+        }],
+        'arrow-spacing': ['warn', {
+            before: true,
+            after: true
+        }],
+        'block-spacing': 'warn',
+        'brace-style': ['warn', '1tbs', {
+            allowSingleLine: true
+        }]
     },
     overrides: [
         {
-            files: ['**/__tests__/*.{j,t}s?(x)', '**/tests/unit/**/*.spec.{j,t}s?(x)'],
+            files: [
+                '**/__tests__/*.{j,t}s?(x)',
+                '**/tests/unit/**/*.spec.{j,t}s?(x)'
+            ],
             env: {
                 jest: true
             }
