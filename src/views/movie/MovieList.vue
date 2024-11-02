@@ -1,25 +1,17 @@
 <template>
-  <div class="movie-list-container">
-    <!-- 頂部過濾和搜索區 -->
-    <div class="filter-section mb-4">
+  <div class="movie-list">
+    <!-- 搜尋和篩選區域 -->
+    <div class="filters mb-4">
       <div class="row g-3">
-        <!-- 搜索框 -->
         <div class="col-md-4">
-          <div class="input-group">
-            <input
-                type="text"
-                class="form-control"
-                v-model="searchQuery"
-                @input="handleSearch"
-                placeholder="搜尋電影名稱..."
-            >
-            <button class="btn btn-outline-primary" type="button">
-              <i class="fas fa-search"></i>
-            </button>
-          </div>
+          <input
+              type="text"
+              class="form-control"
+              placeholder="搜尋電影"
+              v-model="searchKeyword"
+              @input="handleSearch"
+          >
         </div>
-
-        <!-- 分類過濾 -->
         <div class="col-md-3">
           <select
               class="form-select"
@@ -29,249 +21,193 @@
             <option value="">所有類別</option>
             <option
                 v-for="category in categories"
-                :key="category.categoryId"
-                :value="category.categoryId"
+                :key="category.id"
+                :value="category.id"
             >
-              {{ category.categoryName }}
+              {{ category.name }}
             </option>
           </select>
         </div>
-
-        <!-- 狀態過濾 -->
-        <div class="col-md-5">
-          <div class="btn-group w-100">
-            <button
-                v-for="status in movieStatuses"
-                :key="status.value"
-                class="btn"
-                :class="[selectedStatus === status.value ? 'btn-primary' : 'btn-outline-primary']"
-                @click="filterByStatus(status.value)"
-            >
-              {{ status.label }}
-            </button>
-          </div>
+        <div class="col-md-3">
+          <select
+              class="form-select"
+              v-model="selectedStatus"
+              @change="filterMovies"
+          >
+            <option value="">所有狀態</option>
+            <option value="SHOWING">上映中</option>
+            <option value="COMING">即將上映</option>
+          </select>
         </div>
       </div>
     </div>
 
     <!-- 載入中狀態 -->
-    <LoadingSpinner v-if="isLoading" />
-
-    <!-- 錯誤提示 -->
-    <AlertMessage
-        v-if="error"
-        type="error"
-        :message="error"
-    />
-
-    <!-- 無結果提示 -->
-    <div v-else-if="filteredMovies.length === 0" class="text-center py-5">
-      <i class="fas fa-film fa-3x mb-3 text-muted"></i>
-      <p class="text-muted">沒有找到符合條件的電影</p>
+    <div v-if="isLoading" class="loading">
+      <LoadingSpinner />
     </div>
 
-    <!-- 電影列表 -->
-    <div v-else class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-      <div
-          v-for="movie in filteredMovies"
-          :key="movie.movieId"
-          class="col"
-      >
-        <MovieCard :movie="movie" />
+    <!-- 錯誤提示 -->
+    <div v-else-if="error" class="error">
+      <div class="alert alert-danger" role="alert">
+        {{ error }}
       </div>
     </div>
 
-    <!-- 分頁控制 -->
-    <nav v-if="totalPages > 1" class="mt-4">
-      <ul class="pagination justify-content-center">
-        <!-- 上一頁 -->
-        <li class="page-item" :class="{ disabled: currentPage === 1 }">
-          <button
-              class="page-link"
-              @click="changePage(currentPage - 1)"
-              :disabled="currentPage === 1"
-          >
-            <i class="fas fa-chevron-left"></i>
-          </button>
-        </li>
+    <!-- 無數據提示 -->
+    <div v-else-if="movies.length === 0" class="no-data">
+      <div class="text-center text-muted">
+        <i class="fas fa-film fa-3x mb-3"></i>
+        <h5>暫無電影資料</h5>
+        <p>請稍後再試或調整搜尋條件</p>
+      </div>
+    </div>
 
-        <!-- 頁碼 -->
-        <li
-            v-for="page in displayedPages"
-            :key="page"
-            class="page-item"
-            :class="{ active: currentPage === page, disabled: page === '...' }"
+    <!-- 電影列表 -->
+    <div v-else>
+      <div class="row g-4">
+        <div
+            v-for="movie in movies"
+            :key="movie.id"
+            class="col-12 col-sm-6 col-md-4 col-lg-3"
         >
-          <button
-              class="page-link"
-              @click="page !== '...' && changePage(page)"
-          >
-            {{ page }}
-          </button>
-        </li>
+          <MovieCard
+              :movie="movie"
+              @click="handleMovieClick"
+          />
+        </div>
+      </div>
 
-        <!-- 下一頁 -->
-        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-          <button
-              class="page-link"
-              @click="changePage(currentPage + 1)"
-              :disabled="currentPage === totalPages"
+      <!-- 分頁 -->
+      <nav v-if="totalPages > 1" class="mt-4">
+        <ul class="pagination justify-content-center">
+          <li
+              class="page-item"
+              :class="{ disabled: currentPage === 1 }"
           >
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </li>
-      </ul>
-    </nav>
+            <button
+                class="page-link"
+                @click="changePage(currentPage - 1)"
+                :disabled="currentPage === 1"
+            >
+              <i class="fas fa-chevron-left"></i>
+            </button>
+          </li>
+          <li
+              v-for="page in displayedPages"
+              :key="page"
+              class="page-item"
+              :class="{ active: currentPage === page }"
+          >
+            <button
+                class="page-link"
+                @click="changePage(page)"
+            >
+              {{ page }}
+            </button>
+          </li>
+          <li
+              class="page-item"
+              :class="{ disabled: currentPage === totalPages }"
+          >
+            <button
+                class="page-link"
+                @click="changePage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+            >
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
-import { debounce } from 'lodash'
-
-import MovieCard from '@/components/movie/MovieCard.vue'
+import { useRouter } from 'vue-router'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import AlertMessage from '@/components/common/AlertMessage.vue'
+import MovieCard from '@/components/movie/MovieCard.vue'
 
 export default {
   name: 'MovieList',
 
   components: {
-    MovieCard,
     LoadingSpinner,
-    AlertMessage
+    MovieCard
   },
 
   setup() {
     const store = useStore()
+    const router = useRouter()
 
     // 狀態
-    const isLoading = ref(false)
-    const error = ref(null)
-    const searchQuery = ref('')
+    const searchKeyword = ref('')
     const selectedCategory = ref('')
     const selectedStatus = ref('')
     const currentPage = ref(1)
     const pageSize = ref(12)
 
-    // 電影狀態選項
-    const movieStatuses = [
-      { value: '', label: '全部' },
-      { value: 'SHOWING', label: '熱映中' },
-      { value: 'COMING', label: '即將上映' },
-      { value: 'ENDED', label: '已下檔' }
-    ]
-
-    // 從 store 獲取數據
+    // 從store獲取數據
     const movies = computed(() => store.state.movie.movies)
     const categories = computed(() => store.state.movie.categories)
-    const totalMovies = computed(() => store.state.movie.total)
+    const totalPages = computed(() => store.state.movie.totalPages)
+    const isLoading = computed(() => store.state.movie.isLoading)
+    const error = computed(() => store.state.movie.error)
 
-    // 計算總頁數
-    const totalPages = computed(() =>
-        Math.ceil(totalMovies.value / pageSize.value)
-    )
-
-    // 計算顯示的頁碼
+    // 分頁顯示
     const displayedPages = computed(() => {
-      const delta = 2
       const range = []
-      const rangeWithDots = []
-      let l
-
-      for (let i = 1; i <= totalPages.value; i++) {
-        if (
-            i === 1 ||
-            i === totalPages.value ||
-            i >= currentPage.value - delta &&
-            i <= currentPage.value + delta
-        ) {
-          range.push(i)
-        }
+      const delta = 2
+      for (
+          let i = Math.max(1, currentPage.value - delta);
+          i <= Math.min(totalPages.value, currentPage.value + delta);
+          i++
+      ) {
+        range.push(i)
       }
-
-      range.forEach((i) => {
-        if (l) {
-          if (i - l === 2) {
-            rangeWithDots.push(l + 1)
-          } else if (i - l !== 1) {
-            rangeWithDots.push('...')
-          }
-        }
-        rangeWithDots.push(i)
-        l = i
-      })
-
-      return rangeWithDots
-    })
-
-    // 過濾電影列表
-    const filteredMovies = computed(() => {
-      let result = [...movies.value]
-
-      if (searchQuery.value) {
-        const query = searchQuery.value.toLowerCase()
-        result = result.filter((movie) =>
-            movie.movieName.toLowerCase().includes(query)
-        )
-      }
-
-      if (selectedCategory.value) {
-        result = result.filter((movie) =>
-            movie.categoryId === selectedCategory.value
-        )
-      }
-
-      if (selectedStatus.value) {
-        result = result.filter((movie) =>
-            movie.status === selectedStatus.value
-        )
-      }
-
-      return result
+      return range
     })
 
     // 獲取電影列表
     const fetchMovies = async () => {
       try {
-        isLoading.value = true
-        error.value = null
         await store.dispatch('movie/fetchMovies', {
           page: currentPage.value,
           size: pageSize.value,
           category: selectedCategory.value,
           status: selectedStatus.value,
-          search: searchQuery.value
+          search: searchKeyword.value
         })
-      } catch (err) {
-        error.value = '載入電影列表失敗，請稍後再試'
-        console.error('Error fetching movies:', err)
-      } finally {
-        isLoading.value = false
+      } catch (error) {
+        console.error('Error fetching movies:', error)
       }
     }
 
-    // 搜索處理（使用防抖）
-    const handleSearch = debounce(() => {
+    // 獲取電影分類
+    const fetchCategories = async () => {
+      try {
+        await store.dispatch('movie/fetchCategories')
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+      }
+    }
+
+    // 搜尋處理
+    const handleSearch = () => {
       currentPage.value = 1
       fetchMovies()
-    }, 500)
+    }
 
-    // 過濾處理
+    // 篩選處理
     const filterMovies = () => {
       currentPage.value = 1
       fetchMovies()
     }
 
-    // 狀態過濾
-    const filterByStatus = (status) => {
-      selectedStatus.value = status
-      currentPage.value = 1
-      fetchMovies()
-    }
-
-    // 換頁處理
+    // 換頁
     const changePage = (page) => {
       if (page >= 1 && page <= totalPages.value) {
         currentPage.value = page
@@ -279,101 +215,138 @@ export default {
       }
     }
 
-    // 初始化
-    onMounted(async () => {
-      await Promise.all([
-        store.dispatch('movie/fetchCategories'),
-        fetchMovies()
-      ])
+    // 點擊電影卡片
+    const handleMovieClick = (movie) => {
+      if (movie && movie.id) {
+        router.push({
+          name: 'movie-detail',
+          params: { id: movie.id }
+        }).catch(err => {
+          console.error('Navigation error:', err)
+        })
+      }
+    }
+
+    // 清理函數
+    const cleanup = () => {
+      store.dispatch('movie/clearMovieData')
+    }
+
+    onMounted(() => {
+      fetchCategories()
+      fetchMovies()
+    })
+
+    onUnmounted(() => {
+      cleanup()
     })
 
     return {
-      isLoading,
-      error,
-      searchQuery,
+      searchKeyword,
       selectedCategory,
       selectedStatus,
       currentPage,
       movies,
       categories,
-      movieStatuses,
       totalPages,
+      isLoading,
+      error,
       displayedPages,
-      filteredMovies,
       handleSearch,
       filterMovies,
-      filterByStatus,
-      changePage
+      changePage,
+      handleMovieClick
     }
   }
 }
+
+// MovieList.vue 的 setup 函數中
+const handleMovieClick = async (movie) => {
+  try {
+    console.log('Clicking movie:', movie) // 添加日誌
+    if (!movie || !movie.id) {
+      console.error('Invalid movie data:', movie)
+      return
+    }
+
+    await router.push({
+      name: 'movie-detail',
+      params: { id: movie.id }
+    })
+  } catch (error) {
+    console.error('Navigation error:', {
+      error,
+      movieId: movie?.id,
+      route: router.currentRoute.value
+    })
+  }
+}
+
 </script>
 
 <style scoped>
-.movie-list-container {
+.movie-list {
   padding: 2rem 0;
 }
 
-.filter-section {
-  background-color: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
 }
 
-.input-group .form-control:focus {
-  border-color: var(--primary-color);
-  box-shadow: none;
+.error {
+  text-align: center;
+  padding: 2rem;
 }
 
-.form-select:focus {
-  border-color: var(--primary-color);
-  box-shadow: none;
+.no-data {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem;
 }
 
-.btn-group .btn {
-  flex: 1;
-  transition: all 0.3s ease;
-}
-
-.btn-group .btn:hover {
-  transform: translateY(-1px);
+.filters {
+  margin-bottom: 2rem;
 }
 
 .pagination {
   margin-bottom: 0;
 }
 
-.page-link {
+.pagination .page-link {
+  padding: 0.5rem 0.75rem;
   color: var(--primary-color);
-  border-color: var(--border-color);
-  padding: 0.5rem 1rem;
-  min-width: 40px;
-  text-align: center;
+  background-color: white;
+  border: 1px solid var(--border-color);
 }
 
-.page-item.active .page-link {
+.pagination .page-link:hover {
+  background-color: var(--bg-light);
+  border-color: var(--border-color);
+}
+
+.pagination .page-item.active .page-link {
   background-color: var(--primary-color);
   border-color: var(--primary-color);
+  color: white;
 }
 
-.page-link:hover {
-  color: var(--primary-dark);
+.pagination .page-item.disabled .page-link {
+  color: var(--text-light);
   background-color: var(--bg-light);
+  border-color: var(--border-color);
 }
 
 @media (max-width: 768px) {
-  .filter-section {
-    padding: 1rem;
+  .filters .row {
+    row-gap: 1rem;
   }
 
-  .btn-group {
-    flex-wrap: wrap;
-  }
-
-  .btn-group .btn {
-    flex: 1 1 auto;
-    margin-bottom: 0.5rem;
+  .pagination .page-link {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
   }
 }
 </style>

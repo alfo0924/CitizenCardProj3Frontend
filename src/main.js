@@ -142,3 +142,21 @@ if ('serviceWorker' in navigator) {
             })
     })
 }
+
+// 全局錯誤處理
+app.config.errorHandler = (err, vm, info) => {
+    console.error('Global error:', {
+        error: err,
+        component: vm?.$options?.name,
+        info,
+        route: router.currentRoute.value
+    })
+}
+
+// 未捕獲的 Promise 錯誤
+window.addEventListener('unhandledrejection', event => {
+    console.error('Unhandled promise rejection:', {
+        error: event.reason,
+        promise: event.promise
+    })
+})

@@ -1,60 +1,62 @@
 <template>
-  <div class="movie-card" @click="goToDetail">
+  <div class="movie-card" @click.stop="handleClick">
     <!-- 電影海報 -->
     <div class="movie-poster">
       <img
           :src="movie.posterUrl || require('@/assets/images/default-poster.jpg')"
-          :alt="movie.movieName"
+          :alt="movie.title"
           class="poster-image"
       >
-      <div class="movie-status" :class="statusClass">
-        {{ movie.status }}
+      <div class="movie-overlay">
+        <div class="movie-rating" v-if="movie.rating">
+          <i class="fas fa-star"></i>
+          {{ movie.rating.toFixed(1) }}
+        </div>
+        <div class="movie-duration" v-if="movie.duration">
+          <i class="fas fa-clock"></i>
+          {{ movie.duration }} 分鐘
+        </div>
       </div>
     </div>
 
     <!-- 電影資訊 -->
     <div class="movie-info">
-      <h5 class="movie-title">{{ movie.movieName }}</h5>
+      <h5 class="movie-title">{{ movie.title }}</h5>
 
       <div class="movie-meta">
-        <span class="duration">
-          <i class="fas fa-clock"></i> {{ formatDuration(movie.duration) }}
+        <span class="movie-category" v-if="movie.category">
+          <i class="fas fa-film"></i>
+          {{ movie.category }}
         </span>
-        <span class="rating" v-if="movie.rating">
-          <i class="fas fa-star"></i> {{ movie.rating }}
+
+        <span class="movie-status" v-if="movie.status">
+          <i class="fas fa-calendar"></i>
+          {{ getStatusText(movie.status) }}
         </span>
       </div>
 
-      <div class="movie-category" v-if="movie.categoryName">
-        <span class="badge bg-secondary">{{ movie.categoryName }}</span>
-      </div>
-
-      <!-- 上映日期 -->
-      <div class="release-date">
-        <i class="fas fa-calendar-alt"></i>
-        {{ formatDate(movie.releaseDate) }}
-      </div>
-
-      <!-- 簡短描述 -->
-      <p class="movie-description" v-if="movie.description">
-        {{ truncateDescription(movie.description) }}
-      </p>
-
-      <!-- 操作按鈕 -->
       <div class="movie-actions">
+        <span class="movie-price" v-if="movie.price">
+          <i class="fas fa-ticket-alt"></i>
+          NT$ {{ movie.price }}
+        </span>
+
         <button
-            class="btn btn-primary btn-sm"
-            @click.stop="goToBooking"
-            :disabled="!isBookable"
+            class="btn btn-primary btn-sm book-btn"
+            :disabled="!canBook"
+            @click.stop="handleBooking"
         >
-          <i class="fas fa-ticket-alt"></i> 立即訂票
+          <i class="fas fa-bookmark"></i>
+          立即訂票
         </button>
+
         <button
-            class="btn btn-outline-secondary btn-sm"
-            @click.stop="showTrailer"
-            v-if="movie.trailerUrl"
+            v-if="showTrailer"
+            class="btn btn-outline-primary btn-sm trailer-btn"
+            @click.stop="openTrailer"
         >
-          <i class="fas fa-play"></i> 預告片
+          <i class="fas fa-play"></i>
+          預告片
         </button>
       </div>
     </div>
@@ -69,7 +71,7 @@
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title">{{ movie.movieName }} - 預告片</h5>
+            <h5 class="modal-title">{{ movie.title }} - 預告片</h5>
             <button
                 type="button"
                 class="btn-close"
@@ -77,12 +79,13 @@
             ></button>
           </div>
           <div class="modal-body">
-            <div class="ratio ratio-16x9">
-              <iframe
-                  :src="movie.trailerUrl"
-                  allowfullscreen
-              ></iframe>
-            </div>
+            <iframe
+                v-if="movie.trailerUrl"
+                :src="movie.trailerUrl"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+            ></iframe>
           </div>
         </div>
       </div>
@@ -91,9 +94,9 @@
 </template>
 
 <script>
-import { Modal } from 'bootstrap'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { Modal } from 'bootstrap'
 
 export default {
   name: 'MovieCard',
@@ -109,71 +112,56 @@ export default {
     const router = useRouter()
     const trailerModal = ref(null)
 
-    // 計算電影是否可訂票
-    const isBookable = computed(() => {
-      return props.movie.status === '熱映中' &&
-          new Date(props.movie.releaseDate) <= new Date()
+    // 計算屬性
+    const canBook = computed(() => {
+      return props.movie.status === 'SHOWING' && props.movie.price > 0
     })
 
-    // 計算狀態樣式
-    const statusClass = computed(() => {
-      return {
-        'status-showing': props.movie.status === '熱映中',
-        'status-coming': props.movie.status === '即將上映',
-        'status-ended': props.movie.status === '已下檔'
-      }
+    const showTrailer = computed(() => {
+      return props.movie.trailerUrl && props.movie.trailerUrl.length > 0
     })
 
-    // 格式化時間長度
-    const formatDuration = (minutes) => {
-      if (!minutes) return '未知'
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      return `${hours}小時${mins}分鐘`
+    // 方法
+    const handleClick = () => {
+      router.push({
+        name: 'movie-detail',
+        params: { id: props.movie.id }
+      })
     }
 
-    // 格式化日期
-    const formatDate = (date) => {
-      if (!date) return '未知'
-      return new Date(date).toLocaleDateString('zh-TW')
-    }
-
-    // 截短描述文字
-    const truncateDescription = (text) => {
-      if (!text) return ''
-      return text.length > 50 ? text.substring(0, 50) + '...' : text
-    }
-
-    // 前往電影詳情頁
-    const goToDetail = () => {
-      router.push(`/movies/${props.movie.movieId}`)
-    }
-
-    // 前往訂票頁面
-    const goToBooking = () => {
-      if (isBookable.value) {
-        router.push(`/movies/${props.movie.movieId}/booking`)
+    const handleBooking = () => {
+      if (canBook.value) {
+        router.push({
+          name: 'booking',
+          params: { movieId: props.movie.id }
+        })
       }
     }
 
-    // 顯示預告片
-    const showTrailer = () => {
-      if (props.movie.trailerUrl) {
-        const modal = new Modal(trailerModal.value)
-        modal.show()
+    const openTrailer = () => {
+      const modal = new Modal(trailerModal.value)
+      modal.show()
+    }
+
+    const getStatusText = (status) => {
+      switch (status) {
+      case 'SHOWING':
+        return '上映中'
+      case 'COMING':
+        return '即將上映'
+      default:
+        return '未知'
       }
     }
 
     return {
-      isBookable,
-      statusClass,
-      formatDuration,
-      formatDate,
-      truncateDescription,
-      goToDetail,
-      goToBooking,
+      trailerModal,
+      canBook,
       showTrailer,
-      trailerModal
+      handleClick,
+      handleBooking,
+      openTrailer,
+      getStatusText
     }
   }
 }
@@ -182,11 +170,11 @@ export default {
 <style scoped>
 .movie-card {
   background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease;
   cursor: pointer;
-  overflow: hidden;
 }
 
 .movie-card:hover {
@@ -195,8 +183,7 @@ export default {
 
 .movie-poster {
   position: relative;
-  width: 100%;
-  padding-top: 150%; /* 2:3 aspect ratio */
+  padding-top: 150%;
 }
 
 .poster-image {
@@ -208,26 +195,24 @@ export default {
   object-fit: cover;
 }
 
-.movie-status {
+.movie-overlay {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 4px 8px;
-  border-radius: var(--border-radius-sm);
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 1rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
   color: white;
+  display: flex;
+  justify-content: space-between;
+}
+
+.movie-rating,
+.movie-duration {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 0.875rem;
-}
-
-.status-showing {
-  background-color: var(--success-color);
-}
-
-.status-coming {
-  background-color: var(--primary-color);
-}
-
-.status-ended {
-  background-color: var(--secondary-color);
 }
 
 .movie-info {
@@ -236,49 +221,69 @@ export default {
 
 .movie-title {
   margin: 0 0 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .movie-meta {
   display: flex;
   gap: 1rem;
   margin-bottom: 0.5rem;
-  color: var(--text-light);
-  font-size: 0.875rem;
-}
-
-.movie-category {
-  margin-bottom: 0.5rem;
-}
-
-.release-date {
-  color: var(--text-light);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.movie-description {
   font-size: 0.875rem;
   color: var(--text-secondary);
-  margin-bottom: 1rem;
-  line-height: 1.4;
+}
+
+.movie-category,
+.movie-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .movie-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
 }
 
-.btn {
-  flex: 1;
+.movie-price {
+  font-weight: 600;
+  color: var(--primary-color);
 }
 
-/* 響應式設計 */
+.book-btn,
+.trailer-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.modal-body {
+  padding: 0;
+  background: black;
+}
+
+.modal-body iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
 @media (max-width: 768px) {
-  .movie-card {
-    max-width: 300px;
-    margin: 0 auto;
+  .movie-title {
+    font-size: 0.875rem;
+  }
+
+  .movie-meta {
+    font-size: 0.75rem;
+  }
+
+  .book-btn,
+  .trailer-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
   }
 }
 </style>

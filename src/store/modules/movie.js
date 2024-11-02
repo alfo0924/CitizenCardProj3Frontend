@@ -7,7 +7,7 @@ const state = {
     schedules: [],
     reviews: [],
     categories: [],
-    total: 0,
+    totalPages: 0,
     isLoading: false,
     error: null
 }
@@ -19,7 +19,7 @@ const getters = {
     movieSchedules: state => state.schedules,
     movieReviews: state => state.reviews,
     movieCategories: state => state.categories,
-    totalMovies: state => state.total,
+    totalPages: state => state.totalPages,
     isLoading: state => state.isLoading,
     error: state => state.error,
 
@@ -37,20 +37,48 @@ const getters = {
 
 // actions
 const actions = {
+    // 清理數據
+    clearMovieData({ commit }) {
+        commit('SET_MOVIES', [])
+        commit('SET_CURRENT_MOVIE', null)
+        commit('SET_SCHEDULES', [])
+        commit('SET_REVIEWS', [])
+        commit('SET_ERROR', null)
+    },
+
     // 獲取電影列表
     async fetchMovies({ commit }, params) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
 
         try {
-            const response = await axios.get('/api/movies', { params })
-            commit('SET_MOVIES', response.data.content || [])
-            commit('SET_TOTAL', response.data.totalElements || 0)
+            const response = await axios.get('/api/movies', {
+                params: {
+                    ...params,
+                    size: params.size || 12
+                }
+            })
+
+            // 只保存必要的數據
+            const movies = response.data.content.map(movie => ({
+                id: movie.id,
+                title: movie.title,
+                posterUrl: movie.posterUrl,
+                category: movie.category,
+                status: movie.status,
+                rating: movie.rating,
+                price: movie.price,
+                duration: movie.duration,
+                releaseDate: movie.releaseDate
+            }))
+
+            commit('SET_MOVIES', movies)
+            commit('SET_TOTAL_PAGES', response.data.totalPages || 0)
         } catch (error) {
             console.error('Error fetching movies:', error)
             commit('SET_ERROR', '載入電影列表失敗')
             commit('SET_MOVIES', [])
-            commit('SET_TOTAL', 0)
+            commit('SET_TOTAL_PAGES', 0)
         } finally {
             commit('SET_LOADING', false)
         }
@@ -58,14 +86,21 @@ const actions = {
 
     // 獲取電影詳情
     async fetchMovieDetail({ commit }, movieId) {
+        console.log('Fetching movie detail:', movieId)
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
 
         try {
             const response = await axios.get(`/api/movies/${movieId}`)
+            console.log('Movie detail response:', response.data)
             commit('SET_CURRENT_MOVIE', response.data)
         } catch (error) {
-            console.error('Error fetching movie detail:', error)
+            console.error('Error fetching movie detail:', {
+                error,
+                movieId,
+                message: error.message,
+                response: error.response?.data
+            })
             commit('SET_ERROR', '載入電影詳情失敗')
             commit('SET_CURRENT_MOVIE', null)
         } finally {
@@ -142,20 +177,15 @@ const actions = {
                 params: { keyword }
             })
             commit('SET_MOVIES', response.data.content || [])
-            commit('SET_TOTAL', response.data.totalElements || 0)
+            commit('SET_TOTAL_PAGES', response.data.totalPages || 0)
         } catch (error) {
             console.error('Error searching movies:', error)
             commit('SET_ERROR', '搜索電影失敗')
             commit('SET_MOVIES', [])
-            commit('SET_TOTAL', 0)
+            commit('SET_TOTAL_PAGES', 0)
         } finally {
             commit('SET_LOADING', false)
         }
-    },
-
-    // 清除當前電影
-    clearCurrentMovie({ commit }) {
-        commit('SET_CURRENT_MOVIE', null)
     }
 }
 
@@ -181,8 +211,8 @@ const mutations = {
         state.categories = categories
     },
 
-    SET_TOTAL(state, total) {
-        state.total = total
+    SET_TOTAL_PAGES(state, totalPages) {
+        state.totalPages = totalPages
     },
 
     SET_LOADING(state, status) {
