@@ -16,48 +16,42 @@ module.exports = {
         sourceType: 'module'
     },
     rules: {
-        // 關閉或降級一些規則
+        // 關閉所有格式相關規則
+        'indent': 'off',
+        'space-before-function-paren': 'off',
+        'eol-last': 'off',
+        'no-trailing-spaces': 'off',
+        'comma-dangle': 'off',
+        'quotes': 'off',
+        'semi': 'off',
+        'dot-notation': 'off',
+        'quote-props': 'off',
+
+        // 關閉 console 警告
         'no-console': 'off',
         'no-debugger': 'off',
-        'no-unused-vars': 'warn',
-        'no-undef': 'warn',
-        'space-before-function-paren': 'off',
-        indent: 'off',
-        'vue/script-indent': 'off',
-        'vue/html-indent': 'off',
 
         // Vue相關規則
+        'vue/html-indent': 'off',
+        'vue/script-indent': 'off',
+        'vue/max-attributes-per-line': 'off',
+        'vue/singleline-html-element-content-newline': 'off',
+        'vue/multiline-html-element-content-newline': 'off',
+        'vue/first-attribute-linebreak': 'off',
+        'vue/html-closing-bracket-newline': 'off',
+        'vue/html-self-closing': 'off',
         'vue/multi-word-component-names': 'off',
         'vue/no-reserved-component-names': 'off',
         'vue/attribute-hyphenation': 'off',
         'vue/v-on-event-hyphenation': 'off',
         'vue/attributes-order': 'off',
-        'vue/html-self-closing': 'off',
-        'vue/singleline-html-element-content-newline': 'off',
-        'vue/multiline-html-element-content-newline': 'off',
-        'vue/first-attribute-linebreak': 'off',
-        'vue/html-closing-bracket-newline': 'off',
-        'vue/max-attributes-per-line': 'off',
         'vue/no-v-html': 'off',
 
-        // 基本風格規則
-        quotes: ['warn', 'single'],
-        semi: ['warn', 'never'],
-        'comma-dangle': ['warn', 'never'],
-        'object-curly-spacing': ['warn', 'always'],
-        'arrow-parens': ['warn', 'always'],
-        'eol-last': 'off',
-        'no-trailing-spaces': 'warn',
-        'no-multiple-empty-lines': ['warn', {
-            max: 1,
-            maxEOF: 0
-        }],
-
-        // import/export規則
-        'import/first': 'warn',
-        'import/no-duplicates': 'warn',
-        'import/order': ['warn', {
-            groups: [
+        // Import相關規則
+        'import/first': 'off',
+        'import/no-duplicates': 'off',
+        'import/order': ['off', {
+            'groups': [
                 'builtin',
                 'external',
                 'internal',
@@ -66,30 +60,6 @@ module.exports = {
                 'index'
             ],
             'newlines-between': 'always'
-        }],
-
-        // 其他規則
-        'space-before-blocks': ['warn', 'always'],
-        'keyword-spacing': ['warn', {
-            before: true,
-            after: true
-        }],
-        'space-infix-ops': 'warn',
-        'key-spacing': ['warn', {
-            beforeColon: false,
-            afterColon: true
-        }],
-        'comma-spacing': ['warn', {
-            before: false,
-            after: true
-        }],
-        'arrow-spacing': ['warn', {
-            before: true,
-            after: true
-        }],
-        'block-spacing': 'warn',
-        'brace-style': ['warn', '1tbs', {
-            allowSingleLine: true
         }]
     },
     overrides: [
@@ -102,5 +72,11 @@ module.exports = {
                 jest: true
             }
         }
-    ]
+    ],
+    globals: {
+        defineProps: 'readonly',
+        defineEmits: 'readonly',
+        defineExpose: 'readonly',
+        withDefaults: 'readonly'
+    }
 }
