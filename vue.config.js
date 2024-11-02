@@ -89,17 +89,18 @@ module.exports = defineConfig({
   },
 
   chainWebpack: config => {
+    // 設定解析別名
     config.resolve.alias
         .set('@', path.resolve(__dirname, 'src'))
 
+    // 生產環境優化
     if (process.env.NODE_ENV === 'production') {
-      // 優化生產環境
       config.optimization.minimize(true)
       config.optimization.splitChunks({
         chunks: 'all'
       })
 
-      // 移除console
+      // 移除console和debugger
       config.optimization.minimizer('terser').tap(args => {
         args[0].terserOptions.compress.drop_console = true
         args[0].terserOptions.compress.drop_debugger = true
@@ -107,14 +108,14 @@ module.exports = defineConfig({
       })
     }
 
-    // 移除prefetch
+    // 移除prefetch和preload插件
     config.plugins.delete('prefetch')
     config.plugins.delete('preload')
 
-    // 處理圖片
+    // 圖片處理規則
     config.module
         .rule('images')
-        .test(/\.(png|jpe?g|gif|webp)(\?.*)?$/)
+        .test(/\.(png|jpe?g|gif|webp|avif)(\?.*)?$/)
         .use('url-loader')
         .loader('url-loader')
         .options({
@@ -126,8 +127,9 @@ module.exports = defineConfig({
             }
           }
         })
+        .end()
 
-    // 處理字體
+    // 字體處理規則
     config.module
         .rule('fonts')
         .test(/\.(woff2?|eot|ttf|otf)(\?.*)?$/i)
@@ -142,5 +144,34 @@ module.exports = defineConfig({
             }
           }
         })
+        .end()
+
+    // SVG處理規則
+    config.module
+        .rule('svg')
+        .test(/\.(svg)(\?.*)?$/)
+        .use('file-loader')
+        .loader('file-loader')
+        .options({
+          name: 'img/[name].[hash:8].[ext]'
+        })
+        .end()
+
+    // 媒體文件處理規則
+    config.module
+        .rule('media')
+        .test(/\.(mp4|webm|ogg|mp3|wav|flac|aac)(\?.*)?$/)
+        .use('url-loader')
+        .loader('url-loader')
+        .options({
+          limit: 10000,
+          fallback: {
+            loader: 'file-loader',
+            options: {
+              name: 'media/[name].[hash:8].[ext]'
+            }
+          }
+        })
+        .end()
   }
 })
