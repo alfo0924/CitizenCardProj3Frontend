@@ -1,65 +1,95 @@
 # CitizenCardProj3Frontend  |  前端專案架構：
 
+
+
+
 ```
 citizencardproj3frontend/
-├── public/                     # 靜態資源
-│   ├── index.html             # 主HTML文件
-│   └── favicon.ico            # 網站圖標
-├── src/                       # 源代碼
-│   ├── assets/               # 靜態資源
-│   │   ├── images/          # 圖片資源
-│   │   │   └── logo.png
-│   │   └── css/            # CSS樣式
-│   │       ├── main.css     # 主要樣式
-│   │       ├── variables.css # CSS變量
-│   │       └── utilities.css # 工具類樣式
-│   ├── components/          # 共用元件
-│   │   ├── layout/         # 布局元件
-│   │   │   ├── Header.vue
-│   │   │   ├── Footer.vue
-│   │   │   └── Sidebar.vue
-│   │   ├── auth/           # 認證相關元件
+├── public/                      # 靜態資源
+│   ├── favicon.ico
+│   └── index.html
+│
+├── src/                        # 源代碼
+│   ├── assets/                 # 資源文件
+│   │   ├── css/
+│   │   │   ├── main.css
+│   │   │   ├── utilities.css
+│   │   │   └── variables.css
+│   │   └── images/
+│   │       ├── default-avatar.jpg
+│   │       ├── default-poster.jpg
+│   │       └── logo.png
+│   │
+│   ├── components/            # 組件
+│   │   ├── auth/             # 認證相關組件
 │   │   │   ├── LoginForm.vue
 │   │   │   └── RegisterForm.vue
-│   │   ├── movie/          # 電影相關元件
-│   │   │   ├── MovieCard.vue
-│   │   │   └── MovieList.vue
-│   │   └── common/         # 通用元件
-│   │       ├── LoadingSpinner.vue
-│   │       └── AlertMessage.vue
-│   ├── views/              # 頁面視圖
-│   │   ├── Home.vue       # 首頁
-│   │   ├── auth/          # 認證頁面
-│   │   │   ├── Login.vue
-│   │   │   └── Register.vue
-│   │   ├── movie/         # 電影頁面
-│   │   │   ├── MovieList.vue
-│   │   │   └── MovieDetail.vue
-│   │   └── user/          # 用戶頁面
-│   │       ├── Profile.vue
-│   │       └── Wallet.vue
-│   ├── router/            # 路由配置
+│   │   ├── common/           # 通用組件
+│   │   │   ├── AlertMessage.vue
+│   │   │   └── LoadingSpinner.vue
+│   │   ├── layout/           # 布局組件
+│   │   │   ├── Footer.vue
+│   │   │   ├── Header.vue
+│   │   │   └── Sidebar.vue
+│   │   └── movie/            # 電影相關組件
+│   │       ├── MovieCard.vue
+│   │       └── MovieList.vue
+│   │
+│   ├── router/               # 路由配置
 │   │   └── index.js
-│   ├── store/             # Vuex狀態管理
-│   │   ├── index.js
-│   │   └── modules/
-│   │       ├── auth.js
-│   │       └── movie.js
-│   ├── services/          # API服務
-│   │   ├── api.config.js  # API配置
+│   │
+│   ├── services/             # API服務
+│   │   ├── api.config.js
 │   │   ├── auth.service.js
 │   │   └── movie.service.js
-│   ├── utils/            # 工具函數
+│   │
+│   ├── store/                # Vuex狀態管理
+│   │   ├── modules/
+│   │   │   ├── auth.js
+│   │   │   ├── discount.js
+│   │   │   ├── movie.js
+│   │   │   └── wallet.js
+│   │   └── index.js
+│   │
+│   ├── utils/                # 工具函數
 │   │   └── helpers.js
-│   ├── App.vue          # 根組件
-│   └── main.js          # 入口文件
-├── .env                 # 環境變數
-├── .gitignore          # Git忽略文件
-├── babel.config.js     # Babel配置
-├── jsconfig.json       # JS配置
-├── package.json        # 項目配置
-└── vue.config.js       # Vue配置
+│   │
+│   ├── views/                # 頁面視圖
+│   │   ├── admin/           # 管理員頁面
+│   │   │   ├── AdminDashboard.vue
+│   │   │   ├── DiscountManagement.vue
+│   │   │   ├── MovieManagement.vue
+│   │   │   └── UserManagement.vue
+│   │   ├── auth/            # 認證頁面
+│   │   │   ├── Login.vue
+│   │   │   └── Register.vue
+│   │   ├── discount/        # 優惠券頁面
+│   │   │   └── Discounts.vue
+│   │   ├── movie/          # 電影相關頁面
+│   │   │   ├── Booking.vue
+│   │   │   ├── MovieDetail.vue
+│   │   │   └── MovieList.vue
+│   │   ├── user/           # 用戶相關頁面
+│   │   │   ├── Profile.vue
+│   │   │   └── Wallet.vue
+│   │   ├── Home.vue        # 首頁
+│   │   └── NotFound.vue    # 404頁面
+│   │
+│   ├── App.vue              # 根組件
+│   └── main.js              # 入口文件
+│
+├── .env                      # 環境變量
+├── .eslintrc.js             # ESLint配置
+├── .gitignore               # Git忽略文件
+├── .npmrc                   # NPM配置
+├── babel.config.js          # Babel配置
+├── jsconfig.json            # JavaScript配置
+├── package.json             # 項目依賴
+├── README.md                # 項目說明
+└── vue.config.js            # Vue配置
 ```
+
+
 
 主要特點：
 1. 扁平化的目錄結構，易於維護
