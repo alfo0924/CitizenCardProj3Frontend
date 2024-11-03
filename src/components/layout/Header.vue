@@ -7,14 +7,14 @@
         市民卡系統
       </router-link>
 
-      <!-- 漢堡選單按鈕 -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <!-- Toggler Button -->
+      <button class="navbar-toggler" type="button" @click="toggleNav" aria-controls="navbarNav"
+              :aria-expanded="!isNavCollapsed" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- 導航選單 -->
-      <div class="collapse navbar-collapse" id="navbarNav">
+      <!-- Navbar items with collapse class bound to isNavCollapsed -->
+      <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <!-- 電影 -->
           <li class="nav-item">
@@ -45,16 +45,16 @@
           </li>
         </ul>
 
-        <!-- 右側選單 -->
+        <!-- Right Side Menu -->
         <ul class="navbar-nav">
-          <!-- 搜尋按鈕 -->
+          <!-- Search Button -->
           <li class="nav-item">
             <button class="nav-link btn" @click="toggleSearch">
               <i class="fas fa-search"></i>
             </button>
           </li>
 
-          <!-- 未登入 -->
+          <!-- If Not Logged In -->
           <template v-if="!isLoggedIn">
             <li class="nav-item">
               <router-link class="nav-link" to="/login">
@@ -68,9 +68,9 @@
             </li>
           </template>
 
-          <!-- 已登入 -->
+          <!-- If Logged In -->
           <template v-else>
-            <!-- 通知 -->
+            <!-- Notifications -->
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button"
                  data-bs-toggle="dropdown" aria-expanded="false">
@@ -89,7 +89,7 @@
               </ul>
             </li>
 
-            <!-- 用戶選單 -->
+            <!-- User Menu -->
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                  data-bs-toggle="dropdown" aria-expanded="false">
@@ -120,7 +120,7 @@
       </div>
     </div>
 
-    <!-- 搜尋欄 -->
+    <!-- Search Bar -->
     <div class="search-bar" :class="{ active: isSearchActive }">
       <div class="container">
         <div class="input-group">
@@ -150,20 +150,25 @@ export default {
     const router = useRouter()
     const searchQuery = ref('')
     const isSearchActive = ref(false)
+    const isNavCollapsed = ref(true)  // New reactive state for nav collapse
 
-    // 計算屬性
+    // Computed properties
     const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
     const userName = computed(() => store.getters['auth/userName'])
     const userAvatar = computed(() => store.getters['auth/userAvatar'])
     const notifications = computed(() => store.getters['notification/notifications'])
     const unreadNotifications = computed(() => store.getters['notification/unreadCount'])
 
-    // 方法
+    // Methods
     const toggleSearch = () => {
       isSearchActive.value = !isSearchActive.value
       if (!isSearchActive.value) {
         searchQuery.value = ''
       }
+    }
+
+    const toggleNav = () => {
+      isNavCollapsed.value = !isNavCollapsed.value
     }
 
     const search = () => {
@@ -194,7 +199,9 @@ export default {
       unreadNotifications,
       searchQuery,
       isSearchActive,
+      isNavCollapsed,
       toggleSearch,
+      toggleNav,
       search,
       readNotification,
       logout
