@@ -1,5 +1,39 @@
 import axios from 'axios'
 
+// 模擬用戶數據
+const mockUsers = [
+    {
+        id: 1,
+        email: 'user@example.com',
+        password: 'user123456',
+        name: '一般會員',
+        role: 'ROLE_USER',
+        avatar: 'https://i.pravatar.cc/150?img=1',
+        phone: '0912345678',
+        birthday: '1990-01-01',
+        gender: 'MALE',
+        address: '台中市西屯區文華路100號',
+        wallet: {
+            balance: 1000
+        }
+    },
+    {
+        id: 2,
+        email: 'admin@example.com',
+        password: 'admin123456',
+        name: '系統管理員',
+        role: 'ROLE_ADMIN',
+        avatar: 'https://i.pravatar.cc/150?img=2',
+        phone: '0987654321',
+        birthday: '1985-12-31',
+        gender: 'FEMALE',
+        address: '台中市西屯區文華路200號',
+        wallet: {
+            balance: 5000
+        }
+    }
+]
+
 // 初始狀態
 const state = {
     token: localStorage.getItem('token') || null,
@@ -10,37 +44,55 @@ const state = {
 
 // getters
 const getters = {
-    isLoggedIn: (state) => !!state.token,
-    isAdmin: (state) => state.user && state.user.role === 'ROLE_ADMIN',
-    currentUser: (state) => state.user,
-    authError: (state) => state.error,
-    isLoading: (state) => state.isLoading
+    isLoggedIn: state => !!state.token,
+    isAdmin: state => state.user?.role === 'ROLE_ADMIN',
+    currentUser: state => state.user,
+    userName: state => state.user?.name || '',
+    userAvatar: state => state.user?.avatar || '',
+    authError: state => state.error,
+    isLoading: state => state.isLoading
 }
 
 // actions
 const actions = {
     // 登入
     async login({ commit }, credentials) {
+        commit('SET_LOADING', true)
+        commit('CLEAR_ERROR')
+
         try {
-            commit('SET_LOADING', true)
-            commit('CLEAR_ERROR')
+            // 模擬API請求延遲
+            await new Promise(resolve => setTimeout(resolve, 1000))
 
-            const response = await axios.post('/api/auth/login', credentials)
+            // 查找用戶
+            const user = mockUsers.find(u =>
+              u.email === credentials.email &&
+              u.password === credentials.password
+            )
 
-            const { token, user } = response.data
+            if (user) {
+                // 生成模擬token
+                const token = `mock-token-${user.id}-${Date.now()}`
 
-            localStorage.setItem('token', token)
-            localStorage.setItem('user', JSON.stringify(user))
+                // 儲存認證信息
+                localStorage.setItem('token', token)
+                localStorage.setItem('user', JSON.stringify(user))
 
-            commit('SET_TOKEN', token)
-            commit('SET_USER', user)
+                commit('SET_TOKEN', token)
+                commit('SET_USER', user)
 
-            // 設置axios的authorization header
-            axios.defaults.headers.common.Authorization = `Bearer ${token}`
+                // 設置axios header
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-            return response
+                return {
+                    success: true,
+                    data: { token, user }
+                }
+            } else {
+                throw new Error('帳號或密碼錯誤')
+            }
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '登入失敗')
+            commit('SET_ERROR', error.message)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -49,14 +101,25 @@ const actions = {
 
     // 註冊
     async register({ commit }, userData) {
-        try {
-            commit('SET_LOADING', true)
-            commit('CLEAR_ERROR')
+        commit('SET_LOADING', true)
+        commit('CLEAR_ERROR')
 
-            const response = await axios.post('/api/auth/register', userData)
-            return response
+        try {
+            // 模擬API請求延遲
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            // 檢查Email是否已存在
+            if (mockUsers.some(u => u.email === userData.email)) {
+                throw new Error('此Email已被註冊')
+            }
+
+            // 模擬註冊成功
+            return {
+                success: true,
+                message: '註冊成功，請登入'
+            }
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '註冊失敗')
+            commit('SET_ERROR', error.message)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -66,46 +129,35 @@ const actions = {
     // 登出
     async logout({ commit }) {
         try {
-            await axios.post('/api/auth/logout')
-        } catch (error) {
-            console.error('Logout error:', error)
-        } finally {
+            // 模擬API請求
+            await new Promise(resolve => setTimeout(resolve, 500))
+
+            // 清除認證信息
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            delete axios.defaults.headers.common.Authorization
+            delete axios.defaults.headers.common['Authorization']
+
             commit('CLEAR_USER')
+        } catch (error) {
+            console.error('Logout error:', error)
         }
     },
 
     // 重設密碼請求
     async requestPasswordReset({ commit }, email) {
+        commit('SET_LOADING', true)
+        commit('CLEAR_ERROR')
+
         try {
-            commit('SET_LOADING', true)
-            commit('CLEAR_ERROR')
+            // 模擬API請求
+            await new Promise(resolve => setTimeout(resolve, 1000))
 
-            const response = await axios.post('/api/auth/password-reset-request', { email })
-            return response
+            return {
+                success: true,
+                message: '重設密碼郵件已發送'
+            }
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '重設密碼請求失敗')
-            throw error
-        } finally {
-            commit('SET_LOADING', false)
-        }
-    },
-
-    // 重設密碼
-    async resetPassword({ commit }, { token, newPassword }) {
-        try {
-            commit('SET_LOADING', true)
-            commit('CLEAR_ERROR')
-
-            const response = await axios.post('/api/auth/reset-password', {
-                token,
-                newPassword
-            })
-            return response
-        } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '重設密碼失敗')
+            commit('SET_ERROR', '重設密碼請求失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -113,20 +165,28 @@ const actions = {
     },
 
     // 更新用戶資料
-    async updateProfile({ commit }, userData) {
+    async updateProfile({ commit, state }, userData) {
+        commit('SET_LOADING', true)
+        commit('CLEAR_ERROR')
+
         try {
-            commit('SET_LOADING', true)
-            commit('CLEAR_ERROR')
+            // 模擬API請求
+            await new Promise(resolve => setTimeout(resolve, 1000))
 
-            const response = await axios.put('/api/auth/profile', userData)
+            const updatedUser = {
+                ...state.user,
+                ...userData
+            }
 
-            const updatedUser = response.data
             localStorage.setItem('user', JSON.stringify(updatedUser))
             commit('SET_USER', updatedUser)
 
-            return response
+            return {
+                success: true,
+                data: updatedUser
+            }
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '更新資料失敗')
+            commit('SET_ERROR', '更新資料失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -135,37 +195,22 @@ const actions = {
 
     // 變更密碼
     async changePassword({ commit }, { oldPassword, newPassword }) {
-        try {
-            commit('SET_LOADING', true)
-            commit('CLEAR_ERROR')
+        commit('SET_LOADING', true)
+        commit('CLEAR_ERROR')
 
-            const response = await axios.post('/api/auth/change-password', {
-                oldPassword,
-                newPassword
-            })
-            return response
+        try {
+            // 模擬API請求
+            await new Promise(resolve => setTimeout(resolve, 1000))
+
+            return {
+                success: true,
+                message: '密碼已更新'
+            }
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '變更密碼失敗')
+            commit('SET_ERROR', '變更密碼失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
-        }
-    },
-
-    // 重新整理token
-    async refreshToken({ commit }) {
-        try {
-            const response = await axios.post('/api/auth/refresh-token')
-            const { token } = response.data
-
-            localStorage.setItem('token', token)
-            commit('SET_TOKEN', token)
-            axios.defaults.headers.common.Authorization = `Bearer ${token}`
-
-            return response
-        } catch (error) {
-            commit('CLEAR_USER')
-            throw error
         }
     }
 }
@@ -185,8 +230,8 @@ const mutations = {
         state.user = null
     },
 
-    SET_LOADING(state, isLoading) {
-        state.isLoading = isLoading
+    SET_LOADING(state, status) {
+        state.isLoading = status
     },
 
     SET_ERROR(state, error) {
