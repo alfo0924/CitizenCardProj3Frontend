@@ -9,7 +9,10 @@ import Booking from '@/views/movie/Booking.vue'
 import Wallet from '@/views/user/Wallet.vue'
 import Discounts from '@/views/discount/Discounts.vue'
 import NotFound from '@/views/NotFound.vue'
+import FAQ from '@/views/other/FAQ.vue'
 import store from '@/store'
+import PartnerStore from '@/views/other/PartnerStore.vue'
+import CityMovie from '@/views/other/CityMovie.vue'
 
 const routes = [
     {
@@ -89,6 +92,30 @@ const routes = [
         component: Discounts,
         meta: {
             title: '優惠券'
+        }
+    },
+    {
+        path: '/faq',
+        name: 'faq',
+        component: FAQ,
+        meta: {
+            title: '常見問題'
+        }
+    },
+    {
+        path: '/partner-store',
+        name: 'partner-store',
+        component: PartnerStore,
+        meta: {
+            title: '特約商店'
+        }
+    },
+    {
+        path: '/city-movie',
+        name: 'city-movie',
+        component: CityMovie,
+        meta: {
+            title: 'CityMovie'
         }
     },
     // 管理員路由
