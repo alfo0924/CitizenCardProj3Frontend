@@ -20,6 +20,7 @@ const Booking = () => import('@/views/movie/Booking.vue')
 
 // 優惠相關頁面
 const Discounts = () => import('@/views/discount/Discounts.vue')
+const DiscountDetail = () => import('@/views/discount/DiscountDetail.vue')
 
 // 路由配置
 const routes = [
@@ -60,6 +61,7 @@ const routes = [
             title: '個人資料'
         }
     },
+    // 電子錢包路由
     {
         path: '/wallet',
         name: 'wallet',
@@ -67,7 +69,25 @@ const routes = [
         meta: {
             requiresAuth: true,
             title: '電子錢包'
-        }
+        },
+        children: [
+            {
+                path: 'deposit',
+                name: 'wallet-deposit',
+                component: () => import('@/views/user/wallet/Deposit.vue'),
+                meta: {
+                    title: '儲值'
+                }
+            },
+            {
+                path: 'transactions',
+                name: 'wallet-transactions',
+                component: () => import('@/views/user/wallet/Transactions.vue'),
+                meta: {
+                    title: '交易記錄'
+                }
+            }
+        ]
     },
     // 電影路由組
     {
@@ -97,13 +117,22 @@ const routes = [
             title: '訂票'
         }
     },
-    // 優惠券路由
+    // 優惠券路由組
     {
         path: '/discounts',
         name: 'discounts',
         component: Discounts,
         meta: {
-            title: '優惠券'
+            title: '優惠專區'
+        }
+    },
+    {
+        path: '/discounts/:id',
+        name: 'discount-detail',
+        component: DiscountDetail,
+        props: true,
+        meta: {
+            title: '優惠詳情'
         }
     },
     // 管理員路由組
