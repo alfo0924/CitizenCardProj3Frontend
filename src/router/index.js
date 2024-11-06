@@ -1,16 +1,27 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '@/views/Home.vue'
-import Login from '@/views/auth/Login.vue'
-import Register from '@/views/auth/Register.vue'
-import Profile from '@/views/user/Profile.vue'
-import MovieList from '@/views/movie/MovieList.vue'
-import MovieDetail from '@/views/movie/MovieDetail.vue'
-import Booking from '@/views/movie/Booking.vue'
-import Wallet from '@/views/user/Wallet.vue'
-import Discounts from '@/views/discount/Discounts.vue'
-import NotFound from '@/views/NotFound.vue'
 import store from '@/store'
 
+// 基礎頁面
+const Home = () => import('@/views/Home.vue')
+const NotFound = () => import('@/views/NotFound.vue')
+
+// 認證相關頁面
+const Login = () => import('@/views/auth/Login.vue')
+const Register = () => import('@/views/auth/Register.vue')
+
+// 用戶相關頁面
+const Profile = () => import('@/views/user/Profile.vue')
+const Wallet = () => import('@/views/user/Wallet.vue')
+
+// 電影相關頁面
+const MovieList = () => import('@/views/movie/MovieList.vue')
+const MovieDetail = () => import('@/views/movie/MovieDetail.vue')
+const Booking = () => import('@/views/movie/Booking.vue')
+
+// 優惠相關頁面
+const Discounts = () => import('@/views/discount/Discounts.vue')
+
+// 路由配置
 const routes = [
     {
         path: '/',
@@ -20,6 +31,7 @@ const routes = [
             title: '首頁'
         }
     },
+    // 認證路由組
     {
         path: '/login',
         name: 'login',
@@ -38,6 +50,7 @@ const routes = [
             title: '註冊'
         }
     },
+    // 用戶路由組
     {
         path: '/profile',
         name: 'profile',
@@ -47,6 +60,16 @@ const routes = [
             title: '個人資料'
         }
     },
+    {
+        path: '/wallet',
+        name: 'wallet',
+        component: Wallet,
+        meta: {
+            requiresAuth: true,
+            title: '電子錢包'
+        }
+    },
+    // 電影路由組
     {
         path: '/movies',
         name: 'movies',
@@ -68,21 +91,13 @@ const routes = [
         path: '/booking/:scheduleId',
         name: 'booking',
         component: Booking,
+        props: true,
         meta: {
             requiresAuth: true,
             title: '訂票'
-        },
-        props: true
-    },
-    {
-        path: '/wallet',
-        name: 'wallet',
-        component: Wallet,
-        meta: {
-            requiresAuth: true,
-            title: '電子錢包'
         }
     },
+    // 優惠券路由
     {
         path: '/discounts',
         name: 'discounts',
@@ -91,102 +106,140 @@ const routes = [
             title: '優惠券'
         }
     },
-    // 管理員路由
+    // 管理員路由組
     {
         path: '/admin',
-        name: 'admin',
+        name: 'admin-dashboard',
         component: () => import('@/views/admin/AdminDashboard.vue'),
         meta: {
             requiresAuth: true,
             requiresAdmin: true,
             title: '管理後台'
-        },
-        children: [
-            {
-                path: 'movies',
-                name: 'admin-movies',
-                component: () => import('@/views/admin/MovieManagement.vue'),
-                meta: {
-                    title: '電影管理'
-                }
-            },
-            {
-                path: 'users',
-                name: 'admin-users',
-                component: () => import('@/views/admin/UserManagement.vue'),
-                meta: {
-                    title: '會員管理'
-                }
-            },
-            {
-                path: 'discounts',
-                name: 'admin-discounts',
-                component: () => import('@/views/admin/DiscountManagement.vue'),
-                meta: {
-                    title: '優惠管理'
-                }
-            }
-        ]
+        }
     },
-    // 404頁面
     {
-        path: '/:pathMatch(.*)*',
+        path: '/admin/movies',
+        name: 'admin-movies',
+        component: () => import('@/views/admin/MovieManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '電影管理'
+        }
+    },
+    {
+        path: '/admin/users',
+        name: 'admin-users',
+        component: () => import('@/views/admin/UserManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '會員管理'
+        }
+    },
+    {
+        path: '/admin/discounts',
+        name: 'admin-discounts',
+        component: () => import('@/views/admin/DiscountManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '優惠管理'
+        }
+    },
+    // 錯誤頁面
+    {
+        path: '/403',
+        name: 'forbidden',
+        component: () => import('@/views/error/403.vue'),
+        meta: {
+            title: '無權限訪問'
+        }
+    },
+    {
+        path: '/404',
         name: 'not-found',
         component: NotFound,
         meta: {
             title: '頁面不存在'
         }
+    },
+    {
+        path: '/500',
+        name: 'server-error',
+        component: () => import('@/views/error/500.vue'),
+        meta: {
+            title: '伺服器錯誤'
+        }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: { name: 'not-found' }
     }
 ]
 
+// 創建路由實例
 const router = createRouter({
     history: createWebHistory(process.env.BASE_URL),
     routes,
     scrollBehavior(to, from, savedPosition) {
         if (savedPosition) {
             return savedPosition
-        } else {
-            return { top: 0 }
         }
+        return { top: 0, behavior: 'smooth' }
     }
 })
 
 // 導航守衛
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     // 設置頁面標題
-    document.title = to.meta.title ? `${to.meta.title} - 市民卡系統` : '市民卡系統'
+    document.title = to.meta.title
+      ? `${to.meta.title} - 市民卡系統`
+      : '市民卡系統'
 
-    const isLoggedIn = store.getters['auth/isLoggedIn']
-    const isAdmin = store.getters['auth/isAdmin']
+    try {
+        const isLoggedIn = store.getters['auth/isLoggedIn']
+        const isAdmin = store.getters['auth/isAdmin']
 
-    // 需要登入的頁面
-    if (to.meta.requiresAuth && !isLoggedIn) {
-        next({
-            name: 'login',
-            query: { redirect: to.fullPath }
-        })
-        return
+        // 需要登入的頁面
+        if (to.meta.requiresAuth && !isLoggedIn) {
+            next({
+                name: 'login',
+                query: { redirect: to.fullPath }
+            })
+            return
+        }
+
+        // 需要管理員權限的頁面
+        if (to.meta.requiresAdmin && !isAdmin) {
+            next({ name: 'forbidden' })
+            return
+        }
+
+        // 已登入用戶不能訪問登入/註冊頁
+        if (to.meta.requiresGuest && isLoggedIn) {
+            next({ name: 'home' })
+            return
+        }
+
+        next()
+    } catch (error) {
+        console.error('Navigation error:', error)
+        next({ name: 'server-error' })
     }
-
-    // 需要管理員權限的頁面
-    if (to.meta.requiresAdmin && !isAdmin) {
-        next({ name: 'home' })
-        return
-    }
-
-    // 已登入用戶不能訪問登入/註冊頁
-    if (to.meta.requiresGuest && isLoggedIn) {
-        next({ name: 'home' })
-        return
-    }
-
-    next()
 })
 
 // 錯誤處理
 router.onError((error) => {
     console.error('Router error:', error)
-    router.push({ name: 'not-found' })
+    if (error.name === 'ChunkLoadError') {
+        window.location.reload()
+    } else {
+        router.push({
+            name: 'server-error',
+            params: { error: error.message }
+        })
+    }
 })
 
 export default router
