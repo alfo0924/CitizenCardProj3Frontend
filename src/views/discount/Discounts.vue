@@ -65,7 +65,7 @@
       </div>
 
       <!-- 優惠卡片列表 -->
-      <div class="row g-4">
+      <div v-if="discounts.length > 0" class="row g-4">
         <div
             v-for="discount in discounts"
             :key="discount.id"
@@ -95,17 +95,6 @@
               <div class="discount-period">
                 <i class="fas fa-calendar-alt"></i>
                 {{ formatDate(discount.startDate) }} - {{ formatDate(discount.endDate) }}
-              </div>
-
-              <div class="discount-info">
-                <div class="info-item" v-if="discount.minPurchase">
-                  <i class="fas fa-tag"></i>
-                  最低消費：NT$ {{ formatNumber(discount.minPurchase) }}
-                </div>
-                <div class="info-item" v-if="discount.remainingQuantity">
-                  <i class="fas fa-cubes"></i>
-                  剩餘數量：{{ discount.remainingQuantity }}
-                </div>
               </div>
 
               <div class="discount-conditions" v-if="discount.conditions">
@@ -138,7 +127,7 @@
 
       <!-- 無數據提示 -->
       <div
-          v-if="discounts.length === 0"
+          v-else-if="!isLoading"
           class="no-data text-center py-5"
       >
         <i class="fas fa-ticket-alt fa-3x mb-3"></i>
@@ -165,14 +154,11 @@
               v-for="page in displayedPages"
               :key="page"
               class="page-item"
-              :class="{
-              active: currentPage === page,
-              disabled: page === '...'
-            }"
+              :class="{ active: currentPage === page }"
           >
             <button
                 class="page-link"
-                @click="page !== '...' && changePage(page)"
+                @click="changePage(page)"
             >
               {{ page }}
             </button>
@@ -198,6 +184,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
@@ -211,6 +198,7 @@ export default {
 
   setup() {
     const store = useStore()
+    const router = useRouter()
 
     // 狀態
     const isLoading = ref(false)
@@ -311,8 +299,10 @@ export default {
       try {
         isLoading.value = true
         error.value = null
-        await store.dispatch('discount/useDiscount', discount.id)
-        await fetchDiscounts()
+        await store.dispatch('discount/useDiscount', {
+          discountId: discount.id
+        })
+        router.push('/wallet')
       } catch (err) {
         error.value = '使用優惠失敗，請稍後再試'
         console.error('Error using discount:', err)
@@ -393,6 +383,14 @@ export default {
 <style scoped>
 .discounts-container {
   padding: 2rem 0;
+}
+
+.filters {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem;
 }
 
 .discount-card {
@@ -481,14 +479,6 @@ export default {
 
 .discount-card.used .discount-type {
   background: var(--success-color);
-}
-
-.filters {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
-  margin-bottom: 2rem;
 }
 
 .pagination {
