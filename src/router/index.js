@@ -204,6 +204,22 @@ const routes = [
     {
         path: '/:pathMatch(.*)*',
         redirect: { name: 'not-found' }
+    },
+    {
+        path: '/stores',
+        component: () => import('@/views/store/AuthorizedStores.vue'),
+        children: [
+            {
+                path: '',
+                name: 'stores',
+                component: () => import('@/views/store/StoreSearch.vue')
+            },
+            {
+                path: ':id',
+                name: 'store-detail',
+                component: () => import('@/views/store/StoreDetail.vue')
+            }
+        ]
     }
 ]
 
