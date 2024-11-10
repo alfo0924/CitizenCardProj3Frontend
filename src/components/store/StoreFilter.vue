@@ -12,7 +12,7 @@
               type="text"
               class="form-control"
               v-model="searchQuery"
-              placeholder="搜尋商店名稱或地址"
+              placeholder="搜尋商店名稱、地址或商品..."
               @input="handleSearch"
           >
           <button
@@ -46,7 +46,7 @@
       <div class="advanced-filters">
         <div class="row g-3">
           <!-- 商店類別 -->
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">商店類別</label>
             <select
                 class="form-select"
@@ -65,7 +65,7 @@
           </div>
 
           <!-- 地區選擇 -->
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label class="form-label">地區</label>
             <select
                 class="form-select"
@@ -79,6 +79,24 @@
                   :value="area.id"
               >
                 {{ area.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- 排序方式 -->
+          <div class="col-md-4">
+            <label class="form-label">排序方式</label>
+            <select
+                class="form-select"
+                v-model="sortBy"
+                @change="handleSort"
+            >
+              <option
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  :value="option.value"
+              >
+                {{ option.label }}
               </option>
             </select>
           </div>
@@ -101,41 +119,26 @@
             </div>
           </div>
 
-          <!-- 排序方式 -->
-          <div class="col-md-6">
-            <label class="form-label">排序方式</label>
-            <select
-                class="form-select"
-                v-model="sortBy"
-                @change="handleSort"
-            >
-              <option
-                  v-for="option in sortOptions"
-                  :key="option.value"
-                  :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
-          </div>
-
           <!-- 距離範圍 -->
-          <div class="col-12" v-if="showDistanceFilter">
+          <div class="col-md-6" v-if="showDistanceFilter">
             <label class="form-label">
               距離範圍: {{ formatDistance(selectedDistance) }}
             </label>
-            <input
-                type="range"
-                class="form-range"
-                min="0"
-                max="10"
-                step="0.5"
-                v-model.number="selectedDistance"
-                @input="handleDistanceChange"
-            >
-            <div class="d-flex justify-content-between">
-              <small>0km</small>
-              <small>10km</small>
+            <div class="range-container">
+              <input
+                  type="range"
+                  class="form-range"
+                  min="0"
+                  max="10"
+                  step="0.5"
+                  v-model.number="selectedDistance"
+                  @input="handleDistanceChange"
+              >
+              <div class="range-labels d-flex justify-content-between">
+                <small>0km</small>
+                <small>5km</small>
+                <small>10km</small>
+              </div>
             </div>
           </div>
         </div>
@@ -168,238 +171,235 @@
     </div>
   </div>
 </template>
-
 <script>
-import { debounce } from '@/utils/helpers';
+import { ref, computed } from 'vue'
+import { debounce } from '@/utils/helpers'
 
 export default {
   name: 'StoreFilter',
 
-  data() {
-    return {
-      searchQuery: '',
-      selectedCategory: '',
-      selectedArea: '',
-      selectedStatus: '',
-      selectedDistance: 5,
-      sortBy: 'distance',
-      selectedQuickFilters: [],
-      showDistanceFilter: false,
-
-      // 快速篩選標籤
-      quickFilterTags: [
-        { id: 'parking', name: '提供停車', icon: 'bi bi-p-square' },
-        { id: 'wifi', name: '免費WiFi', icon: 'bi bi-wifi' },
-        { id: 'discount', name: '優惠中', icon: 'bi bi-tag' },
-        { id: 'delivery', name: '外送服務', icon: 'bi bi-bicycle' }
-      ],
-
-      // 營業狀態選項
-      businessStatuses: [
-        { value: '', label: '全部', icon: 'bi bi-circle' },
-        { value: 'open', label: '營業中', icon: 'bi bi-shop' },
-        { value: 'closed', label: '已打烊', icon: 'bi bi-shop-window' }
-      ],
-
-      // 排序選項
-      sortOptions: [
-        { value: 'distance', label: '距離最近' },
-        { value: 'rating', label: '評分最高' },
-        { value: 'popularity', label: '最受歡迎' },
-        { value: 'name', label: '店名排序' }
-      ]
-    };
-  },
-
   props: {
-    // 商店類別列表
     categories: {
       type: Array,
       default: () => []
     },
-    // 地區列表
     areas: {
       type: Array,
       default: () => []
     },
-    // 是否啟用距離篩選
     enableDistanceFilter: {
       type: Boolean,
       default: false
     }
   },
 
-  computed: {
-    // 判斷是否有啟用的篩選條件
-    hasActiveFilters() {
-      return this.activeFilters.length > 0;
-    },
+  emits: ['filter-change'],
 
-    // 取得目前啟用的篩選條件
-    activeFilters() {
-      const filters = [];
+  setup(props, { emit }) {
+    // 基本狀態
+    const searchQuery = ref('')
+    const selectedCategory = ref('')
+    const selectedArea = ref('')
+    const selectedStatus = ref('')
+    const selectedDistance = ref(5)
+    const sortBy = ref('distance')
+    const selectedQuickFilters = ref([])
+    const showDistanceFilter = ref(props.enableDistanceFilter)
 
-      if (this.searchQuery) {
+    // 固定選項
+    const quickFilterTags = [
+      { id: 'parking', name: '提供停車', icon: 'bi bi-p-square' },
+      { id: 'wifi', name: '免費WiFi', icon: 'bi bi-wifi' },
+      { id: 'discount', name: '優惠中', icon: 'bi bi-tag' },
+      { id: 'delivery', name: '外送服務', icon: 'bi bi-bicycle' }
+    ]
+
+    const businessStatuses = [
+      { value: '', label: '全部', icon: 'bi bi-circle' },
+      { value: 'open', label: '營業中', icon: 'bi bi-shop' },
+      { value: 'closed', label: '已打烊', icon: 'bi bi-shop-window' }
+    ]
+
+    const sortOptions = [
+      { value: 'distance', label: '距離最近' },
+      { value: 'rating', label: '評分最高' },
+      { value: 'popularity', label: '最受歡迎' },
+      { value: 'name', label: '店名排序' }
+    ]
+
+    // 計算屬性
+    const hasActiveFilters = computed(() => {
+      return activeFilters.value.length > 0
+    })
+
+    const activeFilters = computed(() => {
+      const filters = []
+
+      if (searchQuery.value) {
         filters.push({
           id: 'search',
-          label: `搜尋: ${this.searchQuery}`
-        });
+          label: `搜尋: ${searchQuery.value}`
+        })
       }
 
-      if (this.selectedCategory) {
-        const category = this.categories.find(c => c.id === this.selectedCategory);
+      if (selectedCategory.value) {
+        const category = props.categories.find(c => c.id === selectedCategory.value)
         if (category) {
           filters.push({
             id: 'category',
             label: `類別: ${category.name}`
-          });
+          })
         }
       }
 
-      if (this.selectedArea) {
-        const area = this.areas.find(a => a.id === this.selectedArea);
+      if (selectedArea.value) {
+        const area = props.areas.find(a => a.id === selectedArea.value)
         if (area) {
           filters.push({
             id: 'area',
             label: `地區: ${area.name}`
-          });
+          })
         }
       }
 
-      if (this.selectedStatus) {
-        const status = this.businessStatuses.find(s => s.value === this.selectedStatus);
+      if (selectedStatus.value) {
+        const status = businessStatuses.find(s => s.value === selectedStatus.value)
         if (status) {
           filters.push({
             id: 'status',
             label: `狀態: ${status.label}`
-          });
+          })
         }
       }
 
-      this.selectedQuickFilters.forEach(filterId => {
-        const tag = this.quickFilterTags.find(t => t.id === filterId);
+      selectedQuickFilters.value.forEach(filterId => {
+        const tag = quickFilterTags.find(t => t.id === filterId)
         if (tag) {
           filters.push({
             id: `quick-${filterId}`,
             label: tag.name
-          });
+          })
         }
-      });
+      })
 
-      return filters;
+      return filters
+    })
+
+    // 方法
+    const emitFilterChange = () => {
+      emit('filter-change', {
+        search: searchQuery.value,
+        category: selectedCategory.value,
+        area: selectedArea.value,
+        status: selectedStatus.value,
+        quickFilters: selectedQuickFilters.value,
+        sortBy: sortBy.value,
+        distance: selectedDistance.value
+      })
     }
-  },
 
-  methods: {
-    // 處理搜尋輸入
-    handleSearch: debounce(function() {
-      this.emitFilterChange();
-    }, 300),
+    const handleSearch = debounce(() => {
+      emitFilterChange()
+    }, 300)
 
-    // 清除搜尋
-    clearSearch() {
-      this.searchQuery = '';
-      this.emitFilterChange();
-    },
+    const clearSearch = () => {
+      searchQuery.value = ''
+      emitFilterChange()
+    }
 
-    // 切換快速篩選標籤
-    toggleQuickFilter(tagId) {
-      const index = this.selectedQuickFilters.indexOf(tagId);
+    const toggleQuickFilter = (tagId) => {
+      const index = selectedQuickFilters.value.indexOf(tagId)
       if (index === -1) {
-        this.selectedQuickFilters.push(tagId);
+        selectedQuickFilters.value.push(tagId)
       } else {
-        this.selectedQuickFilters.splice(index, 1);
+        selectedQuickFilters.value.splice(index, 1)
       }
-      this.emitFilterChange();
-    },
+      emitFilterChange()
+    }
 
-    // 處理篩選變更
-    handleFilter() {
-      this.emitFilterChange();
-    },
+    const handleFilter = () => {
+      emitFilterChange()
+    }
 
-    // 設置營業狀態
-    setStatus(status) {
-      this.selectedStatus = status;
-      this.emitFilterChange();
-    },
+    const setStatus = (status) => {
+      selectedStatus.value = status
+      emitFilterChange()
+    }
 
-    // 處理排序變更
-    handleSort() {
-      this.emitFilterChange();
-    },
+    const handleSort = () => {
+      emitFilterChange()
+    }
 
-    // 處理距離變更
-    handleDistanceChange: debounce(function() {
-      this.emitFilterChange();
-    }, 300),
+    const handleDistanceChange = debounce(() => {
+      emitFilterChange()
+    }, 300)
 
-    // 移除篩選條件
-    removeFilter(filterId) {
+    const removeFilter = (filterId) => {
       if (filterId === 'search') {
-        this.searchQuery = '';
+        searchQuery.value = ''
       } else if (filterId === 'category') {
-        this.selectedCategory = '';
+        selectedCategory.value = ''
       } else if (filterId === 'area') {
-        this.selectedArea = '';
+        selectedArea.value = ''
       } else if (filterId === 'status') {
-        this.selectedStatus = '';
+        selectedStatus.value = ''
       } else if (filterId.startsWith('quick-')) {
-        const tagId = filterId.replace('quick-', '');
-        const index = this.selectedQuickFilters.indexOf(tagId);
+        const tagId = filterId.replace('quick-', '')
+        const index = selectedQuickFilters.value.indexOf(tagId)
         if (index !== -1) {
-          this.selectedQuickFilters.splice(index, 1);
+          selectedQuickFilters.value.splice(index, 1)
         }
       }
-      this.emitFilterChange();
-    },
-
-    // 清除所有篩選條件
-    clearAllFilters() {
-      this.searchQuery = '';
-      this.selectedCategory = '';
-      this.selectedArea = '';
-      this.selectedStatus = '';
-      this.selectedQuickFilters = [];
-      this.sortBy = 'distance';
-      this.selectedDistance = 5;
-      this.emitFilterChange();
-    },
-
-    // 格式化距離顯示
-    formatDistance(distance) {
-      return `${distance}公里`;
-    },
-
-    // 發送篩選條件變更事件
-    emitFilterChange() {
-      this.$emit('filter-change', {
-        search: this.searchQuery,
-        category: this.selectedCategory,
-        area: this.selectedArea,
-        status: this.selectedStatus,
-        quickFilters: this.selectedQuickFilters,
-        sortBy: this.sortBy,
-        distance: this.selectedDistance
-      });
+      emitFilterChange()
     }
-  },
 
-  watch: {
-    // 監聽是否啟用距離篩選
-    enableDistanceFilter: {
-      immediate: true,
-      handler(newValue) {
-        this.showDistanceFilter = newValue;
-      }
+    const clearAllFilters = () => {
+      searchQuery.value = ''
+      selectedCategory.value = ''
+      selectedArea.value = ''
+      selectedStatus.value = ''
+      selectedQuickFilters.value = []
+      sortBy.value = 'distance'
+      selectedDistance.value = 5
+      emitFilterChange()
     }
-  },
 
-  created() {
-    // 初始化時發送一次篩選條件
-    this.emitFilterChange();
+    const formatDistance = (distance) => {
+      return `${distance}公里`
+    }
+
+    return {
+      // 狀態
+      searchQuery,
+      selectedCategory,
+      selectedArea,
+      selectedStatus,
+      selectedDistance,
+      sortBy,
+      selectedQuickFilters,
+      showDistanceFilter,
+      quickFilterTags,
+      businessStatuses,
+      sortOptions,
+
+      // 計算屬性
+      hasActiveFilters,
+      activeFilters,
+
+      // 方法
+      handleSearch,
+      clearSearch,
+      toggleQuickFilter,
+      handleFilter,
+      setStatus,
+      handleSort,
+      handleDistanceChange,
+      removeFilter,
+      clearAllFilters,
+      formatDistance
+    }
   }
-};
+}
 </script>
 
 <style scoped>
@@ -417,10 +417,17 @@ export default {
 .quick-filters .btn {
   border-radius: 20px;
   padding: 0.375rem 0.75rem;
+  transition: all 0.2s ease;
 }
 
 .quick-filters .btn i {
   margin-right: 0.25rem;
+}
+
+.quick-filters .btn.active {
+  background-color: var(--bs-primary);
+  color: white;
+  border-color: var(--bs-primary);
 }
 
 .advanced-filters {
@@ -433,15 +440,23 @@ export default {
 .form-label {
   font-weight: 500;
   margin-bottom: 0.5rem;
+  color: #495057;
 }
 
 .selected-filters .badge {
   padding: 0.5rem 0.75rem;
   font-weight: normal;
+  display: inline-flex;
+  align-items: center;
 }
 
 .btn-close {
   font-size: 0.75rem;
+  padding: 0.25rem;
+}
+
+.range-container {
+  padding: 0 0.5rem;
 }
 
 .form-range::-webkit-slider-thumb {
@@ -452,6 +467,12 @@ export default {
   background: var(--bs-primary);
 }
 
+.range-labels {
+  margin-top: 0.5rem;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 768px) {
   .store-filter {
     padding: 1rem;
@@ -459,6 +480,10 @@ export default {
 
   .advanced-filters {
     padding: 1rem;
+  }
+
+  .quick-filters .btn {
+    font-size: 0.875rem;
   }
 }
 </style>
