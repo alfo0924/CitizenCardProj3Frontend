@@ -22,7 +22,15 @@ const Booking = () => import('@/views/movie/Booking.vue')
 const Discounts = () => import('@/views/discount/Discounts.vue')
 const DiscountDetail = () => import('@/views/discount/DiscountDetail.vue')
 
-// 路由配置
+// 特惠商店相關頁面
+const AuthorizedStores = () => import('@/views/store/AuthorizedStores.vue')
+const StoreSearch = () => import('@/views/store/StoreSearch.vue')
+const StoreDetail = () => import('@/views/store/StoreDetail.vue')
+
+// 優惠活動相關頁面
+const Promotions = () => import('@/views/promotion/Promotions.vue')
+const PromotionDetail = () => import('@/views/promotion/PromotionDetail.vue')
+
 const routes = [
     {
         path: '/',
@@ -30,6 +38,48 @@ const routes = [
         component: Home,
         meta: {
             title: '首頁'
+        }
+    },
+    // 特惠商店路由組
+    {
+        path: '/stores',
+        component: AuthorizedStores,
+        children: [
+            {
+                path: '',
+                name: 'stores',
+                component: StoreSearch,
+                meta: {
+                    title: '特惠商店'
+                }
+            },
+            {
+                path: ':id',
+                name: 'store-detail',
+                component: StoreDetail,
+                props: true,
+                meta: {
+                    title: '商店詳情'
+                }
+            }
+        ]
+    },
+    // 優惠活動路由組
+    {
+        path: '/promotions',
+        name: 'promotions',
+        component: Promotions,
+        meta: {
+            title: '優惠活動'
+        }
+    },
+    {
+        path: '/promotions/:id',
+        name: 'promotion-detail',
+        component: PromotionDetail,
+        props: true,
+        meta: {
+            title: '活動詳情'
         }
     },
     // 認證路由組
@@ -176,6 +226,26 @@ const routes = [
             title: '優惠管理'
         }
     },
+    {
+        path: '/admin/stores',
+        name: 'admin-stores',
+        component: () => import('@/views/admin/StoreManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '商店管理'
+        }
+    },
+    {
+        path: '/admin/promotions',
+        name: 'admin-promotions',
+        component: () => import('@/views/admin/PromotionManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '活動管理'
+        }
+    },
     // 錯誤頁面
     {
         path: '/403',
@@ -204,22 +274,6 @@ const routes = [
     {
         path: '/:pathMatch(.*)*',
         redirect: { name: 'not-found' }
-    },
-    {
-        path: '/stores',
-        component: () => import('@/views/store/AuthorizedStores.vue'),
-        children: [
-            {
-                path: '',
-                name: 'stores',
-                component: () => import('@/views/store/StoreSearch.vue')
-            },
-            {
-                path: ':id',
-                name: 'store-detail',
-                component: () => import('@/views/store/StoreDetail.vue')
-            }
-        ]
     }
 ]
 

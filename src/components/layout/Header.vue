@@ -8,18 +8,41 @@
       </router-link>
 
       <!-- Toggler Button -->
-      <button class="navbar-toggler" type="button" @click="toggleNav" aria-controls="navbarNav"
-              :aria-expanded="!isNavCollapsed" aria-label="Toggle navigation">
+      <button
+          class="navbar-toggler"
+          type="button"
+          @click="toggleNav"
+          aria-controls="navbarNav"
+          :aria-expanded="!isNavCollapsed"
+          aria-label="Toggle navigation"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
 
-      <!-- Navbar items with collapse class bound to isNavCollapsed -->
-      <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
+      <!-- Navbar items -->
+      <div
+          :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]"
+          id="navbarNav"
+      >
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <!-- 電影 -->
           <li class="nav-item">
             <router-link class="nav-link" to="/movies">
               <i class="fas fa-film"></i> 電影
+            </router-link>
+          </li>
+
+          <!-- 特惠商店 -->
+          <li class="nav-item">
+            <router-link class="nav-link" to="/stores">
+              <i class="fas fa-store"></i> 特惠商店
+            </router-link>
+          </li>
+
+          <!-- 優惠活動 -->
+          <li class="nav-item">
+            <router-link class="nav-link" to="/promotions">
+              <i class="fas fa-percentage"></i> 優惠活動
             </router-link>
           </li>
 
@@ -54,7 +77,7 @@
             </button>
           </li>
 
-          <!-- If Not Logged In -->
+          <!-- Not Logged In -->
           <template v-if="!isLoggedIn">
             <li class="nav-item">
               <router-link class="nav-link" to="/login">
@@ -68,21 +91,39 @@
             </li>
           </template>
 
-          <!-- If Logged In -->
+          <!-- Logged In -->
           <template v-else>
             <!-- Notifications -->
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button"
-                 data-bs-toggle="dropdown" aria-expanded="false">
+              <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="notificationDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+              >
                 <i class="fas fa-bell"></i>
-                <span class="badge bg-danger" v-if="unreadNotifications">{{ unreadNotifications }}</span>
+                <span
+                    class="badge bg-danger"
+                    v-if="unreadNotifications"
+                >
+                  {{ unreadNotifications }}
+                </span>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+              <ul
+                  class="dropdown-menu dropdown-menu-end"
+                  aria-labelledby="notificationDropdown"
+              >
                 <li v-if="notifications.length === 0">
                   <span class="dropdown-item">無新通知</span>
                 </li>
                 <li v-for="notification in notifications" :key="notification.id">
-                  <a class="dropdown-item" href="#" @click="readNotification(notification.id)">
+                  <a
+                      class="dropdown-item"
+                      href="#"
+                      @click="readNotification(notification.id)"
+                  >
                     {{ notification.message }}
                   </a>
                 </li>
@@ -91,12 +132,27 @@
 
             <!-- User Menu -->
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                 data-bs-toggle="dropdown" aria-expanded="false">
-                <img :src="userAvatar" class="rounded-circle" alt="avatar" width="24" height="24">
+              <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="userDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+              >
+                <img
+                    :src="userAvatar"
+                    class="rounded-circle"
+                    alt="avatar"
+                    width="24"
+                    height="24"
+                >
                 {{ userName }}
               </a>
-              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <ul
+                  class="dropdown-menu dropdown-menu-end"
+                  aria-labelledby="userDropdown"
+              >
                 <li>
                   <router-link class="dropdown-item" to="/profile">
                     <i class="fas fa-user"></i> 個人資料
@@ -107,6 +163,25 @@
                     <i class="fas fa-cog"></i> 設定
                   </router-link>
                 </li>
+                <!-- 管理員選項 -->
+                <template v-if="isAdmin">
+                  <li><hr class="dropdown-divider"></li>
+                  <li>
+                    <router-link class="dropdown-item" to="/admin/dashboard">
+                      <i class="fas fa-tachometer-alt"></i> 管理後台
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link class="dropdown-item" to="/admin/stores">
+                      <i class="fas fa-store-alt"></i> 商店管理
+                    </router-link>
+                  </li>
+                  <li>
+                    <router-link class="dropdown-item" to="/admin/promotions">
+                      <i class="fas fa-ad"></i> 活動管理
+                    </router-link>
+                  </li>
+                </template>
                 <li><hr class="dropdown-divider"></li>
                 <li>
                   <a class="dropdown-item" href="#" @click="logout">
@@ -124,12 +199,25 @@
     <div class="search-bar" :class="{ active: isSearchActive }">
       <div class="container">
         <div class="input-group">
-          <input type="text" class="form-control" placeholder="搜尋電影..."
-                 v-model="searchQuery" @keyup.enter="search">
-          <button class="btn btn-outline-secondary" type="button" @click="search">
+          <input
+              type="text"
+              class="form-control"
+              placeholder="搜尋電影、商店或優惠..."
+              v-model="searchQuery"
+              @keyup.enter="search"
+          >
+          <button
+              class="btn btn-outline-secondary"
+              type="button"
+              @click="search"
+          >
             <i class="fas fa-search"></i>
           </button>
-          <button class="btn btn-outline-secondary" type="button" @click="toggleSearch">
+          <button
+              class="btn btn-outline-secondary"
+              type="button"
+              @click="toggleSearch"
+          >
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -137,7 +225,6 @@
     </div>
   </nav>
 </template>
-
 <script>
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
@@ -145,21 +232,25 @@ import { useRouter } from 'vue-router'
 
 export default {
   name: 'Header',
+
   setup() {
     const store = useStore()
     const router = useRouter()
+
+    // 響應式狀態
     const searchQuery = ref('')
     const isSearchActive = ref(false)
-    const isNavCollapsed = ref(true)  // New reactive state for nav collapse
+    const isNavCollapsed = ref(true)
 
-    // Computed properties
+    // 計算屬性
     const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
+    const isAdmin = computed(() => store.getters['auth/isAdmin'])
     const userName = computed(() => store.getters['auth/userName'])
     const userAvatar = computed(() => store.getters['auth/userAvatar'])
     const notifications = computed(() => store.getters['notification/notifications'])
     const unreadNotifications = computed(() => store.getters['notification/unreadCount'])
 
-    // Methods
+    // 方法
     const toggleSearch = () => {
       isSearchActive.value = !isSearchActive.value
       if (!isSearchActive.value) {
@@ -173,13 +264,22 @@ export default {
 
     const search = () => {
       if (searchQuery.value.trim()) {
-        router.push(`/search?q=${encodeURIComponent(searchQuery.value.trim())}`)
+        // 更新搜尋邏輯以包含商店和優惠
+        const query = encodeURIComponent(searchQuery.value.trim())
+        router.push({
+          path: '/search',
+          query: { q: query }
+        })
         toggleSearch()
       }
     }
 
     const readNotification = async (id) => {
-      await store.dispatch('notification/markAsRead', id)
+      try {
+        await store.dispatch('notification/markAsRead', id)
+      } catch (error) {
+        console.error('標記通知失敗:', error)
+      }
     }
 
     const logout = async () => {
@@ -192,14 +292,20 @@ export default {
     }
 
     return {
+      // 狀態
+      searchQuery,
+      isSearchActive,
+      isNavCollapsed,
+
+      // 計算屬性
       isLoggedIn,
+      isAdmin,
       userName,
       userAvatar,
       notifications,
       unreadNotifications,
-      searchQuery,
-      isSearchActive,
-      isNavCollapsed,
+
+      // 方法
       toggleSearch,
       toggleNav,
       search,
@@ -213,20 +319,35 @@ export default {
 <style scoped>
 .navbar {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1030;
 }
 
 .navbar-brand {
   font-weight: bold;
   color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.navbar-brand img {
+  height: 40px;
+  width: auto;
 }
 
 .nav-link {
   color: var(--text-color);
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  padding: 0.5rem 1rem;
 }
 
 .nav-link:hover {
   color: var(--primary-color);
+}
+
+.nav-link i {
+  margin-right: 0.5rem;
 }
 
 .search-bar {
@@ -241,6 +362,7 @@ export default {
   visibility: hidden;
   transition: all 0.3s ease;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1020;
 }
 
 .search-bar.active {
@@ -249,8 +371,32 @@ export default {
   visibility: visible;
 }
 
+.search-bar .input-group {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
 .dropdown-menu {
   min-width: 200px;
+  padding: 0.5rem 0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dropdown-item i {
+  width: 1.25rem;
+  text-align: center;
+}
+
+.dropdown-item:hover {
+  background-color: var(--light);
+  color: var(--primary-color);
 }
 
 .badge {
@@ -258,6 +404,8 @@ export default {
   top: 0;
   right: 0;
   transform: translate(50%, -50%);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
 }
 
 .user-avatar {
@@ -265,5 +413,57 @@ export default {
   height: 24px;
   object-fit: cover;
   border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+/* 響應式設計 */
+@media (max-width: 991.98px) {
+  .navbar-collapse {
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 1020;
+  }
+
+  .nav-item {
+    margin: 0.5rem 0;
+  }
+
+  .dropdown-menu {
+    position: static !important;
+    transform: none !important;
+    box-shadow: none;
+    border: none;
+    background: var(--light);
+    margin-top: 0.5rem;
+  }
+}
+
+/* 動畫效果 */
+.dropdown-menu {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 主題色變量 */
+:root {
+  --primary-color: #007bff;
+  --text-color: #343a40;
+  --light: #f8f9fa;
 }
 </style>

@@ -66,6 +66,19 @@
       </div>
     </section>
 
+    <section class="featured-stores">
+      <h2>特惠商店</h2>
+      <div class="store-list">
+        <store-card v-for="store in featuredStores" :key="store.id" :store="store" />
+      </div>
+    </section>
+
+    <section class="promotions">
+      <h2>優惠活動</h2>
+      <div class="promotion-list">
+        <promotion-card v-for="promotion in activePromotions" :key="promotion.id" :promotion="promotion" />
+      </div>
+    </section>
     <!-- 優惠專區 -->
     <section class="discounts-section mb-5 bg-light py-5">
       <div class="container">
