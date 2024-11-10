@@ -4,36 +4,34 @@
     <div class="carousel-section mb-4">
       <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-indicators">
-          <button v-for="(slide, index) in featuredMovies"
-                  :key="'indicator-' + index"
-                  type="button"
-                  :data-bs-target="'#mainCarousel'"
-                  :data-bs-slide-to="index"
-                  :class="{ active: index === 0 }"
-                  :aria-current="index === 0"
-                  :aria-label="'Slide ' + (index + 1)">
-          </button>
+          <button
+              v-for="(slide, index) in featuredMovies"
+              :key="'indicator-' + index"
+              type="button"
+              :data-bs-target="'#mainCarousel'"
+              :data-bs-slide-to="index"
+              :class="{ active: index === 0 }"
+              :aria-current="index === 0"
+              :aria-label="'Slide ' + (index + 1)"
+          ></button>
         </div>
-
         <div class="carousel-inner">
-          <div v-for="(movie, index) in featuredMovies"
-               :key="'slide-' + index"
-               class="carousel-item"
-               :class="{ active: index === 0 }">
+          <div
+              v-for="(movie, index) in featuredMovies"
+              :key="'slide-' + index"
+              class="carousel-item"
+              :class="{ active: index === 0 }"
+          >
             <img :src="movie.bannerUrl" class="d-block w-100" :alt="movie.movieName">
             <div class="carousel-caption">
               <h3>{{ movie.movieName }}</h3>
               <p>{{ movie.shortDescription }}</p>
-              <router-link
-                  :to="'/movies/' + movie.movieId"
-                  class="btn btn-primary"
-              >
+              <router-link :to="'/movies/' + movie.movieId" class="btn btn-primary">
                 立即訂票
               </router-link>
             </div>
           </div>
         </div>
-
         <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
           <span class="carousel-control-prev-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
@@ -52,9 +50,7 @@
           <i class="fas fa-film"></i> 熱映中
         </h2>
         <div class="row row-cols-1 row-cols-md-4 g-4">
-          <div v-for="movie in nowShowingMovies"
-               :key="movie.movieId"
-               class="col">
+          <div v-for="movie in nowShowingMovies" :key="movie.movieId" class="col">
             <MovieCard :movie="movie" />
           </div>
         </div>
@@ -66,29 +62,52 @@
       </div>
     </section>
 
-    <section class="featured-stores">
-      <h2>特惠商店</h2>
-      <div class="store-list">
-        <store-card v-for="store in featuredStores" :key="store.id" :store="store" />
+    <!-- 特惠商店區塊 -->
+    <section class="featured-stores mb-5">
+      <div class="container">
+        <h2 class="section-title mb-4">
+          <i class="fas fa-store"></i> 特惠商店
+        </h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+          <div v-for="store in featuredStores" :key="store.id" class="col">
+            <store-card :store="store" />
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <router-link to="/stores" class="btn btn-outline-primary">
+            查看更多商店
+          </router-link>
+        </div>
       </div>
     </section>
 
-    <section class="promotions">
-      <h2>優惠活動</h2>
-      <div class="promotion-list">
-        <promotion-card v-for="promotion in activePromotions" :key="promotion.id" :promotion="promotion" />
+    <!-- 優惠活動區塊 -->
+    <section class="promotions mb-5 bg-light py-5">
+      <div class="container">
+        <h2 class="section-title mb-4">
+          <i class="fas fa-percentage"></i> 優惠活動
+        </h2>
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+          <div v-for="promotion in activePromotions" :key="promotion.id" class="col">
+            <promotion-card :promotion="promotion" />
+          </div>
+        </div>
+        <div class="text-center mt-4">
+          <router-link to="/promotions" class="btn btn-outline-primary">
+            查看更多活動
+          </router-link>
+        </div>
       </div>
     </section>
+
     <!-- 優惠專區 -->
-    <section class="discounts-section mb-5 bg-light py-5">
+    <section class="discounts-section mb-5">
       <div class="container">
         <h2 class="section-title mb-4">
           <i class="fas fa-tags"></i> 優惠專區
         </h2>
         <div class="row">
-          <div v-for="discount in activeDiscounts"
-               :key="discount.discountId"
-               class="col-md-6 col-lg-4 mb-4">
+          <div v-for="discount in activeDiscounts" :key="discount.discountId" class="col-md-6 col-lg-4 mb-4">
             <div class="discount-card">
               <div class="discount-content">
                 <h3>{{ discount.discountName }}</h3>
@@ -134,9 +153,7 @@
             <div class="info-card">
               <h3>最近訂單</h3>
               <div v-if="recentBookings.length > 0">
-                <div v-for="booking in recentBookings"
-                     :key="booking.bookingId"
-                     class="booking-item">
+                <div v-for="booking in recentBookings" :key="booking.bookingId" class="booking-item">
                   <div>{{ booking.movieName }}</div>
                   <small>{{ formatDate(booking.showTime) }}</small>
                 </div>
@@ -155,9 +172,7 @@
             <div class="info-card">
               <h3>可用優惠</h3>
               <div v-if="availableDiscounts.length > 0">
-                <div v-for="discount in availableDiscounts"
-                     :key="discount.discountId"
-                     class="discount-item">
+                <div v-for="discount in availableDiscounts" :key="discount.discountId" class="discount-item">
                   {{ discount.discountName }}
                 </div>
               </div>
@@ -174,18 +189,20 @@
     </section>
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
-
 import MovieCard from '@/components/movie/MovieCard.vue'
+import StoreCard from '@/components/store/StoreCard.vue'
+import PromotionCard from '@/components/promotion/PromotionCard.vue'
 
 export default {
   name: 'Home',
 
   components: {
-    MovieCard
+    MovieCard,
+    StoreCard,
+    PromotionCard
   },
 
   setup() {
@@ -194,6 +211,8 @@ export default {
     // 資料狀態
     const featuredMovies = ref([])
     const nowShowingMovies = ref([])
+    const featuredStores = ref([])
+    const activePromotions = ref([])
     const activeDiscounts = ref([])
     const recentBookings = ref([])
     const availableDiscounts = ref([])
@@ -218,6 +237,24 @@ export default {
         nowShowingMovies.value = response.data
       } catch (error) {
         console.error('Error fetching now showing movies:', error)
+      }
+    }
+
+    const fetchFeaturedStores = async () => {
+      try {
+        const response = await store.dispatch('store/fetchFeaturedStores')
+        featuredStores.value = response.data
+      } catch (error) {
+        console.error('Error fetching featured stores:', error)
+      }
+    }
+
+    const fetchActivePromotions = async () => {
+      try {
+        const response = await store.dispatch('promotion/fetchActivePromotions')
+        activePromotions.value = response.data
+      } catch (error) {
+        console.error('Error fetching active promotions:', error)
       }
     }
 
@@ -258,7 +295,8 @@ export default {
     }
 
     const showDiscountDetails = (discount) => {
-      // 實作優惠詳情顯示邏輯
+      store.commit('discount/setCurrentDiscount', discount)
+      router.push(`/discounts/${discount.discountId}`)
     }
 
     // 生命週期鉤子
@@ -266,6 +304,8 @@ export default {
       await Promise.all([
         fetchFeaturedMovies(),
         fetchNowShowingMovies(),
+        fetchFeaturedStores(),
+        fetchActivePromotions(),
         fetchActiveDiscounts(),
         fetchMemberData()
       ])
@@ -274,6 +314,8 @@ export default {
     return {
       featuredMovies,
       nowShowingMovies,
+      featuredStores,
+      activePromotions,
       activeDiscounts,
       recentBookings,
       availableDiscounts,
@@ -303,29 +345,43 @@ export default {
 .carousel-item img {
   object-fit: cover;
   height: 100%;
+  width: 100%;
 }
 
 .carousel-caption {
   background: rgba(0, 0, 0, 0.5);
   padding: 2rem;
-  border-radius: var(--border-radius-lg);
+  border-radius: 8px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .section-title {
   color: var(--text-color);
   font-weight: 600;
   margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .section-title i {
   color: var(--primary-color);
-  margin-right: 0.5rem;
+}
+
+.featured-stores,
+.promotions {
+  padding: 4rem 0;
+}
+
+.featured-stores {
+  background-color: var(--light);
 }
 
 .discount-card {
   background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 1.5rem;
   height: 100%;
   transition: transform 0.3s ease;
@@ -336,15 +392,15 @@ export default {
 }
 
 .discount-validity {
-  color: var(--text-light);
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin-top: 1rem;
 }
 
 .info-card {
   background: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 1.5rem;
   height: 100%;
 }
@@ -358,7 +414,7 @@ export default {
 .balance {
   font-size: 1.5rem;
   font-weight: 600;
-  color: var(--success-color);
+  color: var(--success);
 }
 
 .booking-item,
@@ -384,5 +440,20 @@ export default {
   .carousel-caption h3 {
     font-size: 1.25rem;
   }
+
+  .featured-stores,
+  .promotions {
+    padding: 2rem 0;
+  }
+}
+
+/* CSS Variables */
+:root {
+  --primary-color: #007bff;
+  --success: #28a745;
+  --text-color: #343a40;
+  --text-muted: #6c757d;
+  --light: #f8f9fa;
+  --border-color: #dee2e6;
 }
 </style>

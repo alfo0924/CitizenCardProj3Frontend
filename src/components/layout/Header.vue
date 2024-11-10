@@ -246,6 +246,7 @@ export default {
     const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
     const isAdmin = computed(() => store.getters['auth/isAdmin'])
     const userName = computed(() => store.getters['auth/userName'])
+    const userEmail = computed(() => store.getters['auth/userEmail'])
     const userAvatar = computed(() => store.getters['auth/userAvatar'])
     const notifications = computed(() => store.getters['notification/notifications'])
     const unreadNotifications = computed(() => store.getters['notification/unreadCount'])
@@ -264,11 +265,13 @@ export default {
 
     const search = () => {
       if (searchQuery.value.trim()) {
-        // 更新搜尋邏輯以包含商店和優惠
         const query = encodeURIComponent(searchQuery.value.trim())
         router.push({
           path: '/search',
-          query: { q: query }
+          query: {
+            q: query,
+            type: 'all' // 可搜尋所有內容類型
+          }
         })
         toggleSearch()
       }
@@ -301,6 +304,7 @@ export default {
       isLoggedIn,
       isAdmin,
       userName,
+      userEmail,
       userAvatar,
       notifications,
       unreadNotifications,
@@ -320,6 +324,9 @@ export default {
 .navbar {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   z-index: 1030;
+  background-color: #ffffff !important;
+  padding: 0.5rem 1rem;
+  min-height: 60px;
 }
 
 .navbar-brand {
@@ -328,11 +335,13 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0;
 }
 
 .navbar-brand img {
   height: 40px;
   width: auto;
+  object-fit: contain;
 }
 
 .nav-link {
@@ -340,6 +349,7 @@ export default {
   transition: all 0.3s ease;
   position: relative;
   padding: 0.5rem 1rem;
+  font-weight: 500;
 }
 
 .nav-link:hover {
@@ -348,6 +358,21 @@ export default {
 
 .nav-link i {
   margin-right: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.nav-link.active {
+  color: var(--primary-color);
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  right: 1rem;
+  height: 2px;
+  background-color: var(--primary-color);
 }
 
 .search-bar {
@@ -376,10 +401,24 @@ export default {
   margin: 0 auto;
 }
 
+.search-bar .form-control {
+  border-right: none;
+}
+
+.search-bar .btn {
+  border-color: #ced4da;
+}
+
+.search-bar .btn:hover {
+  background-color: #f8f9fa;
+}
+
 .dropdown-menu {
   min-width: 200px;
   padding: 0.5rem 0;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: none;
+  margin-top: 0.5rem;
 }
 
 .dropdown-item {
@@ -392,10 +431,15 @@ export default {
 .dropdown-item i {
   width: 1.25rem;
   text-align: center;
+  color: #6c757d;
 }
 
 .dropdown-item:hover {
-  background-color: var(--light);
+  background-color: #f8f9fa;
+  color: var(--primary-color);
+}
+
+.dropdown-item:hover i {
   color: var(--primary-color);
 }
 
@@ -414,6 +458,8 @@ export default {
   object-fit: cover;
   border-radius: 50%;
   margin-right: 0.5rem;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 /* 響應式設計 */
@@ -425,8 +471,8 @@ export default {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     position: absolute;
     top: 100%;
-    left: 0;
-    right: 0;
+    left: 1rem;
+    right: 1rem;
     z-index: 1020;
   }
 
@@ -434,13 +480,22 @@ export default {
     margin: 0.5rem 0;
   }
 
+  .nav-link.active::after {
+    display: none;
+  }
+
   .dropdown-menu {
     position: static !important;
     transform: none !important;
     box-shadow: none;
     border: none;
-    background: var(--light);
+    background: #f8f9fa;
     margin-top: 0.5rem;
+    padding: 0;
+  }
+
+  .dropdown-item {
+    padding: 0.75rem 1rem;
   }
 }
 
@@ -460,10 +515,11 @@ export default {
   }
 }
 
-/* 主題色變量 */
+/* CSS 變量 */
 :root {
   --primary-color: #007bff;
   --text-color: #343a40;
   --light: #f8f9fa;
+  --border-color: #dee2e6;
 }
 </style>
