@@ -61,6 +61,14 @@
           </router-link>
         </li>
 
+        <!-- 特店專區 -->
+        <li class="nav-item">
+          <router-link to="/discountstore" class="nav-link" :title="isCollapsed ? '優惠專區' : ''">
+            <i class="fas fa-tags"></i>
+            <span v-if="!isCollapsed">特店優惠專區</span>
+          </router-link>
+        </li>
+
         <!-- 管理員專區 -->
         <template v-if="isAdmin">
           <li class="nav-item">

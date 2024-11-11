@@ -22,6 +22,9 @@ const Booking = () => import('@/views/movie/Booking.vue')
 const Discounts = () => import('@/views/discount/Discounts.vue')
 const DiscountDetail = () => import('@/views/discount/DiscountDetail.vue')
 
+// 特店優惠相關頁面
+const DiscountStore = () => import('@/views/discountStore/DiscountStore.vue')
+
 // 路由配置
 const routes = [
     {
@@ -174,6 +177,15 @@ const routes = [
             requiresAuth: true,
             requiresAdmin: true,
             title: '優惠管理'
+        }
+    },
+    // 特店優惠路由組
+    {
+        path: '/discountstore',
+        name: 'discountstore',
+        component: DiscountStore,
+        meta: {
+            title: '特店優惠'
         }
     },
     // 錯誤頁面
