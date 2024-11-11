@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import store from '@/store'
+import DiscountStoreOverview from '@/views/discountStore/StoreOverview.vue'
 
 // 基礎頁面
 const Home = () => import('@/views/Home.vue')
@@ -24,6 +25,7 @@ const DiscountDetail = () => import('@/views/discount/DiscountDetail.vue')
 
 // 特店優惠相關頁面
 const DiscountStore = () => import('@/views/discountStore/DiscountStore.vue')
+const StoreOverview = () => import('@/views/discountStore/StoreOverview.vue')
 
 // 路由配置
 const routes = [
@@ -186,6 +188,14 @@ const routes = [
         component: DiscountStore,
         meta: {
             title: '特店優惠'
+        }
+    },
+    {
+        path: '/discountstore/overview',
+        name: 'storeoverview',
+        component: StoreOverview,
+        meta: {
+            title: '特店優惠總覽'
         }
     },
     // 錯誤頁面

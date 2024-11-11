@@ -8,7 +8,7 @@
 
     <!-- 優惠列表 -->
     <div v-else class="discounts-content">
-      <h2 class="page-title mb-4">特店優惠專區</h2>
+      <h2 class="page-title mb-4">特店優惠總覽</h2>
       <!-- 搜尋和篩選 -->
       <div class="shadow-sm p-3 bg-white rounded filters mb-4">
         <div class="row">
@@ -29,62 +29,85 @@
         </div>
       </div>
       <div>
-        <h3 class="hot-title  mb-4">熱門優惠</h3>
+        <h5 class="show-how-many  mb-4">顯示3729項結果</h5>
       </div>
       <div class="hot-discount-store-block hot-card-group row mb-4">
         <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
           <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
           <div class="card-body">
             <h3 class="card-title text-dark">Store Name</h3>
-              <h4 class="card-text text-dark">Discounts Content</h4>
-              <h5 class="card-text text-dark">Discounts Time</h5>
-              <p class="card-text text-dark">Discounts Store Location</p>
-              <div class="d-flex flex-wrap">
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
-              </div>
+            <h4 class="card-text text-dark">Discounts Content</h4>
+            <h5 class="card-text text-dark">Discounts Time</h5>
+            <p class="card-text text-dark">Discounts Store Location</p>
+            <div class="d-flex flex-wrap">
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
+            </div>
           </div>
         </div>
         <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
           <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
           <div class="card-body">
             <h3 class="card-title text-dark">Store Name</h3>
-              <h4 class="card-text text-dark">Discounts Content</h4>
-              <h5 class="card-text text-dark">Discounts Time</h5>
-              <p class="card-text text-dark">Discounts Store Location</p>
-              <div class="d-flex flex-wrap">
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
-              </div>
+            <h4 class="card-text text-dark">Discounts Content</h4>
+            <h5 class="card-text text-dark">Discounts Time</h5>
+            <p class="card-text text-dark">Discounts Store Location</p>
+            <div class="d-flex flex-wrap">
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
+            </div>
           </div>
         </div>
         <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
           <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
           <div class="card-body">
             <h3 class="card-title text-dark">Store Name</h3>
-              <h4 class="card-text text-dark">Discounts Content</h4>
-              <h5 class="card-text text-dark">Discounts Time</h5>
-              <p class="card-text text-dark">Discounts Store Location</p>
-              <div class="d-flex flex-wrap">
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
-              </div>
+            <h4 class="card-text text-dark">Discounts Content</h4>
+            <h5 class="card-text text-dark">Discounts Time</h5>
+            <p class="card-text text-dark">Discounts Store Location</p>
+            <div class="d-flex flex-wrap">
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
+              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="mb-4">
-        <div class="d-flex justify-content-end">
-          <router-link to="/discountstore/overview" class="btn btn-primary active" type="button">更多店家</router-link>
+        <div class="d-flex">
+          <div class="pagination-filter-control me-auto">
+            <div class="d-flex">
+              <p>目前在第</p>
+            <select class="select text-white" name="show-quantity" id="">
+              <option value="0" selected="selected">1</option>
+              <option value="1">2</option>
+              <option value="2">3</option>
+              <option value="3">4</option>
+              <option value="4">5</option>
+            </select>
+            <p>頁 共有3729筆資料，每頁顯示</p>
+            <select class="select text-white" name="show-quantity" id="">
+              <option value="0" selected="selected">1</option>
+              <option value="1">2</option>
+              <option value="2">3</option>
+              <option value="3">4</option>
+              <option value="4">5</option>
+            </select>
+            <p>筆</p>
+            </div>
+          </div>
+          <div class="store-pagination">
+            <nav aria-label="Page navigation example">
+              <ul class="pagination">
+                <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+                <li class="page-item"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item"><a class="page-link" href="#">Next</a></li>
+              </ul>
+            </nav>
+          </div>
         </div>
-      </div>
-      <div class="bottom-info row px-2 mb-4">
-        <div class="info-content d-flex justify-content-center align-items-center col-5">
-          <p class="">Free Cooperation invitation</p>
-        </div>
-          <img class="info-content col-5" src="\images\discountStore\shop-158317_1280.png" alt="">
       </div>
     </div>
   </div>
@@ -289,10 +312,15 @@ export default {
 </script>
 
 <style scoped>
-  @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
 
-  .card-body {
-    background-color: #CED4DA;
+.card-body {
+  background-color: #CED4DA;
+}
 
-  }
+.select {
+  background-color: rgb(0, 119, 255);
+  border: 0px;
+  border-radius: 20%;
+}
 </style>
