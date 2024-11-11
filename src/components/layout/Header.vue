@@ -2,14 +2,14 @@
   <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
     <div class="container">
       <!-- Logo -->
-      <router-link class="navbar-brand" to="/">
+      <router-link class="navbar-brand d-flex align-items-center" to="/">
         <img src="@/assets/images/logo.png" alt="逢甲" height="40">
-        市民卡系統
+        <span class="ms-2">市民卡系統</span>
       </router-link>
 
       <!-- Toggler Button -->
       <button
-          class="navbar-toggler"
+          class="navbar-toggler border-0"
           type="button"
           @click="toggleNav"
           aria-controls="navbarNav"
@@ -27,52 +27,61 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <!-- 電影 -->
           <li class="nav-item">
-            <router-link class="nav-link" to="/movies">
-              <i class="fas fa-film"></i> 電影
+            <router-link class="nav-link d-flex align-items-center" to="/movies">
+              <i class="fas fa-film"></i>
+              <span class="ms-2">電影</span>
             </router-link>
           </li>
 
           <!-- 特惠商店 -->
           <li class="nav-item">
-            <router-link class="nav-link" to="/stores">
-              <i class="fas fa-store"></i> 特惠商店
+            <router-link class="nav-link d-flex align-items-center" to="/stores">
+              <i class="fas fa-store"></i>
+              <span class="ms-2">特惠商店</span>
             </router-link>
           </li>
 
           <!-- 優惠活動 -->
           <li class="nav-item">
-            <router-link class="nav-link" to="/promotions">
-              <i class="fas fa-percentage"></i> 優惠活動
+            <router-link class="nav-link d-flex align-items-center" to="/promotions">
+              <i class="fas fa-percentage"></i>
+              <span class="ms-2">優惠活動</span>
             </router-link>
           </li>
 
           <!-- 我的訂單 -->
           <li class="nav-item" v-if="isLoggedIn">
-            <router-link class="nav-link" to="/bookings">
-              <i class="fas fa-ticket-alt"></i> 我的訂單
+            <router-link class="nav-link d-flex align-items-center" to="/bookings">
+              <i class="fas fa-ticket-alt"></i>
+              <span class="ms-2">我的訂單</span>
             </router-link>
           </li>
 
           <!-- 電子錢包 -->
           <li class="nav-item" v-if="isLoggedIn">
-            <router-link class="nav-link" to="/wallet">
-              <i class="fas fa-wallet"></i> 電子錢包
+            <router-link class="nav-link d-flex align-items-center" to="/wallet">
+              <i class="fas fa-wallet"></i>
+              <span class="ms-2">電子錢包</span>
             </router-link>
           </li>
 
           <!-- 優惠專區 -->
           <li class="nav-item">
-            <router-link class="nav-link" to="/discounts">
-              <i class="fas fa-tags"></i> 優惠專區
+            <router-link class="nav-link d-flex align-items-center" to="/discounts">
+              <i class="fas fa-tags"></i>
+              <span class="ms-2">優惠專區</span>
             </router-link>
           </li>
         </ul>
 
         <!-- Right Side Menu -->
-        <ul class="navbar-nav">
+        <ul class="navbar-nav align-items-center">
           <!-- Search Button -->
           <li class="nav-item">
-            <button class="nav-link btn" @click="toggleSearch">
+            <button
+                class="nav-link btn d-flex align-items-center"
+                @click="toggleSearch"
+            >
               <i class="fas fa-search"></i>
             </button>
           </li>
@@ -80,13 +89,21 @@
           <!-- Not Logged In -->
           <template v-if="!isLoggedIn">
             <li class="nav-item">
-              <router-link class="nav-link" to="/login">
-                <i class="fas fa-sign-in-alt"></i> 登入
+              <router-link
+                  class="nav-link d-flex align-items-center"
+                  to="/login"
+              >
+                <i class="fas fa-sign-in-alt"></i>
+                <span class="ms-2">登入</span>
               </router-link>
             </li>
             <li class="nav-item">
-              <router-link class="nav-link" to="/register">
-                <i class="fas fa-user-plus"></i> 註冊
+              <router-link
+                  class="nav-link d-flex align-items-center"
+                  to="/register"
+              >
+                <i class="fas fa-user-plus"></i>
+                <span class="ms-2">註冊</span>
               </router-link>
             </li>
           </template>
@@ -96,7 +113,7 @@
             <!-- Notifications -->
             <li class="nav-item dropdown">
               <a
-                  class="nav-link dropdown-toggle"
+                  class="nav-link dropdown-toggle position-relative"
                   href="#"
                   id="notificationDropdown"
                   role="button"
@@ -105,8 +122,8 @@
               >
                 <i class="fas fa-bell"></i>
                 <span
-                    class="badge bg-danger"
                     v-if="unreadNotifications"
+                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
                 >
                   {{ unreadNotifications }}
                 </span>
@@ -116,13 +133,13 @@
                   aria-labelledby="notificationDropdown"
               >
                 <li v-if="notifications.length === 0">
-                  <span class="dropdown-item">無新通知</span>
+                  <span class="dropdown-item text-muted">無新通知</span>
                 </li>
                 <li v-for="notification in notifications" :key="notification.id">
                   <a
                       class="dropdown-item"
                       href="#"
-                      @click="readNotification(notification.id)"
+                      @click.prevent="readNotification(notification.id)"
                   >
                     {{ notification.message }}
                   </a>
@@ -131,9 +148,9 @@
             </li>
 
             <!-- User Menu -->
-            <li class="nav-item dropdown">
+            <li class="nav-item dropdown ms-2">
               <a
-                  class="nav-link dropdown-toggle"
+                  class="nav-link dropdown-toggle d-flex align-items-center"
                   href="#"
                   id="userDropdown"
                   role="button"
@@ -142,12 +159,12 @@
               >
                 <img
                     :src="userAvatar"
-                    class="rounded-circle"
+                    class="rounded-circle me-2"
                     alt="avatar"
-                    width="24"
-                    height="24"
+                    width="32"
+                    height="32"
                 >
-                {{ userName }}
+                <span>{{ userName }}</span>
               </a>
               <ul
                   class="dropdown-menu dropdown-menu-end"
@@ -155,12 +172,12 @@
               >
                 <li>
                   <router-link class="dropdown-item" to="/profile">
-                    <i class="fas fa-user"></i> 個人資料
+                    <i class="fas fa-user me-2"></i>個人資料
                   </router-link>
                 </li>
                 <li>
                   <router-link class="dropdown-item" to="/settings">
-                    <i class="fas fa-cog"></i> 設定
+                    <i class="fas fa-cog me-2"></i>設定
                   </router-link>
                 </li>
                 <!-- 管理員選項 -->
@@ -168,24 +185,28 @@
                   <li><hr class="dropdown-divider"></li>
                   <li>
                     <router-link class="dropdown-item" to="/admin/dashboard">
-                      <i class="fas fa-tachometer-alt"></i> 管理後台
+                      <i class="fas fa-tachometer-alt me-2"></i>管理後台
                     </router-link>
                   </li>
                   <li>
                     <router-link class="dropdown-item" to="/admin/stores">
-                      <i class="fas fa-store-alt"></i> 商店管理
+                      <i class="fas fa-store-alt me-2"></i>商店管理
                     </router-link>
                   </li>
                   <li>
                     <router-link class="dropdown-item" to="/admin/promotions">
-                      <i class="fas fa-ad"></i> 活動管理
+                      <i class="fas fa-ad me-2"></i>活動管理
                     </router-link>
                   </li>
                 </template>
                 <li><hr class="dropdown-divider"></li>
                 <li>
-                  <a class="dropdown-item" href="#" @click="logout">
-                    <i class="fas fa-sign-out-alt"></i> 登出
+                  <a
+                      class="dropdown-item text-danger"
+                      href="#"
+                      @click.prevent="logout"
+                  >
+                    <i class="fas fa-sign-out-alt me-2"></i>登出
                   </a>
                 </li>
               </ul>
@@ -196,8 +217,11 @@
     </div>
 
     <!-- Search Bar -->
-    <div class="search-bar" :class="{ active: isSearchActive }">
-      <div class="container">
+    <div
+        class="search-bar w-100 position-absolute"
+        :class="{ active: isSearchActive }"
+    >
+      <div class="container py-3">
         <div class="input-group">
           <input
               type="text"
@@ -225,6 +249,8 @@
     </div>
   </nav>
 </template>
+
+
 <script>
 import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
@@ -247,7 +273,7 @@ export default {
     const isAdmin = computed(() => store.getters['auth/isAdmin'])
     const userName = computed(() => store.getters['auth/userName'])
     const userEmail = computed(() => store.getters['auth/userEmail'])
-    const userAvatar = computed(() => store.getters['auth/userAvatar'])
+    const userAvatar = computed(() => store.getters['auth/userAvatar'] || require('@/assets/images/default-avatar.jpg'))
     const notifications = computed(() => store.getters['notification/notifications'])
     const unreadNotifications = computed(() => store.getters['notification/unreadCount'])
 
@@ -270,7 +296,7 @@ export default {
           path: '/search',
           query: {
             q: query,
-            type: 'all' // 可搜尋所有內容類型
+            type: 'all'
           }
         })
         toggleSearch()
@@ -453,8 +479,8 @@ export default {
 }
 
 .user-avatar {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   object-fit: cover;
   border-radius: 50%;
   margin-right: 0.5rem;
@@ -496,6 +522,21 @@ export default {
 
   .dropdown-item {
     padding: 0.75rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0.25rem 1rem;
+  }
+
+  .navbar-brand img {
+    height: 32px;
+  }
+
+  .search-bar .input-group {
+    max-width: 100%;
+    padding: 0 1rem;
   }
 }
 
