@@ -44,7 +44,7 @@
 
         <!-- 特惠商店 -->
         <li class="nav-item">
-          <router-link to="/stores" class="nav-link" :title="isCollapsed ? '特惠商店' : ''">
+          <router-link to="/discountstore" class="nav-link" :title="isCollapsed ? '特惠商店' : ''">
             <i class="fas fa-store"></i>
             <span v-if="!isCollapsed">特惠商店</span>
           </router-link>

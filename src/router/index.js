@@ -22,6 +22,9 @@ const StoreDetail = () => import('@/views/store/StoreDetail.vue')
 // 優惠活動相關頁面
 const Promotions = () => import('@/views/promotion/Promotions.vue')
 const PromotionDetail = () => import('@/views/promotion/PromotionDetail.vue')
+// 特店優惠相關頁面
+const DiscountStore = () => import('@/views/discountStore/DiscountStore.vue')
+const StoreOverview = () => import('@/views/discountStore/StoreOverview.vue')
 
 const routes = [
     {
@@ -159,32 +162,24 @@ const routes = [
         }
     },
 
-    // 特惠商店路由組
+    // 特店優惠路由組
     {
-        path: '/stores',
-        component: AuthorizedStores,
+        path: '/discountstore',
+        name: 'discountstore',
+        component: DiscountStore,
         meta: {
-            layout: 'default'
-        },
-        children: [
-            {
-                path: '',
-                name: 'stores',
-                component: StoreSearch,
-                meta: {
-                    title: '特惠商店'
-                }
-            },
-            {
-                path: ':id',
-                name: 'store-detail',
-                component: StoreDetail,
-                props: true,
-                meta: {
-                    title: '商店詳情'
-                }
-            }
-        ]
+            title: '特店優惠',
+            layout: 'default' // 保持與其他路由一致的布局設置
+        }
+    },
+    {
+        path: '/discountstore/overview',
+        name: 'storeoverview',
+        component: StoreOverview,
+        meta: {
+            title: '特店優惠總覽',
+            layout: 'default' // 保持與其他路由一致的布局設置
+        }
     },
 
     // 優惠活動路由組

@@ -26,7 +26,7 @@
             <li class="nav-item dropdown">
               <a href="#" class="nav-link dropdown-toggle" id="discountsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">好康優惠</a>
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="discountsDropdown">
-                <router-link class="dropdown-item" to="/partner-store">特約商店</router-link>
+                <router-link class="dropdown-item" to="/discountstore">特約商店</router-link>
               </ul>
             </li>
             <li class="nav-item dropdown">
@@ -95,7 +95,7 @@ export default {
       const currentRoute = route.matched.find(r => r.meta && r.meta.title)
       return currentRoute ? currentRoute.meta.title : ''
     })
-    
+
     // 計算屬性來判斷是否顯示麵包屑
     const showBreadcrumbs = computed(() => route.path !== '/')
 
