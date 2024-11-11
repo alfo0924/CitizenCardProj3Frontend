@@ -167,7 +167,6 @@ export default {
       return isValid
     }
 
-    // Handle form submission
     const handleSubmit = async () => {
       if (!validateForm()) return
 
@@ -182,7 +181,14 @@ export default {
         })
 
         if (response.success) {
-          const redirectPath = router.currentRoute.value.query.redirect || '/'
+          // 顯示登入成功提示
+          store.dispatch('setNotification', {
+            type: 'success',
+            message: '登入成功！歡迎回來'
+          })
+
+          // 獲取重定向路徑，如果沒有則導向用戶首頁
+          const redirectPath = router.currentRoute.value.query.redirect || '/profile'
           router.push(redirectPath)
         } else {
           error.value = response.message || '登入失敗，請稍後再試'

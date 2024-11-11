@@ -309,42 +309,61 @@ const router = createRouter({
 })
 
 // 導航守衛
-router.beforeEach((to, from, next) => {
+// 導航守衛
+router.beforeEach(async (to, from, next) => {
     // 設置頁面標題
-    document.title = to.meta.title ? `${to.meta.title} - 市民卡系統` : '市民卡系統'
+    document.title = to.meta.title
+      ? `${to.meta.title} - 市民卡系統`
+      : '市民卡系統'
 
-    const isLoggedIn = store.getters['auth/isLoggedIn']
-    const isAdmin = store.getters['auth/isAdmin']
+    try {
+        const isLoggedIn = store.getters['auth/isLoggedIn']
+        const isAdmin = store.getters['auth/isAdmin']
 
-    // 需要登入的頁面
-    if (to.meta.requiresAuth && !isLoggedIn) {
-        next({
-            name: 'login',
-            query: { redirect: to.fullPath }
+        // 需要登入的頁面
+        if (to.meta.requiresAuth && !isLoggedIn) {
+            store.dispatch('setNotification', {
+                type: 'warning',
+                message: '請先登入後再訪問此頁面'
+            })
+            next({
+                name: 'login',
+                query: { redirect: to.fullPath }
+            })
+            return
+        }
+
+        // 需要管理員權限的頁面
+        if (to.meta.requiresAdmin && !isAdmin) {
+            store.dispatch('setNotification', {
+                type: 'error',
+                message: '您沒有權限訪問此頁面'
+            })
+            next({ name: 'forbidden' })
+            return
+        }
+
+        // 已登入用戶不能訪問登入/註冊頁
+        if (to.meta.requiresGuest && isLoggedIn) {
+            next({ name: 'profile' }) // 改為導向用戶首頁
+            return
+        }
+
+        // 設置當前布局
+        if (to.meta.layout) {
+            store.commit('setLayout', to.meta.layout)
+        }
+
+        next()
+    } catch (error) {
+        console.error('Navigation error:', error)
+        store.dispatch('setNotification', {
+            type: 'error',
+            message: '發生錯誤，請稍後再試'
         })
-        return
+        next({ name: 'server-error' })
     }
-
-    // 需要管理員權限的頁面
-    if (to.meta.requiresAdmin && !isAdmin) {
-        next({ name: 'home' })
-        return
-    }
-
-    // 已登入用戶不能訪問登入/註冊頁
-    if (to.meta.requiresGuest && isLoggedIn) {
-        next({ name: 'home' })
-        return
-    }
-
-    // 設置當前布局
-    if (to.meta.layout) {
-        store.commit('setLayout', to.meta.layout)
-    }
-
-    next()
 })
-
 // 全局後置守衛
 router.afterEach(() => {
     // 關閉loading狀態
