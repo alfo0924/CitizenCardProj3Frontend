@@ -22,21 +22,38 @@
               class="carousel-item"
               :class="{ active: index === 0 }"
           >
-            <img :src="movie.bannerUrl" class="d-block w-100" :alt="movie.movieName">
+            <img
+                :src="movie.bannerUrl"
+                class="d-block w-100"
+                :alt="movie.movieName"
+            >
             <div class="carousel-caption">
               <h3>{{ movie.movieName }}</h3>
               <p>{{ movie.shortDescription }}</p>
-              <router-link :to="'/movies/' + movie.movieId" class="btn btn-primary">
+              <router-link
+                  :to="'/movies/' + movie.movieId"
+                  class="btn btn-primary"
+              >
                 立即訂票
               </router-link>
             </div>
           </div>
         </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+        <button
+            class="carousel-control-prev"
+            type="button"
+            data-bs-target="#mainCarousel"
+            data-bs-slide="prev"
+        >
           <span class="carousel-control-prev-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
         </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+        <button
+            class="carousel-control-next"
+            type="button"
+            data-bs-target="#mainCarousel"
+            data-bs-slide="next"
+        >
           <span class="carousel-control-next-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Next</span>
         </button>
@@ -50,7 +67,11 @@
           <i class="fas fa-film"></i> 熱映中
         </h2>
         <div class="row row-cols-1 row-cols-md-4 g-4">
-          <div v-for="movie in nowShowingMovies" :key="movie.movieId" class="col">
+          <div
+              v-for="movie in nowShowingMovies"
+              :key="movie.movieId"
+              class="col"
+          >
             <MovieCard :movie="movie" />
           </div>
         </div>
@@ -63,13 +84,17 @@
     </section>
 
     <!-- 特惠商店區塊 -->
-    <section class="featured-stores mb-5">
+    <section class="featured-stores mb-5 bg-light py-5">
       <div class="container">
         <h2 class="section-title mb-4">
           <i class="fas fa-store"></i> 特惠商店
         </h2>
         <div class="row row-cols-1 row-cols-md-3 g-4">
-          <div v-for="store in featuredStores" :key="store.id" class="col">
+          <div
+              v-for="store in featuredStores"
+              :key="store.id"
+              class="col"
+          >
             <store-card :store="store" />
           </div>
         </div>
@@ -82,13 +107,17 @@
     </section>
 
     <!-- 優惠活動區塊 -->
-    <section class="promotions mb-5 bg-light py-5">
+    <section class="promotions mb-5">
       <div class="container">
         <h2 class="section-title mb-4">
           <i class="fas fa-percentage"></i> 優惠活動
         </h2>
         <div class="row row-cols-1 row-cols-md-3 g-4">
-          <div v-for="promotion in activePromotions" :key="promotion.id" class="col">
+          <div
+              v-for="promotion in activePromotions"
+              :key="promotion.id"
+              class="col"
+          >
             <promotion-card :promotion="promotion" />
           </div>
         </div>
@@ -101,13 +130,17 @@
     </section>
 
     <!-- 優惠專區 -->
-    <section class="discounts-section mb-5">
+    <section class="discounts-section mb-5 bg-light py-5">
       <div class="container">
         <h2 class="section-title mb-4">
           <i class="fas fa-tags"></i> 優惠專區
         </h2>
         <div class="row">
-          <div v-for="discount in activeDiscounts" :key="discount.discountId" class="col-md-6 col-lg-4 mb-4">
+          <div
+              v-for="discount in activeDiscounts"
+              :key="discount.discountId"
+              class="col-md-6 col-lg-4 mb-4"
+          >
             <div class="discount-card">
               <div class="discount-content">
                 <h3>{{ discount.discountName }}</h3>
@@ -153,7 +186,11 @@
             <div class="info-card">
               <h3>最近訂單</h3>
               <div v-if="recentBookings.length > 0">
-                <div v-for="booking in recentBookings" :key="booking.bookingId" class="booking-item">
+                <div
+                    v-for="booking in recentBookings"
+                    :key="booking.bookingId"
+                    class="booking-item"
+                >
                   <div>{{ booking.movieName }}</div>
                   <small>{{ formatDate(booking.showTime) }}</small>
                 </div>
@@ -172,7 +209,11 @@
             <div class="info-card">
               <h3>可用優惠</h3>
               <div v-if="availableDiscounts.length > 0">
-                <div v-for="discount in availableDiscounts" :key="discount.discountId" class="discount-item">
+                <div
+                    v-for="discount in availableDiscounts"
+                    :key="discount.discountId"
+                    class="discount-item"
+                >
                   {{ discount.discountName }}
                 </div>
               </div>
@@ -192,6 +233,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import MovieCard from '@/components/movie/MovieCard.vue'
 import StoreCard from '@/components/store/StoreCard.vue'
 import PromotionCard from '@/components/promotion/PromotionCard.vue'
@@ -207,6 +249,7 @@ export default {
 
   setup() {
     const store = useStore()
+    const router = useRouter()
 
     // 資料狀態
     const featuredMovies = ref([])
@@ -228,6 +271,10 @@ export default {
         featuredMovies.value = response.data
       } catch (error) {
         console.error('Error fetching featured movies:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '載入精選電影失敗'
+        })
       }
     }
 
@@ -237,6 +284,10 @@ export default {
         nowShowingMovies.value = response.data
       } catch (error) {
         console.error('Error fetching now showing movies:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '載入熱映電影失敗'
+        })
       }
     }
 
@@ -246,6 +297,10 @@ export default {
         featuredStores.value = response.data
       } catch (error) {
         console.error('Error fetching featured stores:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '載入特惠商店失敗'
+        })
       }
     }
 
@@ -255,6 +310,10 @@ export default {
         activePromotions.value = response.data
       } catch (error) {
         console.error('Error fetching active promotions:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '載入優惠活動失敗'
+        })
       }
     }
 
@@ -264,6 +323,10 @@ export default {
         activeDiscounts.value = response.data
       } catch (error) {
         console.error('Error fetching active discounts:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '載入優惠專區失敗'
+        })
       }
     }
 
@@ -282,6 +345,10 @@ export default {
           await store.dispatch('wallet/fetchBalance')
         } catch (error) {
           console.error('Error fetching member data:', error)
+          store.dispatch('setNotification', {
+            type: 'error',
+            message: '載入會員資料失敗'
+          })
         }
       }
     }
@@ -301,14 +368,19 @@ export default {
 
     // 生命週期鉤子
     onMounted(async () => {
-      await Promise.all([
-        fetchFeaturedMovies(),
-        fetchNowShowingMovies(),
-        fetchFeaturedStores(),
-        fetchActivePromotions(),
-        fetchActiveDiscounts(),
-        fetchMemberData()
-      ])
+      store.dispatch('setLoading', true)
+      try {
+        await Promise.all([
+          fetchFeaturedMovies(),
+          fetchNowShowingMovies(),
+          fetchFeaturedStores(),
+          fetchActivePromotions(),
+          fetchActiveDiscounts(),
+          fetchMemberData()
+        ])
+      } finally {
+        store.dispatch('setLoading', false)
+      }
     })
 
     return {
@@ -331,11 +403,12 @@ export default {
 
 <style scoped>
 .home {
-  padding-top: 60px;
+  min-height: 100vh;
+  background-color: var(--bg-light);
 }
 
 .carousel-section {
-  margin-top: -60px;
+  margin-bottom: 2rem;
 }
 
 .carousel-item {
@@ -349,11 +422,12 @@ export default {
 }
 
 .carousel-caption {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   padding: 2rem;
   border-radius: 8px;
   max-width: 600px;
   margin: 0 auto;
+  backdrop-filter: blur(4px);
 }
 
 .section-title {
@@ -369,13 +443,17 @@ export default {
   color: var(--primary-color);
 }
 
-.featured-stores,
-.promotions {
+section {
   padding: 4rem 0;
 }
 
-.featured-stores {
-  background-color: var(--light);
+section:nth-child(even) {
+  background-color: white;
+}
+
+.featured-stores,
+.promotions {
+  padding: 4rem 0;
 }
 
 .discount-card {
@@ -441,19 +519,13 @@ export default {
     font-size: 1.25rem;
   }
 
+  section {
+    padding: 2rem 0;
+  }
+
   .featured-stores,
   .promotions {
     padding: 2rem 0;
   }
-}
-
-/* CSS Variables */
-:root {
-  --primary-color: #007bff;
-  --success: #28a745;
-  --text-color: #343a40;
-  --text-muted: #6c757d;
-  --light: #f8f9fa;
-  --border-color: #dee2e6;
 }
 </style>
