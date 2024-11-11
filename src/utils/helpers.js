@@ -1,5 +1,3 @@
-// utils/helpers.js
-
 /**
  * 日期時間格式化
  */
@@ -38,8 +36,29 @@ export const formatDateTime = {
             month: 'numeric',
             day: 'numeric'
         })
+    },
+
+    // 相對時間
+    relative: (date) => {
+        if (!date) return ''
+        const now = new Date()
+        const diff = now - new Date(date)
+        const minutes = Math.floor(diff / 60000)
+        const hours = Math.floor(minutes / 60)
+        const days = Math.floor(hours / 24)
+
+        if (minutes < 1) return '剛剛'
+        if (minutes < 60) return `${minutes}分鐘前`
+        if (hours < 24) return `${hours}小時前`
+        if (days < 30) return `${days}天前`
+        return new Date(date).toLocaleDateString('zh-TW')
     }
 }
+
+// 導出單獨的格式化函數，用於兼容性
+export const formatDate = formatDateTime.date
+export const formatTime = formatDateTime.time
+export const formatFullDateTime = formatDateTime.full
 
 /**
  * 金額格式化
@@ -47,7 +66,7 @@ export const formatDateTime = {
 export const formatCurrency = {
     // 台幣格式
     TWD: (amount) => {
-        if (typeof amount !== 'number') return '0'
+        if (typeof amount !== 'number') return 'NT$ 0'
         return `NT$ ${amount.toLocaleString('zh-TW')}`
     },
 
@@ -209,7 +228,7 @@ export const deviceDetector = {
     // 是否為移動設備
     isMobile: () => {
         return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-            navigator.userAgent
+          navigator.userAgent
         )
     },
 
@@ -227,7 +246,7 @@ export const deviceDetector = {
 /**
  * 防抖函數
  */
-export const debounce = (func, wait) => {
+export const debounce = (func, wait = 300) => {
     let timeout
     return function executedFunction(...args) {
         const later = () => {
@@ -242,7 +261,7 @@ export const debounce = (func, wait) => {
 /**
  * 節流函數
  */
-export const throttle = (func, limit) => {
+export const throttle = (func, limit = 300) => {
     let inThrottle
     return function executedFunction(...args) {
         if (!inThrottle) {
@@ -251,4 +270,20 @@ export const throttle = (func, limit) => {
             setTimeout(() => (inThrottle = false), limit)
         }
     }
+}
+
+export default {
+    formatDateTime,
+    formatDate,
+    formatTime,
+    formatFullDateTime,
+    formatCurrency,
+    stringHelpers,
+    validators,
+    storage,
+    urlHelpers,
+    errorHandler,
+    deviceDetector,
+    debounce,
+    throttle
 }
