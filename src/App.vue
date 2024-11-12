@@ -2,7 +2,11 @@
   <div id="app">
     <!-- Header -->
     <Header v-if="showHeader" class="app-header" />
-
+    <!-- Breadcrumb -->
+    <nav v-if="showBreadcrumb" class="breadcrumb">
+      <router-link to="/"></router-link>
+      <!-- Additional breadcrumb links here -->
+    </nav>
     <!-- Main Content -->
     <main class="main-content">
       <!-- Loading Overlay -->
@@ -20,11 +24,6 @@
           class="global-alert"
       />
 
-      <!-- Breadcrumb -->
-      <nav v-if="showBreadcrumb" class="breadcrumb">
-        <router-link to="/"></router-link>
-        <!-- Additional breadcrumb links here -->
-      </nav>
 
       <!-- Router View -->
       <router-view v-slot="{ Component }">
@@ -109,17 +108,17 @@ export default {
   /* 布局常量 */
   --header-height: 60px;
   --breadcrumb-height: 40px;
-  --breadcrumb-margin: 80px; /* 增加間距 */
+  --breadcrumb-margin: 80px;
   --footer-height: 60px;
-  --content-padding: 30px; /* 增加內容padding */
+  --content-padding: 30px;
 
   /* 間距 */
-  --spacing-xs: 0.25rem;
-  --spacing-sm: 0.5rem;
-  --spacing-md: 1rem;
-  --spacing-lg: 1.5rem;
-  --spacing-xl: 2rem;
-  --spacing-xxl: 3rem; /* 新增更大的間距 */
+  --spacing-xs: 1rem;
+  --spacing-sm: 1.5rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 2.5rem;
+  --spacing-xl: 3rem;
+  --spacing-xxl: 4rem;
 
   /* 圓角 */
   --border-radius-sm: 0.25rem;
@@ -171,7 +170,7 @@ body {
 }
 
 /* Breadcrumb */
-.breadcrumb-container {
+.breadcrumb {
   position: fixed;
   top: var(--header-height);
   left: 0;
@@ -180,53 +179,38 @@ body {
   background-color: white;
   border-bottom: 1px solid var(--border-color);
   z-index: 1020;
-  padding: 0.5rem 0;
-}
-
-.breadcrumb {
-  margin: 0;
   padding: 0.5rem var(--content-padding);
-  background-color: transparent;
+  margin: 0;
   display: flex;
   align-items: center;
-}
-
-.breadcrumb-item {
-  display: flex;
-  align-items: center;
-}
-
-.breadcrumb-item + .breadcrumb-item::before {
-  content: ">";
-  padding: 0 0.5rem;
-  color: var(--text-light);
 }
 
 /* 主要內容區域 */
 .main-content {
   flex: 1;
-  margin-top: calc(var(--header-height) + var(--breadcrumb-height) + var(--breadcrumb-margin));
-  min-height: calc(100vh - var(--header-height) - var(--breadcrumb-height));
   width: 100%;
   position: relative;
+  padding-top: calc(var(--header-height) + var(--breadcrumb-height) + var(--breadcrumb-margin));
+  min-height: calc(100vh - var(--header-height) - var(--footer-height));
   overflow-x: hidden;
   overflow-y: auto;
-  padding: var(--content-padding);
 }
 
 /* 內容容器 */
 .content-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--content-padding);
   background-color: white;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--box-shadow);
-  padding: var(--content-padding);
-  margin-bottom: var(--spacing-xxl);
 }
 
 /* 全局提示 */
 .global-alert {
   position: fixed;
-  top: calc(var(--header-height) + var(--breadcrumb-height) + var(--spacing-md));
+  top: calc(var(--header-height) + var(--spacing-md));
   right: var(--spacing-md);
   z-index: 1050;
   min-width: 300px;
@@ -267,33 +251,36 @@ body {
   z-index: 2000;
 }
 
-/* 容器類 */
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--content-padding);
-}
-
-.container-fluid {
-  width: 100%;
-  padding: 0 var(--content-padding);
-}
-
 /* 響應式設計 */
+@media (min-width: 1400px) {
+  :root {
+    --breadcrumb-margin: 100px;
+    --content-padding: 40px;
+  }
+
+  .content-container {
+    max-width: 1320px;
+  }
+}
+
 @media (max-width: 1200px) {
-  .container {
+  :root {
+    --breadcrumb-margin: 80px;
+    --content-padding: 30px;
+  }
+
+  .content-container {
     max-width: 1140px;
   }
 }
 
 @media (max-width: 992px) {
   :root {
-    --content-padding: 20px;
-    --breadcrumb-margin: 30px;
+    --breadcrumb-margin: 60px;
+    --content-padding: 25px;
   }
 
-  .container {
+  .content-container {
     max-width: 960px;
   }
 }
@@ -302,11 +289,11 @@ body {
   :root {
     --header-height: 56px;
     --breadcrumb-height: 36px;
-    --breadcrumb-margin: 20px;
-    --content-padding: 15px;
+    --breadcrumb-margin: 50px;
+    --content-padding: 20px;
   }
 
-  .container {
+  .content-container {
     max-width: 720px;
   }
 
@@ -319,16 +306,13 @@ body {
 
 @media (max-width: 576px) {
   :root {
-    --breadcrumb-margin: 15px;
-    --content-padding: 10px;
-  }
-
-  .container {
-    width: 100%;
+    --breadcrumb-margin: 40px;
+    --content-padding: 15px;
   }
 
   .content-container {
-    padding: var(--spacing-md);
+    max-width: 100%;
+    border-radius: var(--border-radius-md);
   }
 }
 
@@ -338,10 +322,10 @@ body {
 .align-items-center { align-items: center; }
 .justify-content-between { justify-content: space-between; }
 .w-100 { width: 100%; }
-.mb-3 { margin-bottom: 1rem; }
-.mt-3 { margin-top: 1rem; }
-.px-4 { padding-left: 1.5rem; padding-right: 1.5rem; }
-.py-4 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mt-3 { margin-top: var(--spacing-md); }
+.px-4 { padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
+.py-4 { padding-top: var(--spacing-lg); padding-bottom: var(--spacing-lg); }
 .text-center { text-align: center; }
 .position-relative { position: relative; }
 .overflow-hidden { overflow: hidden; }
