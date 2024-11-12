@@ -1,5 +1,12 @@
 <template>
-  <div class="sidebar" :class="{ 'sidebar-collapsed': isCollapsed }">
+  <div
+      class="sidebar"
+      :class="{
+      'collapsed': isCollapsed,
+      'mobile': isMobile,
+      'show': showMobileSidebar
+    }"
+  >
     <!-- 側邊欄頂部 -->
     <div class="sidebar-header">
       <button class="btn collapse-btn" @click="toggleSidebar">
@@ -151,7 +158,7 @@
     <!-- 底部功能區 -->
     <div class="sidebar-footer">
       <template v-if="isLoggedIn">
-        <router-link to="/settings" class="btn btn-link me-2" :title="isCollapsed ? '設定' : ''">
+        <router-link to="/settings" class="btn btn-link" :title="isCollapsed ? '設定' : ''">
           <i class="fas fa-cog"></i>
           <span v-if="!isCollapsed">設定</span>
         </router-link>
@@ -169,8 +176,9 @@
     </div>
   </div>
 </template>
+
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 
@@ -180,7 +188,11 @@ export default {
   setup() {
     const store = useStore()
     const router = useRouter()
+
+    // 響應式狀態
     const isCollapsed = ref(false)
+    const isMobile = ref(false)
+    const showMobileSidebar = ref(false)
 
     // 計算屬性
     const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
@@ -191,10 +203,12 @@ export default {
 
     // 切換側邊欄
     const toggleSidebar = () => {
-      isCollapsed.value = !isCollapsed.value
-      localStorage.setItem('sidebarState', isCollapsed.value ? 'collapsed' : 'expanded')
-      // 觸發視窗重新計算大小的事件
-      window.dispatchEvent(new Event('resize'))
+      if (isMobile.value) {
+        showMobileSidebar.value = !showMobileSidebar.value
+      } else {
+        isCollapsed.value = !isCollapsed.value
+        localStorage.setItem('sidebarState', isCollapsed.value ? 'collapsed' : 'expanded')
+      }
     }
 
     // 登出
@@ -207,26 +221,31 @@ export default {
       }
     }
 
-    // 初始化側邊欄狀態
-    const initSidebarState = () => {
-      const savedState = localStorage.getItem('sidebarState')
-      if (savedState) {
+    // 處理視窗大小變化
+    const handleResize = () => {
+      isMobile.value = window.innerWidth <= 768
+      if (isMobile.value) {
+        showMobileSidebar.value = false
+      } else {
+        const savedState = localStorage.getItem('sidebarState')
         isCollapsed.value = savedState === 'collapsed'
       }
     }
 
+    // 生命週期鉤子
     onMounted(() => {
-      initSidebarState()
-      // 監聽路由變化，在移動裝置上自動收合側邊欄
-      if (window.innerWidth <= 768) {
-        router.afterEach(() => {
-          isCollapsed.value = true
-        })
-      }
+      handleResize()
+      window.addEventListener('resize', handleResize)
+    })
+
+    onUnmounted(() => {
+      window.removeEventListener('resize', handleResize)
     })
 
     return {
       isCollapsed,
+      isMobile,
+      showMobileSidebar,
       isLoggedIn,
       isAdmin,
       userName,
@@ -238,250 +257,256 @@ export default {
   }
 }
 </script>
-
 <style scoped>
+/* Sidebar 基本樣式 */
 .sidebar {
-  width: 280px;
-  height: calc(100vh - 60px);
-  background-color: #ffffff;
-  border-right: 1px solid #dee2e6;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: white;
+  border-right: 1px solid var(--border-color);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   position: fixed;
-  top: 60px;
+  top: var(--header-height);
   left: 0;
   z-index: 1020;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
-.sidebar-collapsed {
-  width: 70px;
+/* 收合狀態 */
+.sidebar.collapsed {
+  width: var(--sidebar-collapsed-width);
 }
 
+/* 移動端狀態 */
+.sidebar.mobile {
+  transform: translateX(-100%);
+  box-shadow: var(--box-shadow);
+}
+
+.sidebar.mobile.show {
+  transform: translateX(0);
+}
+
+/* 頂部區域 */
 .sidebar-header {
-  padding: 1rem;
+  padding: var(--spacing-md);
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   height: 60px;
-  border-bottom: 1px solid #dee2e6;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .collapse-btn {
   background: none;
   border: none;
-  color: #6c757d;
-  padding: 0.5rem;
-  transition: color 0.3s ease;
+  color: var(--secondary-color);
+  padding: var(--spacing-sm);
   cursor: pointer;
+  transition: color 0.3s ease;
 }
 
 .collapse-btn:hover {
-  color: #343a40;
+  color: var(--primary-color);
 }
 
+/* 用戶資訊區 */
 .user-info {
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
 
 .user-avatar img {
   width: 40px;
   height: 40px;
+  border-radius: 50%;
   object-fit: cover;
-  border: 2px solid #fff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 2px solid white;
+  box-shadow: var(--box-shadow);
 }
 
 .user-details h6 {
   font-size: 0.9rem;
-  color: #343a40;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--spacing-xs);
 }
 
 .user-details small {
-  font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--text-light);
 }
 
+/* 導航選單 */
 .sidebar-nav {
   flex: 1;
+  padding: var(--spacing-md) 0;
   overflow-y: auto;
-  padding: 1rem 0;
-  /* 在非手機版隱藏滾動條 */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE and Edge */
-}
-
-/* 在非手機版隱藏滾動條 */
-.sidebar-nav::-webkit-scrollbar {
-  display: none;
 }
 
 .nav-section {
-  margin-top: 1rem;
+  margin: var(--spacing-md) 0;
 }
 
 .nav-divider {
-  padding: 0.5rem 1rem;
+  padding: var(--spacing-sm) var(--spacing-md);
   font-size: 0.75rem;
-  color: #6c757d;
+  color: var(--text-light);
   text-transform: uppercase;
   letter-spacing: 1px;
-  background-color: #f8f9fa;
-  margin: 0.5rem 0;
+  background-color: var(--bg-light);
+}
+
+.nav-item {
+  margin: var(--spacing-xs) 0;
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
-  color: #495057;
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-color);
   text-decoration: none;
   transition: all 0.3s ease;
-  border-radius: 0.25rem;
-  margin: 0.125rem 0.5rem;
+  border-radius: var(--border-radius-sm);
+  margin: 0 var(--spacing-sm);
 }
 
 .nav-link:hover {
-  background-color: #f8f9fa;
-  color: #0d6efd;
+  background-color: rgba(var(--primary-color-rgb), 0.1);
+  color: var(--primary-color);
 }
 
 .nav-link.active {
-  background-color: #e9ecef;
-  color: #0d6efd;
-  font-weight: 500;
+  background-color: var(--primary-color);
+  color: white;
 }
 
 .nav-link i {
-  width: 20px;
+  width: 24px;
   text-align: center;
-  margin-right: 10px;
   font-size: 1.1rem;
+  margin-right: var(--spacing-md);
 }
 
+/* 底部功能區 */
 .sidebar-footer {
-  padding: 1rem;
-  border-top: 1px solid #dee2e6;
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .btn-link {
-  color: #6c757d;
+  color: var(--text-light);
   text-decoration: none;
-  padding: 0.5rem;
-  transition: color 0.3s ease;
+  padding: var(--spacing-sm);
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .btn-link:hover {
-  color: #343a40;
+  color: var(--primary-color);
 }
 
-/* 手機版響應式設計 */
-@media (max-width: 768px) {
+/* 響應式設計 */
+@media (max-width: 991.98px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .sidebar.collapsed {
+    transform: translateX(-100%);
+  }
+}
+
+@media (max-width: 767.98px) {
   .sidebar {
     width: 100%;
     max-width: 280px;
-    transform: translateX(0);
-    box-shadow: 2px 0 8px rgba(0,0,0,0.1);
-    left: -100%; /* 改為使用 left 控制顯示隱藏 */
-    transition: left 0.3s ease; /* 改為過渡 left 屬性 */
+    transform: translateX(-100%);
   }
 
-  /* 顯示滾動條 */
-  .sidebar-nav {
-    scrollbar-width: thin;
-    -ms-overflow-style: auto;
-  }
-
-  .sidebar-nav::-webkit-scrollbar {
-    display: block;
-    width: 4px;
-  }
-
-  .sidebar-nav::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 2px;
-  }
-
-  .sidebar-nav::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 2px;
-  }
-
-  .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: #555;
-  }
-
-  /* 選單展開時的狀態 */
   .sidebar.show {
-    left: 0;
+    transform: translateX(0);
   }
 
-  .sidebar-collapsed {
-    left: -100%;
-  }
-
-  /* 增加遮罩層 */
-  .sidebar::before {
-    content: '';
+  .sidebar-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1015;
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s ease;
-    z-index: -1;
   }
 
-  .sidebar.show::before {
+  .sidebar.show + .sidebar-overlay {
     opacity: 1;
     visibility: visible;
   }
-}
 
-/* 平板直向 */
-@media (min-width: 769px) and (max-width: 1024px) {
-  .sidebar {
-    width: 240px;
-  }
-
-  .sidebar-collapsed {
-    width: 70px;
+  .nav-link {
+    padding: var(--spacing-md);
   }
 }
 
-/* 平板橫向和小型筆電 */
-@media (min-width: 1025px) and (max-width: 1366px) {
-  .sidebar {
-    width: 260px;
-  }
-
-  .sidebar-collapsed {
-    width: 70px;
-  }
+/* 滾動條美化 */
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
 }
 
-/* 大型螢幕 */
-@media (min-width: 1367px) {
-  .sidebar {
-    width: 280px;
-  }
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
 
-  .sidebar-collapsed {
-    width: 70px;
-  }
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--border-radius-sm);
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary-color);
+}
+
+/* 動畫效果 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 工具提示 */
+[title] {
+  position: relative;
+}
+
+[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-left: 10px;
+  z-index: 1000;
 }
 </style>
