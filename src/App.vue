@@ -2,11 +2,7 @@
   <div id="app">
     <!-- Header -->
     <Header v-if="showHeader" class="app-header" />
-    <!-- Breadcrumb -->
-    <nav v-if="showBreadcrumb" class="breadcrumb">
-      <router-link to="/"></router-link>
-      <!-- Additional breadcrumb links here -->
-    </nav>
+
     <!-- Main Content -->
     <main class="main-content">
       <!-- Loading Overlay -->
@@ -23,8 +19,11 @@
           @close="$store.dispatch('clearNotification')"
           class="global-alert"
       />
-
-
+      <!-- Breadcrumb -->
+      <nav v-if="showBreadcrumb" class="breadcrumb">
+        <router-link to="/"></router-link>
+        <!-- Additional breadcrumb links here -->
+      </nav>
       <!-- Router View -->
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
@@ -88,7 +87,7 @@ export default {
 </script>
 
 <style>
-/* 全局樣式 */
+/* 全局樣式變量 */
 :root {
   /* 主題顏色 */
   --primary-color: #007bff;
@@ -108,7 +107,7 @@ export default {
   /* 布局常量 */
   --header-height: 60px;
   --breadcrumb-height: 40px;
-  --breadcrumb-margin: 80px;
+  --breadcrumb-margin: 40px;
   --footer-height: 60px;
   --content-padding: 30px;
 
@@ -127,6 +126,7 @@ export default {
 
   /* 陰影 */
   --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --box-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* 基礎重置 */
@@ -155,6 +155,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  position: relative;
 }
 
 /* Header */
@@ -170,7 +171,7 @@ body {
 }
 
 /* Breadcrumb */
-.breadcrumb {
+.breadcrumb-container {
   position: fixed;
   top: var(--header-height);
   left: 0;
@@ -179,10 +180,41 @@ body {
   background-color: white;
   border-bottom: 1px solid var(--border-color);
   z-index: 1020;
-  padding: 0.5rem var(--content-padding);
+  padding: 0;
+}
+
+.breadcrumb {
   margin: 0;
+  padding: 0.5rem var(--content-padding);
+  list-style: none;
   display: flex;
   align-items: center;
+  background-color: transparent;
+}
+
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb-item a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb-item a:hover {
+  color: var(--primary-dark);
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: ">";
+  padding: 0 0.5rem;
+  color: var(--text-light);
+}
+
+.breadcrumb-item.active {
+  color: var(--text-light);
 }
 
 /* 主要內容區域 */
@@ -194,6 +226,7 @@ body {
   min-height: calc(100vh - var(--header-height) - var(--footer-height));
   overflow-x: hidden;
   overflow-y: auto;
+  margin-top: 50px;
 }
 
 /* 內容容器 */
@@ -214,6 +247,10 @@ body {
   right: var(--spacing-md);
   z-index: 1050;
   min-width: 300px;
+  padding: 1rem;
+  border-radius: var(--border-radius-md);
+  background-color: white;
+  box-shadow: var(--box-shadow-lg);
 }
 
 /* Footer */
@@ -251,15 +288,24 @@ body {
   z-index: 2000;
 }
 
+/* 容器類 */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--content-padding);
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 var(--content-padding);
+}
+
 /* 響應式設計 */
 @media (min-width: 1400px) {
   :root {
     --breadcrumb-margin: 100px;
     --content-padding: 40px;
-  }
-
-  .content-container {
-    max-width: 1320px;
   }
 }
 
@@ -268,20 +314,12 @@ body {
     --breadcrumb-margin: 80px;
     --content-padding: 30px;
   }
-
-  .content-container {
-    max-width: 1140px;
-  }
 }
 
 @media (max-width: 992px) {
   :root {
     --breadcrumb-margin: 60px;
     --content-padding: 25px;
-  }
-
-  .content-container {
-    max-width: 960px;
   }
 }
 
@@ -292,16 +330,6 @@ body {
     --breadcrumb-margin: 50px;
     --content-padding: 20px;
   }
-
-  .content-container {
-    max-width: 720px;
-  }
-
-  .global-alert {
-    width: calc(100% - 2rem);
-    right: 1rem;
-    min-width: auto;
-  }
 }
 
 @media (max-width: 576px) {
@@ -309,24 +337,32 @@ body {
     --breadcrumb-margin: 40px;
     --content-padding: 15px;
   }
-
-  .content-container {
-    max-width: 100%;
-    border-radius: var(--border-radius-md);
-  }
 }
-
 /* 工具類 */
 .d-flex { display: flex; }
 .flex-column { flex-direction: column; }
 .align-items-center { align-items: center; }
 .justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
 .w-100 { width: 100%; }
+.h-100 { height: 100%; }
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
 .mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
 .mt-3 { margin-top: var(--spacing-md); }
-.px-4 { padding-left: var(--spacing-lg); padding-right: var(--spacing-lg); }
-.py-4 { padding-top: var(--spacing-lg); padding-bottom: var(--spacing-lg); }
+.mt-4 { margin-top: var(--spacing-lg); }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.p-1 { padding: var(--spacing-xs); }
+.p-2 { padding: var(--spacing-sm); }
+.p-3 { padding: var(--spacing-md); }
+.p-4 { padding: var(--spacing-lg); }
 .text-center { text-align: center; }
+.text-right { text-align: right; }
 .position-relative { position: relative; }
+.position-absolute { position: absolute; }
 .overflow-hidden { overflow: hidden; }
+.cursor-pointer { cursor: pointer; }
 </style>
