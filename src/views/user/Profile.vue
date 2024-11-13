@@ -122,9 +122,42 @@
 <script>
 import { ref, reactive, onMounted } from 'vue'
 import { useStore } from 'vuex'
-
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+
+// 模擬用戶數據
+const mockUsers = [
+  {
+    id: 1,
+    email: 'user@example.com',
+    password: 'user123456',
+    name: '一般會員',
+    role: 'ROLE_USER',
+    avatar: 'https://i.pravatar.cc/150?img=1',
+    phone: '0912345678',
+    birthday: '1990-01-01',
+    gender: 'MALE',
+    address: '台中市西屯區文華路100號',
+    wallet: {
+      balance: 1000
+    }
+  },
+  {
+    id: 2,
+    email: 'admin@example.com',
+    password: 'admin123456',
+    name: '系統管理員',
+    role: 'ROLE_ADMIN',
+    avatar: 'https://i.pravatar.cc/150?img=2',
+    phone: '0987654321',
+    birthday: '1985-12-31',
+    gender: 'FEMALE',
+    address: '台中市西屯區文華路200號',
+    wallet: {
+      balance: 5000
+    }
+  }
+]
 
 export default {
   name: 'Profile',
@@ -136,11 +169,11 @@ export default {
 
   setup() {
     const store = useStore()
-
     const isLoading = ref(false)
     const error = ref(null)
     const isUpdating = ref(false)
     const updateSuccess = ref(false)
+    const useMockData = ref(true) // 控制是否使用假資料
 
     const profileData = reactive({
       name: '',
@@ -155,12 +188,30 @@ export default {
       try {
         isLoading.value = true
         error.value = null
-        const response = await store.dispatch('user/fetchProfile')
-        Object.assign(profileData, response.data)
+
+        if (useMockData.value) {
+          // 使用假資料
+          const mockUser = mockUsers[0] // 使用第一個用戶作為範例
+          setTimeout(() => {
+            Object.assign(profileData, {
+              name: mockUser.name,
+              email: mockUser.email,
+              phone: mockUser.phone,
+              birthday: mockUser.birthday,
+              gender: mockUser.gender,
+              address: mockUser.address
+            })
+            isLoading.value = false
+          }, 1000) // 模擬加載時間
+        } else {
+          // 使用真實 API
+          const response = await store.dispatch('user/fetchProfile')
+          Object.assign(profileData, response.data)
+          isLoading.value = false
+        }
       } catch (err) {
         error.value = '載入個人資料失敗，請稍後再試'
         console.error('Error fetching profile:', err)
-      } finally {
         isLoading.value = false
       }
     }
@@ -169,15 +220,28 @@ export default {
       try {
         isUpdating.value = true
         updateSuccess.value = false
-        await store.dispatch('user/updateProfile', profileData)
-        updateSuccess.value = true
-        setTimeout(() => {
-          updateSuccess.value = false
-        }, 3000)
+
+        if (useMockData.value) {
+          // 模擬更新成功
+          setTimeout(() => {
+            updateSuccess.value = true
+            isUpdating.value = false
+            setTimeout(() => {
+              updateSuccess.value = false
+            }, 3000)
+          }, 1000)
+        } else {
+          // 使用真實 API
+          await store.dispatch('user/updateProfile', profileData)
+          updateSuccess.value = true
+          setTimeout(() => {
+            updateSuccess.value = false
+          }, 3000)
+          isUpdating.value = false
+        }
       } catch (err) {
         error.value = '更新個人資料失敗，請稍後再試'
         console.error('Error updating profile:', err)
-      } finally {
         isUpdating.value = false
       }
     }
