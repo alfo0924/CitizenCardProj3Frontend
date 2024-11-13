@@ -13,8 +13,76 @@
 
       <!-- 儀表板內容 -->
       <div v-else class="dashboard-content">
-        <h1 class="dashboard-title mb-4">管理員儀表板</h1>
+        <h1 class="dashboard-title m-4">管理員儀表板</h1>
 
+        <div class="row">
+          <!-- 管理功能快速入口 -->
+          <div class="management-shortcuts mt-4 justify-content-center align-items-center text-center">
+            <h3>後台管理</h3>
+            <div class="row g-4 justify-content-center align-items-center mt-2 mb-5 ">
+              <div class="col-md-3">
+                <router-link to="/admin/MovieManagement" class="management-card">
+                  <div class="card">
+                    <div class="card-body">
+                      <i class="fas fa-film"></i>
+                      <h4>電影管理</h4>
+                      <p>管理電影資訊與場次</p>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+
+              <div class="col-md-3">
+                <router-link to="/admin/UserManagement" class="management-card">
+                  <div class="card">
+                    <div class="card-body">
+                      <i class="fas fa-users"></i>
+                      <h4>會員管理</h4>
+                      <p>管理會員資料與權限</p>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+
+              <div class="col-md-3">
+                <router-link to="/admin/DiscountManagement" class="management-card">
+                  <div class="card">
+                    <div class="card-body">
+                      <i class="fas fa-tags"></i>
+                      <h4>優惠管理</h4>
+                      <p>管理優惠券與折扣</p>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+
+              <div class="col-md-3">
+                <router-link to="/admin/StoreManagement" class="management-card">
+                  <div class="card">
+                    <div class="card-body">
+                      <i class="fas fa-store"></i>
+                      <h4>商店管理</h4>
+                      <p>管理特約商店</p>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+
+              <div class="col-md-3">
+                <router-link to="/admin/PromotionManagement" class="management-card">
+                  <div class="card">
+                    <div class="card-body">
+                      <i class="fas fa-bullhorn"></i>
+                      <h4>活動管理</h4>
+                      <p>管理優惠活動</p>
+                    </div>
+                  </div>
+                </router-link>
+              </div>
+
+            </div>
+          </div>
+        </div>
         <!-- 統計卡片 -->
         <div class="row g-4 mb-4">
           <div class="col-md-3">
@@ -144,6 +212,7 @@
       </div>
     </div>
   </div>
+
 </template>
 
 
