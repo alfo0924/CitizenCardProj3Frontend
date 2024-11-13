@@ -184,14 +184,26 @@ export default {
       address: ''
     })
 
+    // 獲取當前用戶角色
+    const getCurrentUserRole = () => {
+      return store.getters['auth/isAdmin'] ? 'ROLE_ADMIN' : 'ROLE_USER'
+    }
+
+    // 根據角色獲取對應的模擬數據
+    const getMockUserByRole = () => {
+      const role = getCurrentUserRole()
+      return mockUsers.find(user => user.role === role) || mockUsers[0]
+    }
+
     const fetchProfile = async () => {
       try {
         isLoading.value = true
         error.value = null
 
         if (useMockData.value) {
-          // 使用假資料
-          const mockUser = mockUsers[0] // 使用第一個用戶作為範例
+          // 使用假資料，根據用戶角色選擇對應數據
+          const mockUser = getMockUserByRole()
+
           setTimeout(() => {
             Object.assign(profileData, {
               name: mockUser.name,
@@ -206,7 +218,11 @@ export default {
         } else {
           // 使用真實 API
           const response = await store.dispatch('user/fetchProfile')
-          Object.assign(profileData, response.data)
+          if (response.success) {
+            Object.assign(profileData, response.data)
+          } else {
+            throw new Error(response.message || '獲取資料失敗')
+          }
           isLoading.value = false
         }
       } catch (err) {
@@ -223,20 +239,35 @@ export default {
 
         if (useMockData.value) {
           // 模擬更新成功
+          // 獲取當前用戶模擬數據
+          const mockUser = getMockUserByRole()
+
+          // 更新模擬數據
+          Object.assign(mockUser, {
+            ...mockUser,
+            ...profileData
+          })
+
           setTimeout(() => {
             updateSuccess.value = true
             isUpdating.value = false
+
+            // 3秒後隱藏成功提示
             setTimeout(() => {
               updateSuccess.value = false
             }, 3000)
           }, 1000)
         } else {
           // 使用真實 API
-          await store.dispatch('user/updateProfile', profileData)
-          updateSuccess.value = true
-          setTimeout(() => {
-            updateSuccess.value = false
-          }, 3000)
+          const response = await store.dispatch('user/updateProfile', profileData)
+          if (response.success) {
+            updateSuccess.value = true
+            setTimeout(() => {
+              updateSuccess.value = false
+            }, 3000)
+          } else {
+            throw new Error(response.message || '更新失敗')
+          }
           isUpdating.value = false
         }
       } catch (err) {
@@ -246,8 +277,42 @@ export default {
       }
     }
 
-    onMounted(() => {
-      fetchProfile()
+    // 表單驗證
+    const validateForm = () => {
+      // 可以添加更多驗證規則
+      if (!profileData.name.trim()) {
+        error.value = '請輸入姓名'
+        return false
+      }
+      if (!profileData.phone.trim()) {
+        error.value = '請輸入手機號碼'
+        return false
+      }
+      // 手機號碼格式驗證
+      const phoneRegex = /^09\d{8}$/
+      if (!phoneRegex.test(profileData.phone)) {
+        error.value = '請輸入有效的手機號碼'
+        return false
+      }
+      return true
+    }
+
+    // 監聽後端 API 狀態
+    const checkApiAvailability = async () => {
+      try {
+        const response = await store.dispatch('checkApiStatus')
+        useMockData.value = !response.success
+      } catch (err) {
+        console.error('API check failed:', err)
+        useMockData.value = true
+      }
+    }
+
+    onMounted(async () => {
+      // 檢查 API 可用性
+      await checkApiAvailability()
+      // 獲取個人資料
+      await fetchProfile()
     })
 
     return {
@@ -256,7 +321,8 @@ export default {
       isUpdating,
       updateSuccess,
       profileData,
-      updateProfile
+      updateProfile,
+      validateForm
     }
   }
 }
