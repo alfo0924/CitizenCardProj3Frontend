@@ -112,12 +112,12 @@ export default {
   --content-padding: 30px;
 
   /* 間距 */
-  --spacing-xs: 1rem;
-  --spacing-sm: 1.5rem;
-  --spacing-md: 2rem;
-  --spacing-lg: 2.5rem;
-  --spacing-xl: 3rem;
-  --spacing-xxl: 4rem;
+  --spacing-xs: 0.25 rem;
+  --spacing-sm: 1 rem;
+  --spacing-md: 1.5 rem;
+  --spacing-lg: 2 rem;
+  --spacing-xl: 2.5 rem;
+  --spacing-xxl: 3 rem;
 
   /* 圓角 */
   --border-radius-sm: 0.25rem;
@@ -305,21 +305,21 @@ body {
 /* 響應式設計 */
 @media (min-width: 1400px) {
   :root {
-    --breadcrumb-margin: 100px;
+    --breadcrumb-margin: 65px;
     --content-padding: 40px;
   }
 }
 
 @media (max-width: 1200px) {
   :root {
-    --breadcrumb-margin: 80px;
+    --breadcrumb-margin: 55px;
     --content-padding: 30px;
   }
 }
 
 @media (max-width: 992px) {
   :root {
-    --breadcrumb-margin: 60px;
+    --breadcrumb-margin: 45px;
     --content-padding: 25px;
   }
 }
@@ -328,15 +328,15 @@ body {
   :root {
     --header-height: 56px;
     --breadcrumb-height: 36px;
-    --breadcrumb-margin: 50px;
+    --breadcrumb-margin: 35px;
     --content-padding: 20px;
   }
 }
 
 @media (max-width: 576px) {
   :root {
-    --breadcrumb-margin: 40px;
-    --content-padding: 15px;
+    --breadcrumb-margin: 15px;
+    --content-padding: 5px;
   }
 }
 /* 工具類 */
