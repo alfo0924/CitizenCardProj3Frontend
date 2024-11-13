@@ -14,6 +14,25 @@
       <!-- 儀表板內容 -->
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title mb-4">管理員儀表板</h1>
+        <!-- 圖表區域 -->
+        <div class="row g-4 ">
+          <!-- 每日營收圖表 -->
+          <div class="col-md-8 p-5 ">
+            <div class="chart-card">
+              <h3>每日營收趨勢</h3>
+              <canvas ref="revenueChartRef"></canvas>
+            </div>
+          </div>
+
+          <!-- 會員分析圖表 -->
+          <div class="col-md-4 p-5 mb-5">
+            <div class="chart-card">
+              <h3>會員分析</h3>
+              <canvas ref="userChartRef"></canvas>
+            </div>
+          </div>
+        </div>
+
 
         <!-- 統計卡片 -->
         <div class="row g-4 mb-4">
@@ -146,13 +165,84 @@
   </div>
 </template>
 
+
+
+
 <script>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
 import Chart from 'chart.js/auto'
-
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+
+// 模擬數據
+const mockData = {
+  stats: {
+    totalUsers: 1250,
+    newUsers: 48,
+    monthlyBookings: 326,
+    bookingGrowth: 12.5,
+    monthlyRevenue: 158900,
+    revenueGrowth: 8.3,
+    discountUsage: 65,
+    discountGrowth: 5.2
+  },
+  revenueData: {
+    labels: ['1/1', '1/2', '1/3', '1/4', '1/5', '1/6', '1/7'],
+    data: [25000, 32000, 28000, 35000, 40000, 38000, 45000]
+  },
+  userData: {
+    labels: ['新會員', '一般會員', '進階會員', 'VIP會員'],
+    data: [250, 650, 280, 70]
+  },
+  recentOrders: [
+    {
+      id: 1,
+      orderNumber: 'ORD20240101001',
+      userName: '王小明',
+      movieTitle: '蜘蛛人：穿越新宇宙',
+      amount: 350,
+      status: 'COMPLETED',
+      createdAt: '2024-01-01T10:30:00'
+    },
+    {
+      id: 2,
+      orderNumber: 'ORD20240101002',
+      userName: '李小華',
+      movieTitle: '玩具總動員 4',
+      amount: 280,
+      status: 'PENDING',
+      createdAt: '2024-01-01T11:15:00'
+    },
+    {
+      id: 3,
+      orderNumber: 'ORD20240101003',
+      userName: '張小美',
+      movieTitle: '魔物獵人',
+      amount: 320,
+      status: 'COMPLETED',
+      createdAt: '2024-01-01T13:45:00'
+    },
+    {
+      id: 4,
+      orderNumber: 'ORD20240101004',
+      userName: '陳大寶',
+      movieTitle: '復仇者聯盟：終局之戰',
+      amount: 380,
+      status: 'CANCELLED',
+      createdAt: '2024-01-01T14:20:00'
+    },
+    {
+      id: 5,
+      orderNumber: 'ORD20240101005',
+      userName: '林小玉',
+      movieTitle: '哥吉拉大戰金剛',
+      amount: 300,
+      status: 'COMPLETED',
+      createdAt: '2024-01-01T15:10:00'
+    }
+  ]
+}
 
 export default {
   name: 'AdminDashboard',
@@ -164,10 +254,13 @@ export default {
 
   setup() {
     const store = useStore()
+    const revenueChartRef = ref(null)
+    const userChartRef = ref(null)
     const revenueChart = ref(null)
     const userChart = ref(null)
     const isLoading = ref(false)
     const error = ref(null)
+    const useMockData = ref(true) // 控制是否使用假資料
 
     // 統計數據
     const stats = ref({
@@ -186,44 +279,76 @@ export default {
 
     // 初始化圖表
     const initCharts = (revenueData, userData) => {
-      // 營收趨勢圖
-      new Chart(revenueChart.value, {
-        type: 'line',
-        data: {
-          labels: revenueData.labels,
-          datasets: [{
-            label: '每日營收',
-            data: revenueData.data,
-            borderColor: '#4CAF50',
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
+      try {
+        // 清除舊的圖表實例
+        if (revenueChart.value) {
+          revenueChart.value.destroy()
         }
-      })
+        if (userChart.value) {
+          userChart.value.destroy()
+        }
 
-      // 會員分析圖
-      new Chart(userChart.value, {
-        type: 'doughnut',
-        data: {
-          labels: userData.labels,
-          datasets: [{
-            data: userData.data,
-            backgroundColor: [
-              '#4CAF50',
-              '#2196F3',
-              '#FFC107',
-              '#9C27B0'
-            ]
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false
-        }
-      })
+        // 創建營收趨勢圖
+        const revenueCtx = revenueChartRef.value.getContext('2d')
+        revenueChart.value = new Chart(revenueCtx, {
+          type: 'line',
+          data: {
+            labels: revenueData.labels,
+            datasets: [{
+              label: '每日營收',
+              data: revenueData.data,
+              borderColor: '#4CAF50',
+              tension: 0.4,
+              fill: false
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false
+              }
+            }
+          }
+        })
+
+        // 創建會員分析圖
+        const userCtx = userChartRef.value.getContext('2d')
+        userChart.value = new Chart(userCtx, {
+          type: 'doughnut',
+          data: {
+            labels: userData.labels,
+            datasets: [{
+              data: userData.data,
+              backgroundColor: [
+                '#4CAF50',
+                '#2196F3',
+                '#FFC107',
+                '#9C27B0'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false
+          }
+        })
+      } catch (err) {
+        console.error('Chart initialization error:', err)
+        error.value = '圖表初始化失敗'
+      }
+    }
+
+    // 檢查 API 可用性
+    const checkApiAvailability = async () => {
+      try {
+        const response = await store.dispatch('admin/checkApiStatus')
+        useMockData.value = !response.success
+      } catch (err) {
+        console.error('API check failed:', err)
+        useMockData.value = true
+      }
     }
 
     // 獲取儀表板數據
@@ -232,59 +357,92 @@ export default {
         isLoading.value = true
         error.value = null
 
-        const response = await store.dispatch('admin/fetchDashboardData')
-        stats.value = response.stats
-        recentOrders.value = response.recentOrders
-
-        initCharts(response.revenueData, response.userData)
+        if (useMockData.value) {
+          // 使用模擬數據
+          setTimeout(() => {
+            stats.value = mockData.stats
+            recentOrders.value = mockData.recentOrders
+            initCharts(mockData.revenueData, mockData.userData)
+            isLoading.value = false
+          }, 1000)
+        } else {
+          // 使用真實 API
+          const response = await store.dispatch('admin/fetchDashboardData')
+          if (response.success) {
+            stats.value = response.stats
+            recentOrders.value = response.recentOrders
+            initCharts(response.revenueData, response.userData)
+          } else {
+            throw new Error(response.message || '獲取數據失敗')
+          }
+          isLoading.value = false
+        }
       } catch (err) {
-        error.value = '載入儀表板數據失敗'
+        error.value = '載入儀表板數據失敗，請稍後再試'
         console.error('Dashboard error:', err)
-      } finally {
         isLoading.value = false
       }
     }
 
     // 格式化數字
     const formatNumber = (number) => {
+      if (typeof number !== 'number') return '0'
       return number.toLocaleString('zh-TW')
     }
 
     // 格式化日期時間
     const formatDateTime = (datetime) => {
+      if (!datetime) return ''
       return new Date(datetime).toLocaleString('zh-TW')
     }
 
     // 獲取訂單狀態樣式
     const getOrderStatusClass = (status) => {
       switch (status) {
-        case 'COMPLETED':
-          return 'bg-success'
-        case 'PENDING':
-          return 'bg-warning'
-        case 'CANCELLED':
-          return 'bg-danger'
-        default:
-          return 'bg-secondary'
+      case 'COMPLETED':
+        return 'bg-success'
+      case 'PENDING':
+        return 'bg-warning'
+      case 'CANCELLED':
+        return 'bg-danger'
+      default:
+        return 'bg-secondary'
       }
     }
 
     // 獲取訂單狀態文字
     const getOrderStatusText = (status) => {
       switch (status) {
-        case 'COMPLETED':
-          return '已完成'
-        case 'PENDING':
-          return '處理中'
-        case 'CANCELLED':
-          return '已取消'
-        default:
-          return '未知'
+      case 'COMPLETED':
+        return '已完成'
+      case 'PENDING':
+        return '處理中'
+      case 'CANCELLED':
+        return '已取消'
+      default:
+        return '未知'
       }
     }
 
-    onMounted(() => {
-      fetchDashboardData()
+    // 清理圖表
+    const cleanupCharts = () => {
+      if (revenueChart.value) {
+        revenueChart.value.destroy()
+        revenueChart.value = null
+      }
+      if (userChart.value) {
+        userChart.value.destroy()
+        userChart.value = null
+      }
+    }
+
+    onMounted(async () => {
+      await checkApiAvailability()
+      await fetchDashboardData()
+    })
+
+    onUnmounted(() => {
+      cleanupCharts()
     })
 
     return {
@@ -292,8 +450,8 @@ export default {
       error,
       stats,
       recentOrders,
-      revenueChart,
-      userChart,
+      revenueChartRef,
+      userChartRef,
       formatNumber,
       formatDateTime,
       getOrderStatusClass,
@@ -302,6 +460,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 .admin-dashboard {
