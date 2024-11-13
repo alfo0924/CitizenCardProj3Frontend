@@ -2,6 +2,7 @@
   <div>
     <!-- Spacer 區域顯示背景色 -->
     <div class="spacer"></div>
+
     <!-- 主選單 Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
       <div class="container d-flex justify-content-between align-items-center">
@@ -15,8 +16,13 @@
         </router-link>
 
         <!-- Toggler Button -->
-        <button class="navbar-toggler" type="button" @click="toggleNav" aria-controls="navbarNav"
-                :aria-expanded="!isNavCollapsed" aria-label="Toggle navigation">
+        <button
+            class="navbar-toggler"
+            type="button"
+            @click="toggleNav"
+            :aria-expanded="!isNavCollapsed"
+            aria-label="Toggle navigation"
+        >
           <span class="navbar-toggler-icon"></span>
         </button>
 
@@ -24,13 +30,31 @@
         <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
           <ul class="navbar-nav mx-auto">
             <li class="nav-item dropdown">
-              <a href="#" class="nav-link dropdown-toggle" id="discountsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">好康優惠</a>
+              <a
+                  href="#"
+                  class="nav-link dropdown-toggle"
+                  id="discountsDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+              >
+                好康優惠
+              </a>
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="discountsDropdown">
                 <router-link class="dropdown-item" to="/discountstore">特約商店</router-link>
               </ul>
             </li>
             <li class="nav-item dropdown">
-              <a href="#" class="nav-link dropdown-toggle" id="citylifeDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">市民生活</a>
+              <a
+                  href="#"
+                  class="nav-link dropdown-toggle"
+                  id="citylifeDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+              >
+                市民生活
+              </a>
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="citylifeDropdown">
                 <router-link class="dropdown-item" to="/city-movie">CityMovie</router-link>
               </ul>
@@ -40,68 +64,147 @@
             </li>
           </ul>
 
-          <!-- 登入/註冊 按鈕 -->
+          <!-- 用戶操作區域 -->
           <ul class="navbar-nav me-2">
-            <li class="nav-item">
-              <router-link class="btn btn-custom-outline" to="/login">登入/註冊</router-link>
+            <!-- 未登入狀態 -->
+            <li class="nav-item" v-if="!isLoggedIn">
+              <router-link class="btn btn-custom-outline" to="/login">
+                登入/註冊
+              </router-link>
+            </li>
+
+            <!-- 已登入狀態 -->
+            <li class="nav-item dropdown" v-else>
+              <a
+                  href="#"
+                  class="nav-link dropdown-toggle user-menu"
+                  id="userDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+              >
+                <img
+                    :src="userAvatar"
+                    class="user-avatar"
+                    :alt="userName"
+                >
+                {{ userName }}
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end custom-dropdown" aria-labelledby="userDropdown">
+                <li>
+                  <router-link class="dropdown-item" to="/profile">
+                    <i class="fas fa-user me-2"></i>個人資料
+                  </router-link>
+                </li>
+                <li>
+                  <router-link class="dropdown-item" to="/wallet">
+                    <i class="fas fa-wallet me-2"></i>電子錢包
+                  </router-link>
+                </li>
+                <!-- 管理員選項 -->
+                <li v-if="isAdmin">
+                  <router-link class="dropdown-item" to="/admin">
+                    <i class="fas fa-cog me-2"></i>管理後台
+                  </router-link>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                  <a
+                      class="dropdown-item text-danger"
+                      href="#"
+                      @click.prevent="handleLogout"
+                  >
+                    <i class="fas fa-sign-out-alt me-2"></i>登出
+                  </a>
+                </li>
+              </ul>
             </li>
           </ul>
         </div>
       </div>
     </nav>
 
-    <!-- 麵包屑導航區域（僅在非首頁顯示） -->
+    <!-- 麵包屑導航區域 -->
     <div v-if="showBreadcrumbs" class="breadcrumb">
       <div class="container d-flex align-items-center">
-        <!-- 首頁連結 -->
-        <router-link to="/" class="breadcrumb-item">首頁</router-link>
+        <router-link to="/" class="breadcrumb-item">
+          <i class="fas fa-home me-1"></i>首頁
+        </router-link>
         <span class="divider">/</span>
-
-        <!-- 當前頁面名稱 -->
-        <span v-if="breadcrumbs.length > 0" class="breadcrumb-item">
+        <span v-if="currentBreadcrumb" class="breadcrumb-item active">
           {{ currentBreadcrumb }}
         </span>
       </div>
     </div>
   </div>
-</template>
-
-<script>
-import { ref, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+</template><script>
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useStore } from 'vuex'
 
 export default {
   name: 'Header',
-  setup() {
-    const isNavCollapsed = ref(true)
-    const route = useRoute()
 
+  setup() {
+    const store = useStore()
+    const router = useRouter()
+    const route = useRoute()
+    const isNavCollapsed = ref(true)
+
+    // 用戶狀態
+    const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
+    const isAdmin = computed(() => store.getters['auth/isAdmin'])
+    const userName = computed(() => store.getters['auth/userName'])
+    const userAvatar = computed(() => store.getters['auth/userAvatar'] || '/default-avatar.png')
+
+    // 導航控制
     const toggleNav = () => {
       isNavCollapsed.value = !isNavCollapsed.value
     }
 
-    // 動態生成麵包屑
+    // 登出處理
+    const handleLogout = async () => {
+      try {
+        await store.dispatch('auth/logout')
+        router.push('/login')
+        store.dispatch('setNotification', {
+          type: 'success',
+          message: '已成功登出'
+        })
+      } catch (error) {
+        console.error('Logout error:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '登出失敗，請稍後再試'
+        })
+      }
+    }
+
+    // 麵包屑相關
     const breadcrumbs = computed(() => {
       return route.matched
-        .filter(route => route.meta && route.meta.title)
-        .map(route => ({
-          name: route.meta.title,
-          path: route.path,
-        }))
+          .filter(route => route.meta && route.meta.title)
+          .map(route => ({
+            name: route.meta.title,
+            path: route.path,
+          }))
     })
 
-    // 獲取當前頁面名稱
     const currentBreadcrumb = computed(() => {
       const currentRoute = route.matched.find(r => r.meta && r.meta.title)
       return currentRoute ? currentRoute.meta.title : ''
     })
 
-    // 計算屬性來判斷是否顯示麵包屑
     const showBreadcrumbs = computed(() => route.path !== '/')
 
     return {
       isNavCollapsed,
+      isLoggedIn,
+      isAdmin,
+      userName,
+      userAvatar,
       toggleNav,
+      handleLogout,
       breadcrumbs,
       currentBreadcrumb,
       showBreadcrumbs,
@@ -112,14 +215,14 @@ export default {
 
 <style scoped>
 .spacer {
-  height: 20px; /* 控制上方空白區域的高度 */
-  background-color: #BA0043; /* 設定背景色 */
+  height: 20px;
+  background-color: #BA0043;
 }
 
 .navbar {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  padding-top: 10px;
+  z-index: 1030;
+  padding: 0.5rem 1rem;
 }
 
 .navbar-brand {
@@ -128,9 +231,10 @@ export default {
 }
 
 .logo-title {
-  font-size: 2.0rem;
+  font-size: 2rem;
   font-weight: 700;
   color: #BA0043;
+  margin: 0;
 }
 
 .logo-subtitle {
@@ -150,6 +254,20 @@ export default {
   color: #a00000;
 }
 
+/* 用戶選單樣式 */
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 /* 自訂按鈕樣式 */
 .btn-custom-outline {
   color: #BA0043;
@@ -160,38 +278,52 @@ export default {
   border-radius: 50px;
   background-color: transparent;
   text-align: center;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .btn-custom-outline:hover {
-  background-color: transparent;
+  background-color: rgba(186, 0, 67, 0.1);
   color: #a00000;
   border-color: #a00000;
 }
 
-/* 麵包屑樣式 */
-.breadcrumb {
-  background-color: #f0f0f0;
-  padding: 10px 80px;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #333333;
-  position: relative;
-  top: 0;
-  z-index: 900;
-  text-align: left;
+/* 下拉選單樣式 */
+.custom-dropdown {
+  padding: 0.5rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  border: none;
 }
 
-.breadcrumb .container {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.custom-dropdown .dropdown-item {
+  font-size: 1.2rem;
+  color: #BA0043;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.custom-dropdown .dropdown-item:hover {
+  background-color: rgba(186, 0, 67, 0.1);
+  color: #a00000;
+}
+
+.dropdown-divider {
+  margin: 0.5rem 0;
+  border-color: #dee2e6;
+}
+
+/* 麵包屑樣式 */
+.breadcrumb {
+  background-color: #f8f9fa;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  border-bottom: 1px solid #dee2e6;
 }
 
 .breadcrumb-item {
-  color: #333333;
+  color: #6c757d;
   text-decoration: none;
-  font-weight: 600;
   transition: color 0.3s ease;
 }
 
@@ -199,38 +331,53 @@ export default {
   color: #BA0043;
 }
 
+.breadcrumb-item.active {
+  color: #BA0043;
+}
+
 .divider {
   color: #BA0043;
-  font-weight: 600;
+  margin: 0 0.5rem;
 }
 
-/* 下拉選單樣式 */
-.custom-dropdown {
-  padding: 10px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
+/* 響應式設計 */
+@media (max-width: 992px) {
+  .navbar-nav {
+    padding: 1rem 0;
+  }
 
-.custom-dropdown .dropdown-item {
-  font-size: 1.2rem;
-  color: #BA0043;
-  padding: 8px 20px;
-  border-radius: 20px;
-  transition: background-color 0.3s ease;
-}
-
-.custom-dropdown .dropdown-item:hover {
-  background-color: #f0f0f0;
-  color: #BA0043;
+  .nav-link {
+    font-size: 1.25rem;
+    padding: 0.5rem 1rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .breadcrumb {
-    font-size: 1rem;
-    padding: 8px 0;
+  .logo-title {
+    font-size: 1.5rem;
   }
-  .breadcrumb .container {
-    gap: 10px;
+
+  .logo-subtitle {
+    font-size: 1rem;
+  }
+
+  .btn-custom-outline {
+    font-size: 1rem;
+    padding: 0.3rem 1rem;
+  }
+
+  .custom-dropdown .dropdown-item {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .navbar {
+    padding: 0.25rem 0.5rem;
+  }
+
+  .navbar-brand img {
+    height: 60px;
   }
 }
 </style>
