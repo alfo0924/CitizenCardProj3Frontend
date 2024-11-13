@@ -14,25 +14,6 @@
       <!-- 儀表板內容 -->
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title mb-4">管理員儀表板</h1>
-        <!-- 圖表區域 -->
-        <div class="row g-4 ">
-          <!-- 每日營收圖表 -->
-          <div class="col-md-8 p-5 ">
-            <div class="chart-card">
-              <h3>每日營收趨勢</h3>
-              <canvas ref="revenueChartRef"></canvas>
-            </div>
-          </div>
-
-          <!-- 會員分析圖表 -->
-          <div class="col-md-4 p-5 mb-5">
-            <div class="chart-card">
-              <h3>會員分析</h3>
-              <canvas ref="userChartRef"></canvas>
-            </div>
-          </div>
-        </div>
-
 
         <!-- 統計卡片 -->
         <div class="row g-4 mb-4">
@@ -102,20 +83,20 @@
         </div>
 
         <!-- 圖表區域 -->
-        <div class="row g-4">
+        <div class="row g-4 p-5 ">
           <!-- 每日營收圖表 -->
-          <div class="col-md-8">
+          <div class="col-md-8 ">
             <div class="chart-card">
               <h3>每日營收趨勢</h3>
-              <canvas ref="revenueChart"></canvas>
+              <canvas ref="revenueChartRef"></canvas>
             </div>
           </div>
 
           <!-- 會員分析圖表 -->
           <div class="col-md-4">
-            <div class="chart-card">
+            <div class="chart-card p-5">
               <h3>會員分析</h3>
-              <canvas ref="userChart"></canvas>
+              <canvas ref="userChartRef"></canvas>
             </div>
           </div>
         </div>
