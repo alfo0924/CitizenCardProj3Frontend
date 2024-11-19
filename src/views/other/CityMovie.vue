@@ -1,16 +1,26 @@
 <template>
-  <div class="city-movie">
+  <div class="movie-container">
     <h1 class="title">CityMovie 電影資訊</h1>
-    <div class="movie-list">
-      <div v-for="movie in movies" :key="movie.id" class="movie-card">
-        <img
-            :src="movie.poster"
-            :alt="movie.title"
-            class="movie-poster"
-        />
-        <h2 class="movie-title">{{ movie.title }}</h2>
-        <p class="movie-description">{{ movie.description }}</p>
-        <button @click="showBooking(movie)" class="movie-button">立即訂票</button>
+
+    <div class="main-content">
+      <!-- 左側大圖和詳情 -->
+      <div class="movie-details">
+        <img :src="selectedMovie.poster" :alt="selectedMovie.title" class="main-poster"/>
+        <h2 class="movie-title">{{ selectedMovie.title }}</h2>
+        <p class="movie-description">{{ selectedMovie.description }}</p>
+        <button @click="showBooking(selectedMovie)" class="movie-button">立即訂票</button>
+      </div>
+
+      <!-- 右側電影列表 -->
+      <div class="movie-list">
+        <div
+            v-for="movie in movies"
+            :key="movie.id"
+            :class="['movie-item', { active: selectedMovie.id === movie.id }]"
+            @click="selectMovie(movie)"
+        >
+          {{ movie.title }}
+        </div>
       </div>
     </div>
 
@@ -46,11 +56,11 @@
           <div class="overflow-auto">
             <div v-for="row in rows" :key="row" class="d-flex mb-2 gap-2">
               <div v-for="num in 20" :key="`${row}${num}`"
-                   @click="toggleSeat(row, num)"
+                   @click="toggleSeat(selectedMovie.id, row, num)"
                    :class="[
                      'seat-box d-flex align-items-center justify-content-center border rounded',
-                     getSeatStatus(row, num) === 'selected' ? 'bg-primary text-white' :
-                     getSeatStatus(row, num) === 'occupied' ? 'bg-secondary text-white' : 'bg-light'
+                     getSeatStatus(selectedMovie.id, row, num) === 'selected' ? 'bg-primary text-white' :
+                     getSeatStatus(selectedMovie.id, row, num) === 'occupied' ? 'bg-secondary text-white' : 'bg-light'
                    ]">
                 {{ row }} {{ num }}
               </div>
@@ -61,7 +71,7 @@
           <div class="mt-4">
             <h6>已選擇的座位：</h6>
             <div class="d-flex flex-wrap gap-2 mb-3">
-              <span v-for="seat in selectedSeats" :key="seat.id"
+              <span v-for="seat in getSelectedSeatsForMovie(selectedMovie.id)" :key="seat.id"
                     class="badge bg-primary">
                 {{ seat.seatNumber }}
               </span>
@@ -84,7 +94,6 @@
 <script setup>
 import { ref, reactive } from 'vue'
 
-// 電影資料
 const movies = reactive([
   {
     id: 1,
@@ -97,35 +106,37 @@ const movies = reactive([
     title: "電影 B",
     description: "感人的愛情故事。",
     poster: "/images/movienight.jpg"
+  },
+  {
+    id: 3,
+    title: "電影 C",
+    description: "驚悚冒險片。",
+    poster: "/images/movienight.jpg"
   }
 ])
 
-// 座位相關
 const rows = Array.from({ length: 10 }, (_, i) => String.fromCharCode(65 + i))
-const selectedSeats = ref([])
+const movieSeats = reactive({})
 const showBookingSection = ref(false)
-const selectedMovie = ref(null)
+const selectedMovie = ref(movies[0])
 
-// 顯示訂票區域
+const selectMovie = (movie) => {
+  selectedMovie.value = movie
+}
+
 const showBooking = (movie) => {
   selectedMovie.value = movie
   showBookingSection.value = true
-  // 滾動到訂票區域
+  if (!movieSeats[movie.id]) {
+    movieSeats[movie.id] = []
+  }
   setTimeout(() => {
     const bookingSection = document.querySelector('.booking-section')
     bookingSection?.scrollIntoView({ behavior: 'smooth' })
   }, 100)
 }
 
-// 取消訂票
-const cancelBooking = () => {
-  showBookingSection.value = false
-  selectedSeats.value = []
-  selectedMovie.value = null
-}
-
-// 選擇座位
-const toggleSeat = (row, num) => {
+const toggleSeat = (movieId, row, num) => {
   const seatNumber = `${row} ${num}`
   const seatInfo = {
     id: `${row}-${num}`,
@@ -134,87 +145,115 @@ const toggleSeat = (row, num) => {
     num
   }
 
-  const existingIndex = selectedSeats.value.findIndex(s => s.seatNumber === seatNumber)
+  if (!movieSeats[movieId]) {
+    movieSeats[movieId] = []
+  }
+
+  const existingIndex = movieSeats[movieId].findIndex(s => s.seatNumber === seatNumber)
   if (existingIndex === -1) {
-    selectedSeats.value.push(seatInfo)
+    movieSeats[movieId].push(seatInfo)
   } else {
-    selectedSeats.value.splice(existingIndex, 1)
+    movieSeats[movieId].splice(existingIndex, 1)
   }
 }
 
-// 獲取座位狀態
-const getSeatStatus = (row, num) => {
+const getSelectedSeatsForMovie = (movieId) => {
+  return movieSeats[movieId] || []
+}
+
+const getSeatStatus = (movieId, row, num) => {
   const seatNumber = `${row} ${num}`
 
-  const isSelected = selectedSeats.value.some(s => s.seatNumber === seatNumber)
-  if (isSelected) return 'selected'
+  if (!movieSeats[movieId]) {
+    return 'available'
+  }
 
-  const isOccupied = false
-  if (isOccupied) return 'occupied'
+  const isSelected = movieSeats[movieId].some(s => s.seatNumber === seatNumber)
+  if (isSelected) return 'selected'
 
   return 'available'
 }
 
-// 確認訂位
+const cancelBooking = () => {
+  showBookingSection.value = false
+}
+
 const confirmBooking = () => {
-  if (selectedSeats.value.length === 0) {
+  const currentMovieId = selectedMovie.value.id
+  if (!movieSeats[currentMovieId] || movieSeats[currentMovieId].length === 0) {
     alert('請選擇座位')
     return
   }
 
   console.log('訂位資訊：', {
-    movieId: selectedMovie.value.id,
+    movieId: currentMovieId,
     movieTitle: selectedMovie.value.title,
-    seats: selectedSeats.value
+    seats: movieSeats[currentMovieId]
   })
 
   alert('訂位成功！')
-  selectedSeats.value = []
+  movieSeats[currentMovieId] = []
   showBookingSection.value = false
-  selectedMovie.value = null
 }
 </script>
 
 <style scoped>
-.city-movie {
+.movie-container {
   padding: 20px;
-  text-align: center;
 }
 
 .title {
   font-size: 2rem;
   color: #BA0043;
   margin-bottom: 2rem;
+  text-align: center;
 }
 
-.movie-list {
+.main-content {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
   gap: 20px;
   margin-bottom: 30px;
 }
 
-.movie-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
+.movie-details {
+  flex: 1;
+  padding: 20px;
+  background: #fff;
   border-radius: 10px;
-  width: 250px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   text-align: center;
-  padding: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.movie-poster {
-  width: 200px;
-  height: 150px;
+.main-poster {
+  width: 100%;
+  height: 400px;
   object-fit: cover;
   border-radius: 8px;
-  transition: transform 0.3s ease;
+  margin-bottom: 20px;
 }
 
-.movie-poster:hover {
-  transform: scale(1.05);
+.movie-list {
+  width: 200px;
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.movie-item {
+  padding: 10px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+.movie-item:hover {
+  background-color: #e0e0e0;
+}
+
+.movie-item.active {
+  background-color: #BA0043;
+  color: white;
 }
 
 .movie-title {
@@ -226,6 +265,7 @@ const confirmBooking = () => {
 .movie-description {
   color: #777;
   font-size: 1rem;
+  margin-bottom: 20px;
 }
 
 .movie-button {
