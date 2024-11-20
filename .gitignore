@@ -106,3 +106,12 @@ out/
 .env.staging
 
 .npm-cache/
+
+# NPM cache
+.npm
+.npm-cache
+.cache
+*.tgz
+
+# Node modules
+node_modules/
