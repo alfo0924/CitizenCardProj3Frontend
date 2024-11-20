@@ -255,7 +255,8 @@ export default {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
+  font-size: 1.2rem;
 }
 
 .form-label {
