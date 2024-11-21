@@ -27,42 +27,29 @@
         </button>
 
         <!-- 中央選單項目 -->
+
         <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
+          <!-- 中央選單項目 -->
           <ul class="navbar-nav mx-auto">
-            <li class="nav-item dropdown">
-              <a
-                  href="#"
-                  class="nav-link dropdown-toggle"
-                  id="discountsDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-              >
-                好康優惠
-              </a>
-              <ul class="dropdown-menu custom-dropdown" aria-labelledby="discountsDropdown">
-                <router-link class="dropdown-item" to="/discountstore">特約商店</router-link>
-              </ul>
+            <!-- 將下拉選單改為直接連結 -->
+            <li class="nav-item">
+              <router-link class="nav-link" to="/discountstore">
+                特約商店
+              </router-link>
             </li>
-            <li class="nav-item dropdown">
-              <a
-                  href="#"
-                  class="nav-link dropdown-toggle"
-                  id="citylifeDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-              >
-                市民生活
-              </a>
-              <ul class="dropdown-menu custom-dropdown" aria-labelledby="citylifeDropdown">
-                <router-link class="dropdown-item" to="/city-movie">CityMovie</router-link>
-              </ul>
+
+            <li class="nav-item">
+              <router-link class="nav-link" to="/city-movie">
+                CityMovie
+              </router-link>
             </li>
+
             <li class="nav-item">
               <router-link class="nav-link" to="/faq">常見問題</router-link>
             </li>
           </ul>
+
+
 
           <!-- 用戶操作區域 -->
           <ul class="navbar-nav me-2">
