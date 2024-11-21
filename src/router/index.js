@@ -203,7 +203,7 @@ const routes = [
         }
     },
 
-    // 管理員路由
+    // 管理員路由組
     {
         path: '/admin',
         name: 'admin',
@@ -213,54 +213,40 @@ const routes = [
             requiresAdmin: true,
             title: '管理後台',
             layout: 'admin'
-        },
-        children: [
-            {
-                path: 'movies',
-                name: 'admin-movies',
-                component: () => import('@/views/admin/MovieManagement.vue'),
-                meta: {
-                    title: '電影管理',
-                    layout: 'admin'
-                }
-            },
-            {
-                path: 'users',
-                name: 'admin-users',
-                component: () => import('@/views/admin/UserManagement.vue'),
-                meta: {
-                    title: '會員管理',
-                    layout: 'admin'
-                }
-            },
-            {
-                path: 'discounts',
-                name: 'admin-discounts',
-                component: () => import('@/views/admin/DiscountManagement.vue'),
-                meta: {
-                    title: '優惠管理',
-                    layout: 'admin'
-                }
-            },
-            {
-                path: 'stores',
-                name: 'admin-stores',
-                component: () => import('@/views/admin/StoreManagement.vue'),
-                meta: {
-                    title: '商店管理',
-                    layout: 'admin'
-                }
-            },
-            {
-                path: 'promotions',
-                name: 'admin-promotions',
-                component: () => import('@/views/admin/PromotionManagement.vue'),
-                meta: {
-                    title: '活動管理',
-                    layout: 'admin'
-                }
-            }
-        ]
+        }
+    },
+    {
+        path: '/admin/movies',
+        name: 'admin-movies',
+        component: () => import('@/views/admin/MovieManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '電影管理',
+            layout: 'admin'
+        }
+    },
+    {
+        path: '/admin/users',
+        name: 'admin-users',
+        component: () => import('@/views/admin/UserManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '會員管理',
+            layout: 'admin'
+        }
+    },
+    {
+        path: '/admin/stores',
+        name: 'admin-stores',
+        component: () => import('@/views/admin/StoreManagement.vue'),
+        meta: {
+            requiresAuth: true,
+            requiresAdmin: true,
+            title: '商店管理',
+            layout: 'admin'
+        }
     },
 
     // 錯誤頁面

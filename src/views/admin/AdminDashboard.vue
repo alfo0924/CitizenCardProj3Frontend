@@ -15,77 +15,51 @@
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title m-4">管理員儀表板</h1>
 
-        <div class="row">
-          <!-- 管理功能快速入口 -->
-          <div class="management-shortcuts mt-4 justify-content-center align-items-center text-center">
-            <h3>後台管理</h3>
-            <div class="row g-4 justify-content-center align-items-center mt-2 mb-5 ">
-              <div class="col-md-3">
-                <router-link to="/admin/MovieManagement" class="management-card">
-                  <div class="card">
-                    <div class="card-body">
-                      <i class="fas fa-film"></i>
-                      <h4>電影管理</h4>
-                      <p>管理電影資訊與場次</p>
-                    </div>
+        <!-- 管理功能快速入口 -->
+        <div class="management-shortcuts mt-4">
+          <h3>後台管理</h3>
+          <div class="row g-4 justify-content-center mt-2 mb-5">
+            <div class="col-md-4">
+              <router-link to="/admin/movies" class="management-card">
+                <div class="card">
+                  <div class="card-body">
+                    <i class="fas fa-film"></i>
+                    <h4>電影管理</h4>
+                    <p>管理電影資訊與場次</p>
                   </div>
-                </router-link>
-              </div>
+                </div>
+              </router-link>
+            </div>
 
-              <div class="col-md-3">
-                <router-link to="/admin/UserManagement" class="management-card">
-                  <div class="card">
-                    <div class="card-body">
-                      <i class="fas fa-users"></i>
-                      <h4>會員管理</h4>
-                      <p>管理會員資料與權限</p>
-                    </div>
+            <div class="col-md-4">
+              <router-link to="/admin/users" class="management-card">
+                <div class="card">
+                  <div class="card-body">
+                    <i class="fas fa-users"></i>
+                    <h4>會員管理</h4>
+                    <p>管理會員資料與權限</p>
                   </div>
-                </router-link>
-              </div>
+                </div>
+              </router-link>
+            </div>
 
-              <div class="col-md-3">
-                <router-link to="/admin/DiscountManagement" class="management-card">
-                  <div class="card">
-                    <div class="card-body">
-                      <i class="fas fa-tags"></i>
-                      <h4>優惠管理</h4>
-                      <p>管理優惠券與折扣</p>
-                    </div>
+            <div class="col-md-4">
+              <router-link to="/admin/stores" class="management-card">
+                <div class="card">
+                  <div class="card-body">
+                    <i class="fas fa-store"></i>
+                    <h4>商店管理</h4>
+                    <p>管理特約商店</p>
                   </div>
-                </router-link>
-              </div>
-
-              <div class="col-md-3">
-                <router-link to="/admin/StoreManagement" class="management-card">
-                  <div class="card">
-                    <div class="card-body">
-                      <i class="fas fa-store"></i>
-                      <h4>商店管理</h4>
-                      <p>管理特約商店</p>
-                    </div>
-                  </div>
-                </router-link>
-              </div>
-
-              <div class="col-md-3">
-                <router-link to="/admin/PromotionManagement" class="management-card">
-                  <div class="card">
-                    <div class="card-body">
-                      <i class="fas fa-bullhorn"></i>
-                      <h4>活動管理</h4>
-                      <p>管理優惠活動</p>
-                    </div>
-                  </div>
-                </router-link>
-              </div>
-
+                </div>
+              </router-link>
             </div>
           </div>
         </div>
+
         <!-- 統計卡片 -->
         <div class="row g-4 mb-4">
-          <div class="col-md-3">
+          <div class="col-md-4">
             <div class="stat-card">
               <div class="stat-icon">
                 <i class="fas fa-users"></i>
@@ -101,49 +75,33 @@
             </div>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-4">
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-ticket-alt"></i>
+                <i class="fas fa-store"></i>
               </div>
               <div class="stat-info">
-                <h3>本月訂票數</h3>
-                <div class="stat-value">{{ stats.monthlyBookings }}</div>
+                <h3>特約商店數</h3>
+                <div class="stat-value">{{ stats.totalStores }}</div>
                 <div class="stat-change">
                   <i class="fas fa-arrow-up"></i>
-                  {{ stats.bookingGrowth }}%
+                  {{ stats.newStores }} 新增
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="col-md-3">
+          <div class="col-md-4">
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-wallet"></i>
+                <i class="fas fa-film"></i>
               </div>
               <div class="stat-info">
-                <h3>本月營收</h3>
-                <div class="stat-value">NT$ {{ formatNumber(stats.monthlyRevenue) }}</div>
+                <h3>上映電影數</h3>
+                <div class="stat-value">{{ stats.activeMovies }}</div>
                 <div class="stat-change">
                   <i class="fas fa-arrow-up"></i>
-                  {{ stats.revenueGrowth }}%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-3">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-percent"></i>
-              </div>
-              <div class="stat-info">
-                <h3>優惠使用率</h3>
-                <div class="stat-value">{{ stats.discountUsage }}%</div>
-                <div class="stat-change">
-                  <i class="fas fa-arrow-up"></i>
-                  {{ stats.discountGrowth }}%
+                  {{ stats.newMovies }} 新增
                 </div>
               </div>
             </div>
@@ -151,73 +109,27 @@
         </div>
 
         <!-- 圖表區域 -->
-        <div class="row g-4 p-5 ">
-          <!-- 每日營收圖表 -->
-          <div class="col-md-8 ">
-            <div class="chart-card">
-              <h3>每日營收趨勢</h3>
-              <canvas ref="revenueChartRef"></canvas>
-            </div>
-          </div>
-
+        <div class="row g-4">
           <!-- 會員分析圖表 -->
-          <div class="col-md-4">
-            <div class="chart-card p-5">
+          <div class="col-md-6">
+            <div class="chart-card">
               <h3>會員分析</h3>
               <canvas ref="userChartRef"></canvas>
             </div>
           </div>
-        </div>
 
-        <!-- 最新訂單列表 -->
-        <div class="recent-orders mt-4">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3>最新訂單</h3>
-            <router-link to="/admin/orders" class="btn btn-outline-primary btn-sm">
-              查看全部
-            </router-link>
-          </div>
-          <div class="table-responsive">
-            <table class="table">
-              <thead>
-              <tr>
-                <th>訂單編號</th>
-                <th>會員</th>
-                <th>電影</th>
-                <th>金額</th>
-                <th>狀態</th>
-                <th>時間</th>
-              </tr>
-              </thead>
-              <tbody>
-              <tr v-for="order in recentOrders" :key="order.id">
-                <td>{{ order.orderNumber }}</td>
-                <td>{{ order.userName }}</td>
-                <td>{{ order.movieTitle }}</td>
-                <td>NT$ {{ formatNumber(order.amount) }}</td>
-                <td>
-                    <span
-                        class="badge"
-                        :class="getOrderStatusClass(order.status)"
-                    >
-                      {{ getOrderStatusText(order.status) }}
-                    </span>
-                </td>
-                <td>{{ formatDateTime(order.createdAt) }}</td>
-              </tr>
-              </tbody>
-            </table>
+          <!-- 商店類型分析圖表 -->
+          <div class="col-md-6">
+            <div class="chart-card">
+              <h3>商店類型分析</h3>
+              <canvas ref="storeChartRef"></canvas>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-
 </template>
-
-
-
-
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
@@ -230,68 +142,19 @@ const mockData = {
   stats: {
     totalUsers: 1250,
     newUsers: 48,
-    monthlyBookings: 326,
-    bookingGrowth: 12.5,
-    monthlyRevenue: 158900,
-    revenueGrowth: 8.3,
-    discountUsage: 65,
-    discountGrowth: 5.2
-  },
-  revenueData: {
-    labels: ['1/1', '1/2', '1/3', '1/4', '1/5', '1/6', '1/7'],
-    data: [25000, 32000, 28000, 35000, 40000, 38000, 45000]
+    totalStores: 156,
+    newStores: 12,
+    activeMovies: 25,
+    newMovies: 5
   },
   userData: {
     labels: ['新會員', '一般會員', '進階會員', 'VIP會員'],
     data: [250, 650, 280, 70]
   },
-  recentOrders: [
-    {
-      id: 1,
-      orderNumber: 'ORD20240101001',
-      userName: '王小明',
-      movieTitle: '蜘蛛人：穿越新宇宙',
-      amount: 350,
-      status: 'COMPLETED',
-      createdAt: '2024-01-01T10:30:00'
-    },
-    {
-      id: 2,
-      orderNumber: 'ORD20240101002',
-      userName: '李小華',
-      movieTitle: '玩具總動員 4',
-      amount: 280,
-      status: 'PENDING',
-      createdAt: '2024-01-01T11:15:00'
-    },
-    {
-      id: 3,
-      orderNumber: 'ORD20240101003',
-      userName: '張小美',
-      movieTitle: '魔物獵人',
-      amount: 320,
-      status: 'COMPLETED',
-      createdAt: '2024-01-01T13:45:00'
-    },
-    {
-      id: 4,
-      orderNumber: 'ORD20240101004',
-      userName: '陳大寶',
-      movieTitle: '復仇者聯盟：終局之戰',
-      amount: 380,
-      status: 'CANCELLED',
-      createdAt: '2024-01-01T14:20:00'
-    },
-    {
-      id: 5,
-      orderNumber: 'ORD20240101005',
-      userName: '林小玉',
-      movieTitle: '哥吉拉大戰金剛',
-      amount: 300,
-      status: 'COMPLETED',
-      createdAt: '2024-01-01T15:10:00'
-    }
-  ]
+  storeData: {
+    labels: ['餐飲', '娛樂', '購物', '生活', '其他'],
+    data: [45, 30, 35, 25, 21]
+  }
 }
 
 export default {
@@ -304,10 +167,10 @@ export default {
 
   setup() {
     const store = useStore()
-    const revenueChartRef = ref(null)
     const userChartRef = ref(null)
-    const revenueChart = ref(null)
-    const userChart = ref(null)
+    const storeChartRef = ref(null)
+    let userChart = null
+    let storeChart = null
     const isLoading = ref(false)
     const error = ref(null)
     const useMockData = ref(true) // 控制是否使用假資料
@@ -316,74 +179,81 @@ export default {
     const stats = ref({
       totalUsers: 0,
       newUsers: 0,
-      monthlyBookings: 0,
-      bookingGrowth: 0,
-      monthlyRevenue: 0,
-      revenueGrowth: 0,
-      discountUsage: 0,
-      discountGrowth: 0
+      totalStores: 0,
+      newStores: 0,
+      activeMovies: 0,
+      newMovies: 0
     })
 
-    // 最新訂單
-    const recentOrders = ref([])
-
     // 初始化圖表
-    const initCharts = (revenueData, userData) => {
+    const initCharts = (userData, storeData) => {
       try {
         // 清除舊的圖表實例
-        if (revenueChart.value) {
-          revenueChart.value.destroy()
+        if (userChart) {
+          userChart.destroy()
         }
-        if (userChart.value) {
-          userChart.value.destroy()
+        if (storeChart) {
+          storeChart.destroy()
         }
-
-        // 創建營收趨勢圖
-        const revenueCtx = revenueChartRef.value.getContext('2d')
-        revenueChart.value = new Chart(revenueCtx, {
-          type: 'line',
-          data: {
-            labels: revenueData.labels,
-            datasets: [{
-              label: '每日營收',
-              data: revenueData.data,
-              borderColor: '#4CAF50',
-              tension: 0.4,
-              fill: false
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: {
-                display: false
-              }
-            }
-          }
-        })
 
         // 創建會員分析圖
-        const userCtx = userChartRef.value.getContext('2d')
-        userChart.value = new Chart(userCtx, {
-          type: 'doughnut',
-          data: {
-            labels: userData.labels,
-            datasets: [{
-              data: userData.data,
-              backgroundColor: [
-                '#4CAF50',
-                '#2196F3',
-                '#FFC107',
-                '#9C27B0'
-              ]
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false
-          }
-        })
+        if (userChartRef.value) {
+          const userCtx = userChartRef.value.getContext('2d')
+          userChart = new Chart(userCtx, {
+            type: 'doughnut',
+            data: {
+              labels: userData.labels,
+              datasets: [{
+                data: userData.data,
+                backgroundColor: [
+                  '#4CAF50',
+                  '#2196F3',
+                  '#FFC107',
+                  '#9C27B0'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                }
+              }
+            }
+          })
+        }
+
+        // 創建商店類型分析圖
+        if (storeChartRef.value) {
+          const storeCtx = storeChartRef.value.getContext('2d')
+          storeChart = new Chart(storeCtx, {
+            type: 'pie',
+            data: {
+              labels: storeData.labels,
+              datasets: [{
+                data: storeData.data,
+                backgroundColor: [
+                  '#FF6384',
+                  '#36A2EB',
+                  '#FFCE56',
+                  '#4BC0C0',
+                  '#9966FF'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                }
+              }
+            }
+          })
+        }
       } catch (err) {
         console.error('Chart initialization error:', err)
         error.value = '圖表初始化失敗'
@@ -411,8 +281,7 @@ export default {
           // 使用模擬數據
           setTimeout(() => {
             stats.value = mockData.stats
-            recentOrders.value = mockData.recentOrders
-            initCharts(mockData.revenueData, mockData.userData)
+            initCharts(mockData.userData, mockData.storeData)
             isLoading.value = false
           }, 1000)
         } else {
@@ -420,8 +289,7 @@ export default {
           const response = await store.dispatch('admin/fetchDashboardData')
           if (response.success) {
             stats.value = response.stats
-            recentOrders.value = response.recentOrders
-            initCharts(response.revenueData, response.userData)
+            initCharts(response.userData, response.storeData)
           } else {
             throw new Error(response.message || '獲取數據失敗')
           }
@@ -434,55 +302,15 @@ export default {
       }
     }
 
-    // 格式化數字
-    const formatNumber = (number) => {
-      if (typeof number !== 'number') return '0'
-      return number.toLocaleString('zh-TW')
-    }
-
-    // 格式化日期時間
-    const formatDateTime = (datetime) => {
-      if (!datetime) return ''
-      return new Date(datetime).toLocaleString('zh-TW')
-    }
-
-    // 獲取訂單狀態樣式
-    const getOrderStatusClass = (status) => {
-      switch (status) {
-      case 'COMPLETED':
-        return 'bg-success'
-      case 'PENDING':
-        return 'bg-warning'
-      case 'CANCELLED':
-        return 'bg-danger'
-      default:
-        return 'bg-secondary'
-      }
-    }
-
-    // 獲取訂單狀態文字
-    const getOrderStatusText = (status) => {
-      switch (status) {
-      case 'COMPLETED':
-        return '已完成'
-      case 'PENDING':
-        return '處理中'
-      case 'CANCELLED':
-        return '已取消'
-      default:
-        return '未知'
-      }
-    }
-
     // 清理圖表
     const cleanupCharts = () => {
-      if (revenueChart.value) {
-        revenueChart.value.destroy()
-        revenueChart.value = null
+      if (userChart) {
+        userChart.destroy()
+        userChart = null
       }
-      if (userChart.value) {
-        userChart.value.destroy()
-        userChart.value = null
+      if (storeChart) {
+        storeChart.destroy()
+        storeChart = null
       }
     }
 
@@ -499,19 +327,12 @@ export default {
       isLoading,
       error,
       stats,
-      recentOrders,
-      revenueChartRef,
       userChartRef,
-      formatNumber,
-      formatDateTime,
-      getOrderStatusClass,
-      getOrderStatusText
+      storeChartRef
     }
   }
 }
 </script>
-
-
 <style scoped>
 .admin-dashboard {
   padding: 2rem 0;
@@ -521,8 +342,55 @@ export default {
   font-size: 1.75rem;
   font-weight: 600;
   color: var(--text-color);
+  margin-bottom: 2rem;
 }
 
+/* 管理卡片樣式 */
+.management-shortcuts {
+  margin-bottom: 3rem;
+}
+
+.management-card {
+  text-decoration: none;
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  display: block;
+}
+
+.management-card .card {
+  height: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.management-card:hover .card {
+  transform: translateY(-5px);
+  box-shadow: var(--box-shadow-lg);
+}
+
+.management-card .card-body {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.management-card i {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.management-card h4 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.management-card p {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin: 0;
+}
+
+/* 統計卡片樣式 */
 .stat-card {
   background: white;
   padding: 1.5rem;
@@ -531,6 +399,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 1rem;
+  height: 100%;
 }
 
 .stat-icon {
@@ -547,7 +416,7 @@ export default {
 
 .stat-info h3 {
   font-size: 0.875rem;
-  color: var(--text-secondary);
+  color: var(--text-light);
   margin-bottom: 0.5rem;
 }
 
@@ -561,48 +430,62 @@ export default {
 .stat-change {
   font-size: 0.875rem;
   color: var(--success-color);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-.stat-change i {
-  margin-right: 0.25rem;
-}
-
+/* 圖表卡片樣式 */
 .chart-card {
   background: white;
   padding: 1.5rem;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--box-shadow);
   height: 400px;
+  margin-bottom: 2rem;
 }
 
 .chart-card h3 {
   font-size: 1.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
 }
 
-.recent-orders {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+/* 響應式設計 */
+@media (max-width: 1200px) {
+  .management-card .card-body {
+    padding: 1.5rem 1rem;
+  }
+
+  .management-card i {
+    font-size: 2rem;
+  }
 }
 
-.recent-orders h3 {
-  font-size: 1.25rem;
-  margin-bottom: 0;
-}
+@media (max-width: 992px) {
+  .stat-card {
+    padding: 1.25rem;
+  }
 
-.table th {
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.badge {
-  padding: 0.5rem 0.75rem;
-  font-weight: 500;
+  .chart-card {
+    height: 350px;
+  }
 }
 
 @media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .management-card i {
+    font-size: 1.75rem;
+  }
+
+  .management-card h4 {
+    font-size: 1.1rem;
+  }
+
   .stat-card {
     padding: 1rem;
   }
@@ -619,6 +502,27 @@ export default {
 
   .chart-card {
     height: 300px;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-dashboard {
+    padding: 1rem 0;
+  }
+
+  .management-card .card-body {
+    padding: 1rem;
+  }
+
+  .chart-card {
+    height: 250px;
+    padding: 1rem;
+  }
+
+  .chart-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
   }
 }
 </style>
