@@ -96,6 +96,15 @@
           {{ isLoading ? '登入中...' : '登入' }}
         </button>
 
+        <div class="social-login">
+          <button type="button" class="btn btn-outline-primary w-100 mb-2" @click="handleGoogleLogin">
+            <i class="fab fa-google me-2"></i>使用 Google 帳號登入
+          </button>
+          <button type="button" class="btn btn-outline-primary w-100" @click="handleFacebookLogin">
+            <i class="fab fa-facebook me-2"></i>使用 Facebook 帳號登入
+          </button>
+        </div>
+
         <!-- Register Link -->
         <div class="text-center">
           <router-link to="/register" class="text-secondary">立即註冊</router-link>
@@ -246,7 +255,8 @@ export default {
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
+  max-width: 450px;
+  font-size: 1.2rem;
 }
 
 .form-label {
