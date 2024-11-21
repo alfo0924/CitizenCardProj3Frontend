@@ -7,7 +7,7 @@
           <img src="/logo.webp" alt="Bird Logo" class="footer-logo me-3">
           <div>
             <h2 class="text-dark mb-3">逢甲市政府</h2>
-            <p class="mb-1">更新日期：2024-11-06</p>
+            <p class="mb-1">更新日期：2024-11-19</p>
             <p class="mb-1">瀏覽人次：283364</p>
             <p class="mb-1">
               網站安全政策 / 政府網站資料開放宣言 / 隱私權政策

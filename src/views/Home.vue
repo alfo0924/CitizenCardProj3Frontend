@@ -1,29 +1,33 @@
 <template>
   <div class="slider">
     <div
-      class="slides"
-      :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
+        class="slides"
+        :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
     >
       <!-- Slide 1 -->
       <div class="slide">
-        <router-link class="dropdown-item" to="/city-movie">
-        <img src="/carousel/citymovie.webp" alt="Slide 1"></router-link>
+        <router-link class="dropdown-item" to="/login">
+          <img src="/carousel/login.webp" alt="Slide 1"></router-link>
       </div>
-      
       <!-- Slide 2 -->
       <div class="slide">
-        <router-link class="dropdown-item" to="/partner-store">
-        <img src="/carousel/shop.webp" alt="Slide 2"></router-link>
+        <router-link class="dropdown-item" to="/city-movie">
+          <img src="/carousel/citymovie.webp" alt="Slide 2"></router-link>
+      </div>
+      <!-- Slide 3 -->
+      <div class="slide">
+        <router-link class="dropdown-item" to="/discountstore">
+          <img src="/carousel/shop.webp" alt="Slide 3"></router-link>
       </div>
     </div>
 
     <!-- Dot Indicators -->
     <div class="dots">
       <span
-        v-for="n in totalSlides"
-        :key="n"
-        :class="{ active: currentSlide === n - 1 }"
-        @click="goToSlide(n - 1)"
+          v-for="n in totalSlides"
+          :key="n"
+          :class="{ active: currentSlide === n - 1 }"
+          @click="goToSlide(n - 1)"
       ></span>
     </div>
   </div>
@@ -36,7 +40,7 @@ export default {
   name: 'Slider',
   setup() {
     const currentSlide = ref(0)
-    const totalSlides = 2
+    const totalSlides = 3
     let intervalId
 
     const nextSlide = () => {
@@ -71,12 +75,13 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 .slider {
   position: relative;
   overflow: hidden;
-  width: 100vw; /* 讓 slider 佔滿整個視窗寬度 */
-  height: 100vh; /* 讓 slider 佔滿整個視窗高度 */
+  width: 100vw; /* Make slider full width */
+  height: 100vh; /* Make slider full height */
 }
 
 .slides {
@@ -97,9 +102,10 @@ export default {
 .slide img {
   width: 100%;
   height: 100%;
-  object-fit: contain; 
+  object-fit: contain;
   max-width: 100%;
   max-height: 100%;
+  margin-top: -2cm; /* Move image up by 2cm */
 }
 
 /* Dot Indicators */
@@ -122,6 +128,6 @@ export default {
 }
 
 .dots span.active {
-  background-color: rgba(255, 255, 255, 0.9); /* 突顯當前點 */
+  background-color: rgba(255, 255, 255, 0.9); /* Highlight current dot */
 }
 </style>

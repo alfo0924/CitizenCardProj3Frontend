@@ -14,7 +14,6 @@
             <small class="logo-subtitle">FENG CHIA PASS</small>
           </div>
         </router-link>
-
         <!-- Toggler Button -->
         <button
             class="navbar-toggler"

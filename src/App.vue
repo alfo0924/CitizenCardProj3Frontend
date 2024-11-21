@@ -4,7 +4,8 @@
     <Header v-if="showHeader" class="app-header" />
 
     <!-- Main Content -->
-    <main class="main-content">
+    <main :class="['main-content', { 'no-breadcrumb': !showBreadcrumb }, { 'no-header': !showHeader }]">
+
       <!-- Loading Overlay -->
       <LoadingSpinner
           v-if="$store.getters.isLoading"
@@ -30,8 +31,10 @@
           <component :is="Component" />
         </transition>
       </router-view>
+
     </main>
 
+    <DiscountStoreList v-if="!showBreadcrumb"/>
     <!-- Footer -->
     <Footer v-if="showFooter" class="app-footer" />
   </div>
@@ -44,6 +47,7 @@ import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+import DiscountStoreList from '@/views/discountStore/DiscountStoreList.vue'
 
 export default {
   name: 'App',
@@ -52,14 +56,16 @@ export default {
     Header,
     Footer,
     LoadingSpinner,
-    AlertMessage
+    AlertMessage,
+    DiscountStoreList
   },
 
   setup() {
     const route = useRoute()
 
     // 不顯示布局的路由
-    const noLayoutRoutes = ['login', 'register', 'forgot-password']
+    const noLayoutRoutes = ['']
+    const noBreadcrumbRoutes = ['home']
 
     // 計算是否顯示Header
     const showHeader = computed(() => {
@@ -73,7 +79,8 @@ export default {
 
     // 計算是否顯示Breadcrumb
     const showBreadcrumb = computed(() => {
-      return !noLayoutRoutes.includes(route.name)
+      console.log('route.name:', route.name, !route.name === 'home')
+      return !noBreadcrumbRoutes.includes(route.name)
     })
 
     return {
@@ -222,12 +229,22 @@ body {
   flex: 1;
   width: 100%;
   position: relative;
-  padding-top: calc(var(--header-height) + var(--breadcrumb-height) + var(--breadcrumb-margin));
+  padding-top: calc(var(--header-height) + var(--breadcrumb-height) + var(--breadcrumb-margin) + var(--spacing-md));
   min-height: calc(100vh - var(--header-height) - var(--footer-height));
   overflow-x: hidden;
   overflow-y: auto;
-  margin-top: 50px;
-  //background: #BA0043;
+  padding-bottom: 50px;
+  background: #BA0043;
+}
+
+.main-content.no-breadcrumb {
+  padding-top: calc(var(--header-height) + var(--spacing-md));
+  padding-bottom: 0px;
+}
+
+.main-content.no-header {
+  padding-top: 0px;
+  padding-bottom: 0px;
 }
 
 /* 內容容器 */
