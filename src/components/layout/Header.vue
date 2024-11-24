@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- Spacer 區域顯示背景色 -->
-    <div class="spacer"></div>
-
     <!-- 主選單 Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
       <div class="container d-flex justify-content-between align-items-center">
@@ -38,7 +35,7 @@
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
               >
-                好康優惠
+                特約商店
               </a>
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="discountsDropdown">
                 <router-link class="dropdown-item" to="/discountstore">特約商店</router-link>
@@ -53,7 +50,7 @@
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
               >
-                市民生活
+                CityMovie
               </a>
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="citylifeDropdown">
                 <router-link class="dropdown-item" to="/city-movie">CityMovie</router-link>
@@ -137,7 +134,9 @@
       </div>
     </div>
   </div>
-</template><script>
+</template>
+
+<script>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
@@ -214,11 +213,6 @@ export default {
 </script>
 
 <style scoped>
-.spacer {
-  height: 20px;
-  background-color: #BA0043;
-}
-
 .navbar {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1030;
