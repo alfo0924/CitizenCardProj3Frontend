@@ -70,7 +70,8 @@ export default {
   position: relative;
   overflow: hidden;
   width: 100vw;
-  height: 85vh;
+  height: auto;
+  /* height: 85vh; */
 }
 
 .slides {
@@ -83,7 +84,8 @@ export default {
   justify-content: center;
   align-items: center;
   min-width: 100vw;
-  height: 85vh;
+  height: auto;
+  /* height: 85vh; */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -91,7 +93,7 @@ export default {
 .slide img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit:cover;
 }
 
 .dots {

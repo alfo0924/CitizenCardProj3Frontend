@@ -26,7 +26,7 @@
         <!-- 中央選單項目 -->
         <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
           <ul class="navbar-nav mx-auto">
-            <li class="nav-item dropdown">
+            <!-- <li class="nav-item dropdown">
               <a
                   href="#"
                   class="nav-link dropdown-toggle"
@@ -40,8 +40,11 @@
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="discountsDropdown">
                 <router-link class="dropdown-item" to="/discountstore">特約商店</router-link>
               </ul>
+            </li> -->
+            <li class="nav-item">
+              <router-link class="nav-link" to="/discountstore">特約商店</router-link>
             </li>
-            <li class="nav-item dropdown">
+            <!-- <li class="nav-item dropdown">
               <a
                   href="#"
                   class="nav-link dropdown-toggle"
@@ -55,6 +58,9 @@
               <ul class="dropdown-menu custom-dropdown" aria-labelledby="citylifeDropdown">
                 <router-link class="dropdown-item" to="/city-movie">CityMovie</router-link>
               </ul>
+            </li> -->
+            <li class="nav-item">
+              <router-link class="nav-link" to="/city-movie">CityMovie</router-link>
             </li>
             <li class="nav-item">
               <router-link class="nav-link" to="/faq">常見問題</router-link>
@@ -332,6 +338,11 @@ export default {
 .divider {
   color: #BA0043;
   margin: 0 0.5rem;
+}
+
+.nav-item{
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 /* 響應式設計 */
