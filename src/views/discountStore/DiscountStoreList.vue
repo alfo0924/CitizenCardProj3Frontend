@@ -9,7 +9,7 @@
     <!-- 優惠列表 -->
     <div v-else class="discounts-content">
       <div>
-        <h3 class="hot-title  mb-4">熱門優惠</h3>
+        <h3 class="hot-title">熱門優惠</h3>
       </div>
       <div class="hot-discount-store-block hot-card-group row mb-4">
         <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
@@ -263,5 +263,9 @@ export default {
 .card-body {
   background-color: #CED4DA;
 
+}
+h3 {
+  margin-block-start: 1em;
+  margin-block-end: 0em;
 }
 </style>
