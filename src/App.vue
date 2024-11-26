@@ -106,9 +106,9 @@ export default {
   --info-color: #17a2b8;
 
   /* 中性色 */
-  --text-color: #333333;
-  --text-light: #666666;
-  --bg-light: #BA0043;
+  --text-color: #BA0043;
+  --text-light: #fbfcfd;
+  --bg-light: #fbfcfd;
   --border-color: #dee2e6;
 
   /* 布局常量 */
@@ -234,7 +234,7 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   /* padding-bottom: 50px; */
-  background: #BA0043;
+  background: #fbfcfd;
 }
 
 .main-content.no-breadcrumb {

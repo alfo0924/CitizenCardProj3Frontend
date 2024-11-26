@@ -26,39 +26,9 @@
         <!-- 中央選單項目 -->
         <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
           <ul class="navbar-nav mx-auto">
-            <!-- <li class="nav-item dropdown">
-              <a
-                  href="#"
-                  class="nav-link dropdown-toggle"
-                  id="discountsDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-              >
-                特約商店
-              </a>
-              <ul class="dropdown-menu custom-dropdown" aria-labelledby="discountsDropdown">
-                <router-link class="dropdown-item" to="/discountstore">特約商店</router-link>
-              </ul>
-            </li> -->
             <li class="nav-item">
               <router-link class="nav-link" to="/discountstore">特約商店</router-link>
             </li>
-            <!-- <li class="nav-item dropdown">
-              <a
-                  href="#"
-                  class="nav-link dropdown-toggle"
-                  id="citylifeDropdown"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-              >
-                CityMovie
-              </a>
-              <ul class="dropdown-menu custom-dropdown" aria-labelledby="citylifeDropdown">
-                <router-link class="dropdown-item" to="/city-movie">CityMovie</router-link>
-              </ul>
-            </li> -->
             <li class="nav-item">
               <router-link class="nav-link" to="/city-movie">CityMovie</router-link>
             </li>
@@ -247,14 +217,33 @@ export default {
   color: #BA0043;
   font-weight: 600;
   font-size: 1.5rem;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 5px;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 3px;
+  bottom: 0;
+  left: 50%;
+  background-color: #BA0043;
+  transition: width 0.3s ease, left 0.3s ease;
 }
 
 .nav-link:hover {
   color: #a00000;
 }
 
-/* 用戶選單樣式 */
+.nav-link:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* 其他樣式保持不變 */
 .user-menu {
   display: flex;
   align-items: center;
@@ -268,7 +257,6 @@ export default {
   object-fit: cover;
 }
 
-/* 自訂按鈕樣式 */
 .btn-custom-outline {
   color: #BA0043;
   border: 2px solid #BA0043;
@@ -282,7 +270,7 @@ export default {
 }
 
 .btn-custom-outline:hover {
-  background-color: rgba(186, 0, 67, 0.1);
+  background-color: rgba(186, 0, 67, 0.5);
   color: #a00000;
   border-color: #a00000;
 }
