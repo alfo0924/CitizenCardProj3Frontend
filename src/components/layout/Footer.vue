@@ -7,7 +7,7 @@
           <img src="/logo.webp" alt="Bird Logo" class="footer-logo me-3">
           <div>
             <h2 class="text-dark mb-3">逢甲市政府</h2>
-            <p class="mb-1">更新日期：2024-11-19</p>
+            <p class="mb-1">更新日期：2024-11-26</p>
             <p class="mb-1">瀏覽人次：283364</p>
             <p class="mb-1">
               網站安全政策 / 政府網站資料開放宣言 / 隱私權政策
@@ -36,7 +36,7 @@ export default {
 
   setup() {
     const visitorCount = ref(283364)
-    const lastUpdate = ref('2024-10-27')
+    const lastUpdate = ref('2024-11-26')
 
     return {
       visitorCount,
@@ -48,8 +48,8 @@ export default {
 
 <style scoped>
 .footer {
-  background-color: #fff !important;
-  color: var(--text-dark);
+  background-color: #BA0043 !important;
+  color: var(--text-light);
 }
 
 .footer h1 {

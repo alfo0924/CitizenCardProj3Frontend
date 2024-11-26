@@ -106,13 +106,13 @@ export default {
   --info-color: #17a2b8;
 
   /* 中性色 */
-  --text-color: #333333;
-  --text-light: #666666;
-  --bg-light: #BA0043;
+  --text-color: #BA0043;
+  --text-light: #fbfcfd;
+  --bg-light: #fbfcfd;
   --border-color: #dee2e6;
 
   /* 布局常量 */
-  --header-height: 60px;
+  --header-height: 106px;
   --breadcrumb-height: 40px;
   --breadcrumb-margin: 40px;
   --footer-height: 60px;
@@ -230,15 +230,16 @@ body {
   width: 100%;
   position: relative;
   padding-top: calc(var(--header-height) + var(--breadcrumb-height) + var(--breadcrumb-margin) + var(--spacing-md));
-  min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  /* min-height: calc(100vh - var(--header-height) - var(--footer-height)); */
   overflow-x: hidden;
   overflow-y: auto;
-  padding-bottom: 50px;
-  background: #BA0043;
+  /* padding-bottom: 50px; */
+  background: #fbfcfd;
 }
 
 .main-content.no-breadcrumb {
-  padding-top: calc(var(--header-height) + var(--spacing-md));
+  padding-top: calc(var(--header-height));
+  /* padding-top: 0px; */
   padding-bottom: 0px;
 }
 
@@ -252,7 +253,7 @@ body {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--content-padding);
+  /* padding: var(--content-padding); */
   background-color: white;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--box-shadow);
@@ -343,7 +344,7 @@ body {
 
 @media (max-width: 768px) {
   :root {
-    --header-height: 56px;
+    --header-height: 86px;
     --breadcrumb-height: 36px;
     --breadcrumb-margin: 35px;
     --content-padding: 20px;

@@ -1,27 +1,22 @@
 <template>
   <div class="slider">
-    <div
-        class="slides"
-        :style="{ transform: `translateX(-${currentSlide * 100}%)` }"
-    >
-      <!-- Slide 1 -->
+    <div class="slides" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
       <div class="slide">
         <router-link class="dropdown-item" to="/login">
-          <img src="/carousel/login.webp" alt="Slide 1"></router-link>
+          <img src="/carousel/login.webp" alt="Slide 1">
+        </router-link>
       </div>
-      <!-- Slide 2 -->
       <div class="slide">
         <router-link class="dropdown-item" to="/city-movie">
-          <img src="/carousel/citymovie.webp" alt="Slide 2"></router-link>
+          <img src="/carousel/citymovie.webp" alt="Slide 2">
+        </router-link>
       </div>
-      <!-- Slide 3 -->
       <div class="slide">
         <router-link class="dropdown-item" to="/discountstore">
-          <img src="/carousel/shop.webp" alt="Slide 3"></router-link>
+          <img src="/carousel/shop.webp" alt="Slide 3">
+        </router-link>
       </div>
     </div>
-
-    <!-- Dot Indicators -->
     <div class="dots">
       <span
           v-for="n in totalSlides"
@@ -30,58 +25,53 @@
           @click="goToSlide(n - 1)"
       ></span>
     </div>
+    <div class="controls">
+      <button class="prev" @click="prevSlide">‹</button>
+      <button class="next" @click="nextSlide">›</button>
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue';
 
 export default {
   name: 'Slider',
   setup() {
-    const currentSlide = ref(0)
-    const totalSlides = 3
-    let intervalId
+    const currentSlide = ref(0);
+    const totalSlides = 3;
 
     const nextSlide = () => {
-      currentSlide.value = (currentSlide.value + 1) % totalSlides
-    }
+      currentSlide.value = (currentSlide.value + 1) % totalSlides;
+    };
+
+    const prevSlide = () => {
+      currentSlide.value =
+          (currentSlide.value - 1 + totalSlides) % totalSlides;
+    };
 
     const goToSlide = (index) => {
-      currentSlide.value = index
-    }
-
-    const startAutoSlide = () => {
-      intervalId = setInterval(nextSlide, 3000) // Change slide every 3 seconds
-    }
-
-    const stopAutoSlide = () => {
-      clearInterval(intervalId)
-    }
-
-    onMounted(() => {
-      startAutoSlide()
-    })
-
-    onUnmounted(() => {
-      stopAutoSlide()
-    })
+      currentSlide.value = index;
+    };
 
     return {
       currentSlide,
       totalSlides,
+      nextSlide,
+      prevSlide,
       goToSlide,
-    }
-  }
-}
+    };
+  },
+};
 </script>
 
 <style scoped>
 .slider {
   position: relative;
   overflow: hidden;
-  width: 100vw; /* Make slider full width */
-  height: 100vh; /* Make slider full height */
+  width: 100vw;
+  height: auto;
+  /* height: 85vh; */
 }
 
 .slides {
@@ -94,7 +84,8 @@ export default {
   justify-content: center;
   align-items: center;
   min-width: 100vw;
-  height: 100vh;
+  height: auto;
+  /* height: 85vh; */
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -102,20 +93,17 @@ export default {
 .slide img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  max-width: 100%;
-  max-height: 100%;
-  margin-top: -2cm; /* Move image up by 2cm */
+  object-fit:cover;
 }
 
-/* Dot Indicators */
 .dots {
   position: absolute;
-  bottom: 20px;
+  bottom: 2%;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 10px;
+  z-index: 10;
 }
 
 .dots span {
@@ -128,6 +116,34 @@ export default {
 }
 
 .dots span.active {
-  background-color: rgba(255, 255, 255, 0.9); /* Highlight current dot */
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.controls {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  transform: translateY(-50%);
+  z-index: 20;
+}
+
+.controls button {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls button:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 </style>

@@ -96,14 +96,14 @@
           {{ isLoading ? '登入中...' : '登入' }}
         </button>
 
-        <div class="social-login">
-          <button type="button" class="btn btn-outline-primary w-100 mb-2" @click="handleGoogleLogin">
-            <i class="fab fa-google me-2"></i>使用 Google 帳號登入
-          </button>
-          <button type="button" class="btn btn-outline-primary w-100" @click="handleFacebookLogin">
-            <i class="fab fa-facebook me-2"></i>使用 Facebook 帳號登入
-          </button>
-        </div>
+<!--        <div class="social-login">-->
+<!--          <button type="button" class="btn btn-outline-primary w-100 mb-2" @click="handleGoogleLogin">-->
+<!--            <i class="fab fa-google me-2"></i>使用 Google 帳號登入-->
+<!--          </button>-->
+<!--          <button type="button" class="btn btn-outline-primary w-100" @click="handleFacebookLogin">-->
+<!--            <i class="fab fa-facebook me-2"></i>使用 Facebook 帳號登入-->
+<!--          </button>-->
+<!--        </div>-->
 
         <!-- Register Link -->
         <div class="text-center">

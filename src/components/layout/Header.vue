@@ -1,8 +1,5 @@
 <template>
   <div>
-    <!-- Spacer 區域顯示背景色 -->
-    <div class="spacer"></div>
-
     <!-- 主選單 Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
       <div class="container d-flex justify-content-between align-items-center">
@@ -27,23 +24,14 @@
         </button>
 
         <!-- 中央選單項目 -->
-
         <div :class="['collapse', 'navbar-collapse', { show: !isNavCollapsed }]" id="navbarNav">
-          <!-- 中央選單項目 -->
           <ul class="navbar-nav mx-auto">
-            <!-- 將下拉選單改為直接連結 -->
             <li class="nav-item">
-              <router-link class="nav-link" to="/discountstore">
-                特約商店
-              </router-link>
+              <router-link class="nav-link" to="/discountstore">特約商店</router-link>
             </li>
-
             <li class="nav-item">
-              <router-link class="nav-link" to="/city-movie">
-                CityMovie
-              </router-link>
+              <router-link class="nav-link" to="/city-movie">CityMovie</router-link>
             </li>
-
             <li class="nav-item">
               <router-link class="nav-link" to="/faq">常見問題</router-link>
             </li>
@@ -57,6 +45,7 @@
                 登入/註冊
               </router-link>
             </li>
+
             <!-- 已登入狀態 -->
             <li class="nav-item dropdown" v-else>
               <a
@@ -121,7 +110,9 @@
       </div>
     </div>
   </div>
-</template><script>
+</template>
+
+<script>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
@@ -198,11 +189,6 @@ export default {
 </script>
 
 <style scoped>
-.spacer {
-  height: 20px;
-  background-color: #BA0043;
-}
-
 .navbar {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1030;
@@ -231,14 +217,33 @@ export default {
   color: #BA0043;
   font-weight: 600;
   font-size: 1.5rem;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, border-bottom 0.3s ease;
+  text-decoration: none;
+  position: relative;
+  padding-bottom: 5px;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 3px;
+  bottom: 0;
+  left: 50%;
+  background-color: #BA0043;
+  transition: width 0.3s ease, left 0.3s ease;
 }
 
 .nav-link:hover {
   color: #a00000;
 }
 
-/* 用戶選單樣式 */
+.nav-link:hover::after {
+  width: 100%;
+  left: 0;
+}
+
+/* 其他樣式保持不變 */
 .user-menu {
   display: flex;
   align-items: center;
@@ -252,7 +257,6 @@ export default {
   object-fit: cover;
 }
 
-/* 自訂按鈕樣式 */
 .btn-custom-outline {
   color: #BA0043;
   border: 2px solid #BA0043;
@@ -266,7 +270,7 @@ export default {
 }
 
 .btn-custom-outline:hover {
-  background-color: rgba(186, 0, 67, 0.1);
+  background-color: rgba(186, 0, 67, 0.5);
   color: #a00000;
   border-color: #a00000;
 }
@@ -322,6 +326,11 @@ export default {
 .divider {
   color: #BA0043;
   margin: 0 0.5rem;
+}
+
+.nav-item{
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 /* 響應式設計 */
