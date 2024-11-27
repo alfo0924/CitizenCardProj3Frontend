@@ -369,17 +369,27 @@ body {
   text-decoration: none;
   color: var(--text-color);
   display: block;
-  transition: all 0.3s ease;
+  transition: all 1.5s ease;
 }
 
 .quick-access-card .card {
   border: none;
   box-shadow: var(--box-shadow);
-  transition: transform 0.3s ease;
+  transition: all 0.5s ease;
+  background-color: white;
 }
 
 .quick-access-card:hover .card {
   transform: translateY(-5px);
+  background-color: var(--danger-color);
+}
+
+.quick-access-card .card-body {
+  transition: all 0.5s ease;
+}
+
+.quick-access-card:hover .card-body {
+  color: var(--text-light);
 }
 
 .card-icon {
@@ -393,6 +403,12 @@ body {
   justify-content: center;
   font-size: 1.8rem;
   margin-right: 1.5rem;
+  transition: all 0.5s ease;
+}
+
+.quick-access-card:hover .card-icon {
+  background-color: white;
+  color: var(--danger-color);
 }
 
 .card-content {
@@ -403,11 +419,18 @@ body {
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
   color: var(--text-color);
+  transition: color 0.5s ease;
 }
 
 .card-content p {
   margin: 0;
   color: var(--text-color);
+  transition: color 0.5s ease;
+}
+
+.quick-access-card:hover .card-content h3,
+.quick-access-card:hover .card-content p {
+  color: var(--text-light);
 }
 
 /* 響應式設計 */
@@ -427,7 +450,6 @@ body {
     font-size: 1.25rem;
   }
 }
-
 /* 響應式設計 */
 @media (min-width: 1400px) {
   :root {
