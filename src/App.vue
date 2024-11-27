@@ -449,7 +449,6 @@ body {
     font-size: 1.25rem;
   }
 }
-
 /* 響應式設計 */
 @media (min-width: 1400px) {
   :root {

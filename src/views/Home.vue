@@ -127,23 +127,59 @@ export default {
   justify-content: space-between;
   transform: translateY(-50%);
   z-index: 20;
+  padding: 0 20px; /* 添加左右間距 */
 }
 
 .controls button {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(186, 0, 67, 0.5); /* 改用主題色 */
   color: white;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
+  width: 50px; /* 增加按鈕大小 */
+  height: 50px;
+  font-size: 30px; /* 增加箭頭大小 */
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease; /* 添加過渡效果 */
+  //opacity: 0; /* 預設隱藏 */
 }
 
+/* 滑鼠懸停效果 */
 .controls button:hover {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(186, 0, 67, 0.8);
+  transform: scale(1.1); /* 懸停時放大 */
+}
+
+/* 當滑鼠懸停在輪播圖上時顯示按鈕 */
+.slider:hover .controls button {
+  opacity: 1;
+}
+
+/* 左右按鈕個別樣式 */
+.controls .prev {
+  margin-left: 50px;
+}
+
+.controls .next {
+  margin-right: 50px;
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+  .controls button {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 576px) {
+  .controls button {
+    width: 35px;
+    height: 35px;
+    font-size: 20px;
+  }
 }
 </style>
