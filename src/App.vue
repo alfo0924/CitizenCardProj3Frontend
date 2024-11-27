@@ -407,7 +407,7 @@ body {
 
 .card-content p {
   margin: 0;
-  color: var(--text-light);
+  color: var(--text-color);
 }
 
 /* 響應式設計 */
