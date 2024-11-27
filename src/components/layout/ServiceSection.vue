@@ -94,4 +94,3 @@ export default {
   content: "👤";
 }
 </style>
-  
