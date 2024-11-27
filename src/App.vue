@@ -34,7 +34,47 @@
 
     </main>
 
-    <DiscountStoreList v-if="!showBreadcrumb"/>
+<!--    <DiscountStoreList v-if="!showBreadcrumb"/>-->
+
+    <!-- Quick Access Cards -->
+    <div v-if="!showBreadcrumb" class="quick-access-cards container mt-4">
+      <div class="row g-4">
+        <!-- CityMovie Card -->
+        <div class="col-md-6">
+          <router-link to="/city-movie" class="quick-access-card">
+            <div class="card">
+              <div class="card-body d-flex align-items-center">
+                <div class="card-icon">
+                  <i class="fas fa-film"></i>
+                </div>
+                <div class="card-content">
+                  <h3>CityMovie</h3>
+                  <p>享受精彩電影體驗</p>
+                </div>
+              </div>
+            </div>
+          </router-link>
+        </div>
+
+        <!-- DiscountStore Card -->
+        <div class="col-md-6">
+          <router-link to="/discountstore" class="quick-access-card">
+            <div class="card">
+              <div class="card-body d-flex align-items-center">
+                <div class="card-icon">
+                  <i class="fas fa-store"></i>
+                </div>
+                <div class="card-content">
+                  <h3>商店優惠</h3>
+                  <p>探索特約商店優惠</p>
+                </div>
+              </div>
+            </div>
+          </router-link>
+        </div>
+      </div>
+    </div>
+
     <!-- Footer -->
     <Footer v-if="showFooter" class="app-footer" />
   </div>
@@ -318,6 +358,74 @@ body {
 .container-fluid {
   width: 100%;
   padding: 0 var(--content-padding);
+}
+
+/* 快速訪問卡片樣式 */
+.quick-access-cards {
+  margin-bottom: 2rem;
+}
+
+.quick-access-card {
+  text-decoration: none;
+  color: var(--text-color);
+  display: block;
+  transition: all 0.3s ease;
+}
+
+.quick-access-card .card {
+  border: none;
+  box-shadow: var(--box-shadow);
+  transition: transform 0.3s ease;
+}
+
+.quick-access-card:hover .card {
+  transform: translateY(-5px);
+}
+
+.card-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--danger-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-right: 1.5rem;
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.card-content p {
+  margin: 0;
+  color: var(--text-light);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .quick-access-cards {
+    margin-bottom: 1.5rem;
+  }
+
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+  }
+
+  .card-content h3 {
+    font-size: 1.25rem;
+  }
 }
 
 /* 響應式設計 */
