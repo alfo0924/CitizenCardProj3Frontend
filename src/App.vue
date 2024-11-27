@@ -49,7 +49,7 @@
                 </div>
                 <div class="card-content">
                   <h3>CityMovie</h3>
-                  <p>享受精彩電影體驗</p>
+                  <p>享受免費精彩電影體驗</p>
                 </div>
               </div>
             </div>
@@ -66,7 +66,7 @@
                 </div>
                 <div class="card-content">
                   <h3>商店優惠</h3>
-                  <p>探索特約商店優惠</p>
+                  <p>探索熱門特約商店優惠</p>
                 </div>
               </div>
             </div>
