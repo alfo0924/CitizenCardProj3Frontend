@@ -102,7 +102,7 @@ const routes = [
         component: Wallet,
         meta: {
             requiresAuth: true,
-            title: '電子錢包',
+            title: '電子票夾',
             layout: 'user'
         },
         children: [

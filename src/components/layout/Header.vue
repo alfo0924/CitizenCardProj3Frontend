@@ -70,7 +70,7 @@
                 </li>
                 <li>
                   <router-link class="dropdown-item" to="/wallet">
-                    <i class="fas fa-wallet me-2"></i>電子錢包
+                    <i class="fas fa-wallet me-2"></i>電子票夾
                   </router-link>
                 </li>
                 <!-- 管理員選項 -->
