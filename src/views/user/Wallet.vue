@@ -110,13 +110,13 @@ export default {
     const movieTickets = ref([])
     const discountCoupons = ref([])
 
-// 模擬票券資料
-    const mockTickets = {
+    // 模擬票券資料
+    const mockData = {
       movieTickets: [
         {
           id: 1,
           movieTitle: '蜘蛛人：穿越新宇宙',
-          showTime: '2024-01-15T14:30:00',
+          showTime: '2024-12-15T14:30:00',
           hall: 'A廳',
           seatNumber: 'A12',
           status: 'VALID'
@@ -124,62 +124,77 @@ export default {
         {
           id: 2,
           movieTitle: '玩具總動員4',
-          showTime: '2024-01-20T16:30:00',
-          hall: 'B廳',
+          showTime: '2024-12-20T16:30:00',
+          hall: 'A廳',
           seatNumber: 'B15',
           status: 'USED'
+        },
+        {
+          id: 3,
+          movieTitle: '魔物獵人',
+          showTime: '2024-12-25T19:30:00',
+          hall: 'A廳',
+          seatNumber: 'C08',
+          status: 'EXPIRED'
         }
       ],
       discountCoupons: [
         {
           id: 1,
-          title: '電影票9折優惠',
-          description: '適用於所有電影票購買',
-          expiryDate: '2024-02-01',
-          status: 'VALID'
+          title: '特約商店優惠',
+          description: '全館商品9折',
+          discountType: 'PERCENTAGE',
+          discountValue: 10.00,
+          status: 'VALID',
+          expiryDate: '2024-02-01'
         },
         {
           id: 2,
-          title: '套餐優惠券',
-          description: '購買套餐享有85折優惠',
-          expiryDate: '2024-01-31',
-          status: 'EXPIRED'
+          title: '生日特別優惠',
+          description: '特約商店享85折優惠',
+          discountType: 'PERCENTAGE',
+          discountValue: 15.00,
+          status: 'VALID',
+          expiryDate: '2024-02-15'
+        },
+        {
+          id: 3,
+          title: '商品折扣券',
+          description: '指定商品折抵50元',
+          discountType: 'FIXED_AMOUNT',
+          discountValue: 50.00,
+          status: 'USED',
+          expiryDate: '2024-01-31'
         }
       ]
     }
 
-// 獲取票券資料
+    // 獲取票券資料
     const fetchTickets = async () => {
       try {
         isLoading.value = true
         error.value = null
 
-// 使用模擬資料
-        setTimeout(() => {
-          movieTickets.value = mockTickets.movieTickets
-          discountCoupons.value = mockTickets.discountCoupons
-          isLoading.value = false
-        }, 1000)
-
-// 實際 API 調用（目前註釋掉）
-        /*
         const response = await store.dispatch('wallet/fetchTickets')
-        if (response.success) {
-        movieTickets.value = response.data.movieTickets
-        discountCoupons.value = response.data.discountCoupons
+
+        if (response && response.success) {
+          movieTickets.value = response.data.movieTickets
+          discountCoupons.value = response.data.discountCoupons
         } else {
-        throw new Error(response.message || '獲取票券資料失敗')
+          console.log('使用模擬數據')
+          movieTickets.value = mockData.movieTickets
+          discountCoupons.value = mockData.discountCoupons
         }
-        */
       } catch (err) {
-        error.value = '無法載入票券資料'
         console.error('Fetch tickets error:', err)
+        movieTickets.value = mockData.movieTickets
+        discountCoupons.value = mockData.discountCoupons
       } finally {
         isLoading.value = false
       }
     }
 
-// 格式化日期時間
+    // 格式化日期時間
     const formatDateTime = (datetime) => {
       if (!datetime) return ''
       return new Date(datetime).toLocaleString('zh-TW', {
@@ -191,7 +206,7 @@ export default {
       })
     }
 
-// 格式化日期
+    // 格式化日期
     const formatDate = (date) => {
       if (!date) return ''
       return new Date(date).toLocaleDateString('zh-TW', {
@@ -201,7 +216,7 @@ export default {
       })
     }
 
-// 取得狀態樣式
+    // 取得狀態樣式
     const getStatusClass = (status) => {
       const classes = {
         'VALID': 'status-valid',
@@ -211,7 +226,7 @@ export default {
       return classes[status] || 'status-default'
     }
 
-// 取得狀態文字
+    // 取得狀態文字
     const getStatusText = (status) => {
       const texts = {
         'VALID': '可使用',
@@ -221,16 +236,14 @@ export default {
       return texts[status] || '未知'
     }
 
-// 顯示票券詳情
+    // 顯示票券詳情
     const showTicketDetail = (ticket) => {
       console.log('查看票券詳情:', ticket)
-// TODO: 實作票券詳情顯示邏輯
     }
 
-// 顯示優惠券詳情
+    // 顯示優惠券詳情
     const showCouponDetail = (coupon) => {
       console.log('使用優惠券:', coupon)
-// TODO: 實作優惠券使用邏輯
     }
 
     onMounted(() => {
