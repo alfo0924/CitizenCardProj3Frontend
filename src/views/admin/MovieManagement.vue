@@ -262,64 +262,68 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
 export default {
-  name: 'UserManagement',
+  name: 'MovieManagement',
   components: {
     LoadingSpinner,
     AlertMessage
   },
   setup() {
     const store = useStore()
-    const userModal = ref(null)
+    const movieModal = ref(null)
     const isLoading = ref(false)
     const error = ref(null)
     const isProcessing = ref(false)
     const searchKeyword = ref('')
-    const selectedRole = ref('')
     const selectedStatus = ref('')
     const currentPage = ref(1)
-    const editingUser = ref({
-      name: '',
-      email: '',
-      role: 'USER',
-      status: 'ACTIVE'
+    const editingMovie = ref({
+      title: '',
+      releaseDate: '',
+      duration: '',
+      description: '',
+      status: 'SHOWING'
     })
 
-    // 模擬用戶數據
-    const mockUsers = [
+    // 模擬資料
+    const mockMovies = [
       {
         id: 1,
-        name: '王大明',
-        email: 'wang.dm@gmail.com',
-        role: 'USER',
-        status: 'ACTIVE',
-        createdAt: '2024-01-01T10:30:00'
+        title: '蜘蛛人：穿越新宇宙',
+        releaseDate: '2024-01-15',
+        duration: 140,
+        description: '邁爾斯踏上了新的冒險旅程...',
+        posterUrl: '/posters/spider.jpg',
+        status: 'SHOWING'
       },
       {
         id: 2,
-        name: '李小華',
-        email: 'lee.sh@gmail.com',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        createdAt: '2024-01-02T11:15:00'
+        title: '玩具總動員4',
+        releaseDate: '2024-01-20',
+        duration: 120,
+        description: '胡迪踏上尋找新主人的旅程...',
+        posterUrl: '/posters/toy4.jpg',
+        status: 'COMING'
       },
       {
         id: 3,
-        name: '張美玲',
-        email: 'chang.ml@gmail.com',
-        role: 'USER',
-        status: 'INACTIVE',
-        createdAt: '2024-01-03T12:45:00'
+        title: '魔物獵人',
+        releaseDate: '2024-01-25',
+        duration: 130,
+        description: '改編自同名遊戲...',
+        posterUrl: '/posters/monster.jpg',
+        status: 'ENDED'
       }
     ]
 
     // 從store獲取數據或使用模擬數據
-    const users = computed(() => {
-      const storeUsers = store.state.user.users
-      return storeUsers && storeUsers.length > 0 ? storeUsers : mockUsers
+    const movies = computed(() => {
+      const storeMovies = store.state.movie.movies
+      return storeMovies && storeMovies.length > 0 ? storeMovies : mockMovies
     })
 
-    const totalPages = computed(() => store.state.user.totalPages || Math.ceil(mockUsers.length / 10))
+    const totalPages = computed(() => store.state.movie.totalPages || Math.ceil(mockMovies.length / 10))
 
+    // 分頁顯示
     const displayedPages = computed(() => {
       const range = []
       const delta = 2
@@ -333,181 +337,181 @@ export default {
       return range
     })
 
-    const fetchUsers = async () => {
+    // 獲取電影列表
+    const fetchMovies = async () => {
       try {
         isLoading.value = true
         error.value = null
-        const response = await store.dispatch('user/fetchUsers', {
+
+        // 嘗試從後端獲取數據
+        const response = await store.dispatch('movie/fetchMovies', {
           page: currentPage.value,
-          role: selectedRole.value,
           status: selectedStatus.value,
           keyword: searchKeyword.value
         })
 
         if (!response || !response.success) {
           console.log('使用模擬數據')
-          store.commit('user/setUsers', mockUsers)
+          // 如果後端請求失敗，使用模擬數據
+          store.commit('movie/setMovies', mockMovies)
         }
       } catch (err) {
-        console.error('Error fetching users:', err)
-        error.value = '載入用戶列表失敗'
-        store.commit('user/setUsers', mockUsers)
+        console.error('Error fetching movies:', err)
+        error.value = '載入電影列表失敗'
+        // 發生錯誤時使用模擬數據
+        store.commit('movie/setMovies', mockMovies)
       } finally {
         isLoading.value = false
       }
     }
 
+    // 搜尋處理
     const handleSearch = () => {
       currentPage.value = 1
-      fetchUsers()
+      fetchMovies()
     }
 
-    const filterUsers = () => {
+    // 篩選處理
+    const filterMovies = () => {
       currentPage.value = 1
-      fetchUsers()
+      fetchMovies()
     }
 
+    // 換頁
     const changePage = (page) => {
       if (page >= 1 && page <= totalPages.value) {
         currentPage.value = page
-        fetchUsers()
+        fetchMovies()
       }
     }
 
-    const openUserModal = (user = null) => {
-      if (user) {
-        editingUser.value = { ...user }
+    // 開啟編輯Modal
+    const openMovieModal = (movie = null) => {
+      if (movie) {
+        editingMovie.value = { ...movie }
       } else {
-        editingUser.value = {
-          name: '',
-          email: '',
-          role: 'USER',
-          status: 'ACTIVE'
+        editingMovie.value = {
+          title: '',
+          releaseDate: '',
+          duration: '',
+          description: '',
+          status: 'SHOWING'
         }
       }
-      const modal = new Modal(userModal.value)
+      const modal = new Modal(movieModal.value)
       modal.show()
     }
 
-    const saveUser = async () => {
+    // 處理圖片上傳
+    const handleImageUpload = (event) => {
+      const file = event.target.files[0]
+      if (file) {
+        // TODO: 實作圖片上傳
+        console.log('Uploading image:', file.name)
+      }
+    }
+
+    // 儲存電影
+    const saveMovie = async () => {
       try {
         isProcessing.value = true
-        if (editingUser.value.id) {
-          await store.dispatch('user/updateUser', editingUser.value)
+        if (editingMovie.value.id) {
+          await store.dispatch('movie/updateMovie', editingMovie.value)
         } else {
-          await store.dispatch('user/createUser', editingUser.value)
+          await store.dispatch('movie/createMovie', editingMovie.value)
         }
-        Modal.getInstance(userModal.value).hide()
-        await fetchUsers()
+        Modal.getInstance(movieModal.value).hide()
+        await fetchMovies()
       } catch (err) {
-        error.value = '儲存用戶失敗'
-        console.error('Error saving user:', err)
+        error.value = '儲存電影失敗'
+        console.error('Error saving movie:', err)
       } finally {
         isProcessing.value = false
       }
     }
 
-    const toggleUserStatus = async (user) => {
-      const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
-      const actionText = newStatus === 'ACTIVE' ? '啟用' : '停用'
-      try {
-        await Swal.fire({
-          title: `確定要${actionText}此用戶嗎？`,
-          text: `即將${actionText}用戶「${user.name}」`,
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: `確定${actionText}`,
-          cancelButtonText: '取消'
-        })
-        await store.dispatch('user/updateUser', { ...user, status: newStatus })
-        await fetchUsers()
-        Swal.fire(
-            `已${actionText}`,
-            `用戶已成功${actionText}`,
-            'success'
-        )
-      } catch (err) {
-        error.value = `${actionText}用戶失敗`
-        console.error('Error toggling user status:', err)
-      }
+    // 確認刪除
+    const confirmDelete = (movie) => {
+      Swal.fire({
+        title: '確定要刪除嗎？',
+        text: `即將刪除電影「${movie.title}」`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: '確定刪除',
+        cancelButtonText: '取消'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await store.dispatch('movie/deleteMovie', movie.id)
+            await fetchMovies()
+            Swal.fire('已刪除', '電影已成功刪除', 'success')
+          } catch (err) {
+            error.value = '刪除電影失敗'
+            console.error('Error deleting movie:', err)
+          }
+        }
+      })
     }
 
-    const getRoleBadgeClass = (role) => {
-      switch (role) {
-      case 'ADMIN':
-        return 'bg-danger'
-      case 'USER':
-        return 'bg-primary'
-      default:
-        return 'bg-secondary'
-      }
-    }
-
-    const getRoleText = (role) => {
-      switch (role) {
-      case 'ADMIN':
-        return '管理員'
-      case 'USER':
-        return '一般用戶'
-      default:
-        return '未知'
-      }
-    }
-
-    const getStatusBadgeClass = (status) => {
+    // 獲取狀態樣式
+    const getStatusClass = (status) => {
       switch (status) {
-      case 'ACTIVE':
+      case 'SHOWING':
         return 'bg-success'
-      case 'INACTIVE':
+      case 'COMING':
+        return 'bg-primary'
+      case 'ENDED':
         return 'bg-secondary'
       default:
         return 'bg-secondary'
       }
     }
 
+    // 獲取狀態文字
     const getStatusText = (status) => {
       switch (status) {
-      case 'ACTIVE':
-        return '啟用'
-      case 'INACTIVE':
-        return '停用'
+      case 'SHOWING':
+        return '上映中'
+      case 'COMING':
+        return '即將上映'
+      case 'ENDED':
+        return '已下檔'
       default:
         return '未知'
       }
     }
 
-    const formatDateTime = (datetime) => {
-      return new Date(datetime).toLocaleString('zh-TW')
+    // 格式化日期
+    const formatDate = (date) => {
+      return new Date(date).toLocaleDateString('zh-TW')
     }
 
     onMounted(() => {
-      fetchUsers()
+      fetchMovies()
     })
 
     return {
       isLoading,
       error,
       isProcessing,
-      users,
+      movies,
       searchKeyword,
-      selectedRole,
       selectedStatus,
       currentPage,
       totalPages,
       displayedPages,
-      editingUser,
-      userModal,
+      editingMovie,
+      movieModal,
       handleSearch,
-      filterUsers,
+      filterMovies,
       changePage,
-      openUserModal,
-      saveUser,
-      toggleUserStatus,
-      getRoleBadgeClass,
-      getRoleText,
-      getStatusBadgeClass,
+      openMovieModal,
+      handleImageUpload,
+      saveMovie,
+      confirmDelete,
+      getStatusClass,
       getStatusText,
-      formatDateTime
+      formatDate
     }
   }
 }
