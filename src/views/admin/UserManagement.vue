@@ -249,8 +249,7 @@
     </div>
   </div>
 </template>
-<script>
-import { ref, computed, onMounted } from 'vue'
+<script>import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
@@ -282,11 +281,33 @@ export default {
 
     // 模擬用戶數據
     const mockUsers = [
-      { id: 1, name: '張三', email: 'zhang@example.com', role: 'USER', status: 'ACTIVE', createdAt: '2024-01-01T10:00:00' },
-      { id: 2, name: '李四', email: 'li@example.com', role: 'ADMIN', status: 'ACTIVE', createdAt: '2024-01-02T11:00:00' },
-      { id: 3, name: '王五', email: 'wang@example.com', role: 'USER', status: 'INACTIVE', createdAt: '2024-01-03T12:00:00' }
+      {
+        id: 1,
+        name: '王大明',
+        email: 'wang.dm@gmail.com',
+        role: 'USER',
+        status: 'ACTIVE',
+        createdAt: '2024-01-01T10:30:00'
+      },
+      {
+        id: 2,
+        name: '李小華',
+        email: 'lee.sh@gmail.com',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        createdAt: '2024-01-02T11:15:00'
+      },
+      {
+        id: 3,
+        name: '張美玲',
+        email: 'chang.ml@gmail.com',
+        role: 'USER',
+        status: 'INACTIVE',
+        createdAt: '2024-01-03T12:45:00'
+      }
     ]
 
+    // 從store獲取數據或使用模擬數據
     const users = computed(() => {
       const storeUsers = store.state.user.users
       return storeUsers && storeUsers.length > 0 ? storeUsers : mockUsers
@@ -317,6 +338,7 @@ export default {
           status: selectedStatus.value,
           keyword: searchKeyword.value
         })
+
         if (!response || !response.success) {
           console.log('使用模擬數據')
           store.commit('user/setUsers', mockUsers)
