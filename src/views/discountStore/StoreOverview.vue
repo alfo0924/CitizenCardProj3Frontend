@@ -1,326 +1,311 @@
 <template>
   <div class="container discounts-container">
-    <!-- 載入中狀態 -->
-    <LoadingSpinner v-if="isLoading" />
-
-    <!-- 錯誤提示 -->
-    <AlertMessage v-if="error" type="error" :message="error" @close="error = null" />
-
     <!-- 優惠列表 -->
-    <div v-else class="discounts-content">
-      <h2 class="page-title mb-4">特店優惠總覽</h2>
+    <div class="discounts-content">
+      <h2 class="page-title">特店優惠總覽</h2>
+
       <!-- 搜尋和篩選 -->
-      <div class="shadow-sm p-3 bg-white rounded filters mb-4">
-        <div class="row">
-          <!-- 搜尋框 -->
-          <div class="col-md-4">
-            <div class="input-group">
-              <span class="input-group-text">
-                <i class="fas fa-search"></i>
-              </span>
-              <input type="text" class="form-control" placeholder="搜尋" v-model="searchKeyword" @input="handleSearch">
-              <button type="button" class="btn btn-secondary ml-3">
-                <span>
-                  <i class="bi bi-filter-left">進階搜尋</i>
-                </span>
-              </button>
-            </div>
-          </div>
+      <div class="search-filter-container">
+        <div class="search-box">
+          <span class="search-icon">
+            <i class="fas fa-search"></i>
+          </span>
+          <input type="text" placeholder="搜尋" v-model="searchKeyword">
+          <button class="advanced-search-btn">
+            <i class="bi bi-filter-left"></i>
+            進階搜尋
+          </button>
         </div>
       </div>
-      <div>
-        <h5 class="show-how-many  mb-4">顯示3729項結果</h5>
+
+      <!-- 結果計數 -->
+      <div class="results-count">
+        <h5>顯示 {{ displayedCards.length }} 項結果</h5>
       </div>
-      <div class="hot-discount-store-block hot-card-group row mb-4">
-        <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
-          <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
-          <div class="card-body">
-            <h3 class="card-title text-dark">Store Name</h3>
-            <h4 class="card-text text-dark">Discounts Content</h4>
-            <h5 class="card-text text-dark">Discounts Time</h5>
-            <p class="card-text text-dark">Discounts Store Location</p>
-            <div class="d-flex flex-wrap">
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
+
+      <!-- 優惠卡片區域 -->
+      <div class="cards-container">
+        <router-link v-for="card in displayedCards" :key="card.id"
+          :to="{ name: 'StoreDetail', params: { id: card.id } }" class="store-card">
+          <div class="card-image">
+            <img src="/images/discountStore/shop-158317_1280.png" alt="store-image">
+          </div>
+          <div class="card-content">
+            <h4 class="store-name">{{ card.name }}</h4>
+            <p class="discount-info">{{ card.shortContent }}</p>
+            <p class="location-info">{{ card.address }}</p>
+            <div class="tags">
+              <span class="tag">{{ card.category }}</span>
+              <span class="tag">{{ card.tag }}</span>
             </div>
           </div>
+        </router-link>
+      </div>
+
+      <!-- 分頁控制 -->
+      <div class="pagination-container">
+        <div class="page-control">
+          <span>目前在第</span>
+          <select class="page-select" v-model="currentPage">
+            <option v-for="page in totalPages" :key="page" :value="page">{{ page }}</option>
+          </select>
+          <span>頁 共有 {{ totalItems }} 筆資料，每頁顯示</span>
+          <select class="page-select" v-model="pageSize">
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span>筆</span>
         </div>
-        <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
-          <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
-          <div class="card-body">
-            <h3 class="card-title text-dark">Store Name</h3>
-            <h4 class="card-text text-dark">Discounts Content</h4>
-            <h5 class="card-text text-dark">Discounts Time</h5>
-            <p class="card-text text-dark">Discounts Store Location</p>
-            <div class="d-flex flex-wrap">
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
-            </div>
-          </div>
-        </div>
-        <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
-          <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
-          <div class="card-body">
-            <h3 class="card-title text-dark">Store Name</h3>
-            <h4 class="card-text text-dark">Discounts Content</h4>
-            <h5 class="card-text text-dark">Discounts Time</h5>
-            <p class="card-text text-dark">Discounts Store Location</p>
-            <div class="d-flex flex-wrap">
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-              <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
-            </div>
-          </div>
-        </div>
-        <div class="d-flex">
-          <div class="pagination-filter-control me-auto">
-            <div class="d-flex">
-              <p>目前在第</p>
-            <select class="select text-white" name="show-quantity" id="">
-              <option value="0" selected="selected">1</option>
-              <option value="1">2</option>
-              <option value="2">3</option>
-              <option value="3">4</option>
-              <option value="4">5</option>
-            </select>
-            <p>頁 共有3729筆資料，每頁顯示</p>
-            <select class="select text-white" name="show-quantity" id="">
-              <option value="0" selected="selected">1</option>
-              <option value="1">2</option>
-              <option value="2">3</option>
-              <option value="3">4</option>
-              <option value="4">5</option>
-            </select>
-            <p>筆</p>
-            </div>
-          </div>
-          <div class="store-pagination">
-            <nav aria-label="Page navigation example">
-              <ul class="pagination">
-                <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-                <li class="page-item"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item"><a class="page-link" href="#">Next</a></li>
-              </ul>
-            </nav>
-          </div>
+
+        <div class="pagination">
+          <button class="page-btn" :disabled="currentPage === 1" @click="currentPage--">上一頁</button>
+          <button v-for="page in visiblePages" :key="page" class="page-btn" :class="{ active: currentPage === page }"
+            @click="currentPage = page">{{ page }}</button>
+          <button class="page-btn" :disabled="currentPage === totalPages" @click="currentPage++">下一頁</button>
         </div>
       </div>
     </div>
   </div>
 </template>
+
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import AlertMessage from '@/components/common/AlertMessage.vue'
+import _ from 'lodash';
+import storeData from './StoreInfo.json';
 
 export default {
   name: 'Discounts',
-
-  components: {
-    LoadingSpinner,
-    AlertMessage
-  },
-
-  setup() {
-    const store = useStore()
-    const router = useRouter()
-
-    // 狀態
-    const isLoading = ref(false)
-    const error = ref(null)
-    const searchKeyword = ref('')
-    const selectedType = ref('')
-    const selectedStatus = ref('')
-    const currentPage = ref(1)
-
-    // 從store獲取數據
-    const discounts = computed(() => store.state.discount.discounts)
-    const totalPages = computed(() => store.state.discount.totalPages)
-
-    // 分頁顯示
-    const displayedPages = computed(() => {
-      const delta = 2
-      const range = []
-      const rangeWithDots = []
-      let l
-
-      for (let i = 1; i <= totalPages.value; i++) {
-        if (
-          i === 1 ||
-          i === totalPages.value ||
-          i >= currentPage.value - delta &&
-          i <= currentPage.value + delta
-        ) {
-          range.push(i)
-        }
-      }
-
-      range.forEach((i) => {
-        if (l) {
-          if (i - l === 2) {
-            rangeWithDots.push(l + 1)
-          } else if (i - l !== 1) {
-            rangeWithDots.push('...')
-          }
-        }
-        rangeWithDots.push(i)
-        l = i
-      })
-
-      return rangeWithDots
-    })
-
-    // 獲取優惠列表
-    const fetchDiscounts = async () => {
-      try {
-        isLoading.value = true
-        error.value = null
-        await store.dispatch('discount/fetchDiscounts', {
-          page: currentPage.value,
-          type: selectedType.value,
-          status: selectedStatus.value,
-          keyword: searchKeyword.value
-        })
-      } catch (err) {
-        error.value = '載入優惠列表失敗，請稍後再試'
-        console.error('Error fetching discounts:', err)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    // 搜尋處理
-    const handleSearch = () => {
-      currentPage.value = 1
-      fetchDiscounts()
-    }
-
-    // 篩選處理
-    const filterDiscounts = () => {
-      currentPage.value = 1
-      fetchDiscounts()
-    }
-
-    // 換頁
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        fetchDiscounts()
-      }
-    }
-
-    // 檢查優惠是否過期
-    const isExpired = (discount) => {
-      return new Date(discount.endDate) < new Date()
-    }
-
-    // 檢查優惠是否可用
-    const canUseDiscount = (discount) => {
-      return discount.status === 'ACTIVE' && !isExpired(discount)
-    }
-
-    // 使用優惠
-    const useDiscount = async (discount) => {
-      try {
-        isLoading.value = true
-        error.value = null
-        await store.dispatch('discount/useDiscount', {
-          discountId: discount.id
-        })
-        router.push('/wallet')
-      } catch (err) {
-        error.value = '使用優惠失敗，請稍後再試'
-        console.error('Error using discount:', err)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    // 格式化優惠值
-    const formatDiscountValue = (discount) => {
-      switch (discount.type) {
-        case 'CASH':
-          return `NT$ ${discount.value}`
-        case 'PERCENTAGE':
-          return `${discount.value}% OFF`
-        case 'FIXED':
-          return `折抵 NT$ ${discount.value}`
-        default:
-          return discount.value
-      }
-    }
-
-    // 獲取優惠類型文字
-    const getDiscountType = (type) => {
-      switch (type) {
-        case 'CASH':
-          return '現金折扣'
-        case 'PERCENTAGE':
-          return '折扣優惠'
-        case 'FIXED':
-          return '固定折抵'
-        default:
-          return '優惠'
-      }
-    }
-
-    // 獲取按鈕文字
-    const getActionButtonText = (discount) => {
-      if (discount.status === 'USED') return '已使用'
-      if (isExpired(discount)) return '已過期'
-      return '立即使用'
-    }
-
-    // 格式化日期
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString('zh-TW')
-    }
-
-    onMounted(() => {
-      fetchDiscounts()
-    })
-
+  data() {
     return {
-      isLoading,
-      error,
-      discounts,
-      searchKeyword,
-      selectedType,
-      selectedStatus,
-      currentPage,
-      totalPages,
-      displayedPages,
-      handleSearch,
-      filterDiscounts,
-      changePage,
-      isExpired,
-      canUseDiscount,
-      useDiscount,
-      formatDiscountValue,
-      getDiscountType,
-      getActionButtonText,
-      formatDate
-    }
-  }
-}
+      searchKeyword: '',
+      currentPage: 1,
+      pageSize: 15,
+      stores: storeData.stores,
+    };
+  },
+  computed: {
+    filteredCards() {
+      const keyword = this.searchKeyword.toLowerCase();
+      return this.stores.filter(card =>
+        card.name.toLowerCase().includes(keyword) ||
+        card.shortContent.toLowerCase().includes(keyword) ||
+        card.category.toLowerCase().includes(keyword)
+      );
+    },
+    displayedCards() {
+      const start = (this.currentPage - 1) * this.pageSize;
+      const end = start + this.pageSize;
+      return this.filteredCards.slice(start, end);
+    },
+    totalItems() {
+      return this.filteredCards.length;
+    },
+    totalPages() {
+      return Math.ceil(this.totalItems / this.pageSize);
+    },
+    visiblePages() {
+      const pages = [];
+      let start = Math.max(1, this.currentPage - 2);
+      let end = Math.min(start + 4, this.totalPages);
+      if (end - start < 4) {
+        start = Math.max(1, end - 4);
+      }
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      return pages;
+    },
+  },
+};
 </script>
 
 <style scoped>
-@import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
-
-.card-body {
-  background-color: #CED4DA;
+.discounts-container {
+  padding: 2rem 1rem;
+  background-color: #f8f9fa;
 }
 
-.select {
-  background-color: rgb(0, 119, 255);
-  border: 0px;
-  border-radius: 20%;
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: rgba(186, 0, 67, 0.9);
+  margin-bottom: 2rem;
+}
+
+.search-filter-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+  border-color: rgba(186, 0, 67, 0.5);
+  box-shadow: 0 0 0 2px rgba(186, 0, 67, 0.1);
+  outline: none;
+}
+
+.advanced-search-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(186, 0, 67, 0.1);
+  color: rgba(186, 0, 67, 0.9);
+  border: none;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.advanced-search-btn:hover {
+  background: rgba(186, 0, 67, 0.2);
+}
+
+.results-count {
+  color: rgba(186, 0, 67, 0.9);
+  margin: 1rem 0;
+}
+
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.store-card {
+  background: white;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.store-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-image img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 1.5rem;
+  background: white;
+}
+
+.store-name {
+  font-size: 1.25rem;
+  color: rgba(186, 0, 67, 0.9);
+  margin-bottom: 1rem;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  background: rgba(186, 0, 67, 0.1);
+  color: rgba(186, 0, 67, 0.9);
+  border-radius: 1rem;
+  font-size: 0.875rem;
+}
+
+.pagination-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.page-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.page-select {
+  padding: 0.5rem;
+  border: 1px solid rgba(186, 0, 67, 0.3);
+  border-radius: 0.5rem;
+  background: white;
+  color: rgba(186, 0, 67, 0.9);
+}
+
+.pagination {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(186, 0, 67, 0.3);
+  border-radius: 0.5rem;
+  background: white;
+  color: rgba(186, 0, 67, 0.9);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.page-btn:hover:not(:disabled) {
+  background: rgba(186, 0, 67, 0.1);
+}
+
+.page-btn.active {
+  background: rgba(186, 0, 67, 0.9);
+  color: white;
+}
+
+.page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .page-control {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .store-card {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
 }
 </style>
