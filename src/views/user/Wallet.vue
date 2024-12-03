@@ -1,273 +1,88 @@
 <template>
-  <div class="wallet-container">
-    <!-- 載入中狀態 -->
-    <LoadingSpinner v-if="isLoading" />
+  <div class="wallet-page">
+    <div class="container py-4">
+      <!-- 載入中狀態 -->
+      <LoadingSpinner v-if="isLoading" />
 
-    <!-- 錯誤提示 -->
-    <AlertMessage
-        v-if="error"
-        type="error"
-        :message="error"
-    />
+      <!-- 錯誤提示 -->
+      <AlertMessage v-if="error" type="error" :message="error" />
 
-    <!-- 電子錢包資訊 -->
-    <div v-else class="wallet-content">
-      <!-- 餘額卡片 -->
-      <div class="balance-card mb-4">
-        <div class="balance-info">
-          <h3>我的餘額</h3>
-          <div class="balance-amount">
-            NT$ {{ formatNumber(walletInfo.balance) }}
+      <div v-else>
+        <!-- 標題區域 -->
+        <h1 class="page-title mb-4">我的票券</h1>
+
+        <!-- 票券類型切換 -->
+        <ul class="nav nav-tabs mb-4">
+          <li class="nav-item">
+            <a class="nav-link" :class="{ active: activeTab === 'movie' }"
+               @click="activeTab = 'movie'">電影票</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" :class="{ active: activeTab === 'discount' }"
+               @click="activeTab = 'discount'">優惠券</a>
+          </li>
+        </ul>
+
+        <!-- 電影票列表 -->
+        <div v-if="activeTab === 'movie'" class="ticket-list">
+          <div v-if="movieTickets.length === 0" class="text-center py-5">
+            <i class="fas fa-ticket-alt fa-3x mb-3 text-muted"></i>
+            <p class="text-muted">目前沒有電影票</p>
           </div>
-          <div class="balance-actions mt-3">
-            <button
-                class="btn btn-primary me-2"
-                @click="showTopUpModal"
-            >
-              <i class="fas fa-plus-circle me-1"></i> 儲值
-            </button>
-            <button
-                class="btn btn-outline-primary"
-                @click="showTransferModal"
-                :disabled="!walletInfo.balance"
-            >
-              <i class="fas fa-exchange-alt me-1"></i> 轉帳
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 交易記錄 -->
-      <div class="transactions-section">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h3>交易記錄</h3>
-          <!-- 篩選器 -->
-          <div class="filters">
-            <select
-                class="form-select me-2"
-                v-model="selectedType"
-                @change="filterTransactions"
-            >
-              <option value="">所有類型</option>
-              <option value="DEPOSIT">儲值</option>
-              <option value="PAYMENT">支付</option>
-              <option value="REFUND">退款</option>
-              <option value="TRANSFER">轉帳</option>
-            </select>
-            <input
-                type="month"
-                class="form-control"
-                v-model="selectedMonth"
-                @change="filterTransactions"
-            >
-          </div>
-        </div>
-
-        <!-- 交易列表 -->
-        <div class="transaction-list" v-if="transactions.length">
-          <div
-              v-for="transaction in transactions"
-              :key="transaction.transactionId"
-              class="transaction-item"
-              :class="transaction.type.toLowerCase()"
-          >
-            <div class="transaction-icon">
-              <i :class="getTransactionIcon(transaction.type)"></i>
-            </div>
-            <div class="transaction-info">
-              <div class="transaction-title">
-                {{ getTransactionTitle(transaction) }}
-              </div>
-              <div class="transaction-time">
-                {{ formatDateTime(transaction.transactionTime) }}
-              </div>
-            </div>
-            <div class="transaction-amount" :class="getAmountClass(transaction.type)">
-              {{ getAmountPrefix(transaction.type) }}
-              NT$ {{ formatNumber(transaction.amount) }}
-            </div>
-          </div>
-        </div>
-        <div v-else class="text-center py-4">
-          <p class="text-muted">暫無交易記錄</p>
-        </div>
-
-        <!-- 分頁控制 -->
-        <nav v-if="totalPages > 1" class="mt-4">
-          <ul class="pagination justify-content-center">
-            <li class="page-item" :class="{ disabled: currentPage === 1 }">
-              <button
-                  class="page-link"
-                  @click="changePage(currentPage - 1)"
-                  :disabled="currentPage === 1"
-              >
-                <i class="fas fa-chevron-left"></i>
-              </button>
-            </li>
-            <li
-                v-for="page in displayedPages"
-                :key="page"
-                class="page-item"
-                :class="{ active: currentPage === page, disabled: page === '...' }"
-            >
-              <button
-                  class="page-link"
-                  @click="page !== '...' && changePage(page)"
-              >
-                {{ page }}
-              </button>
-            </li>
-            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-              <button
-                  class="page-link"
-                  @click="changePage(currentPage + 1)"
-                  :disabled="currentPage === totalPages"
-              >
-                <i class="fas fa-chevron-right"></i>
-              </button>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
-
-    <!-- 儲值Modal -->
-    <div
-        class="modal fade"
-        id="topUpModal"
-        tabindex="-1"
-        ref="topUpModal"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">儲值金額</h5>
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-            ></button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label class="form-label">選擇金額</label>
-              <div class="amount-options">
-                <button
-                    v-for="amount in topUpAmounts"
-                    :key="amount"
-                    class="btn"
-                    :class="topUpAmount === amount ? 'btn-primary' : 'btn-outline-primary'"
-                    @click="selectTopUpAmount(amount)"
-                >
-                  NT$ {{ formatNumber(amount) }}
-                </button>
-              </div>
-              <div class="mt-3">
-                <label class="form-label">或輸入其他金額</label>
-                <input
-                    type="number"
-                    class="form-control"
-                    v-model.number="customTopUpAmount"
-                    min="100"
-                    max="50000"
-                    step="100"
-                >
-                <small class="text-muted">
-                  最低儲值金額NT$ 100，最高NT$ 50,000
-                </small>
+          <div v-else class="row g-4">
+            <div v-for="ticket in movieTickets" :key="ticket.id" class="col-md-6">
+              <div class="ticket-card">
+                <div class="ticket-header">
+                  <h5>{{ ticket.movieTitle }}</h5>
+                  <span :class="getStatusClass(ticket.status)">
+                    {{ getStatusText(ticket.status) }}
+                  </span>
+                </div>
+                <div class="ticket-body">
+                  <p><i class="fas fa-calendar"></i> {{ formatDateTime(ticket.showTime) }}</p>
+                  <p><i class="fas fa-map-marker-alt"></i> {{ ticket.hall }}</p>
+                  <p><i class="fas fa-chair"></i> {{ ticket.seatNumber }}</p>
+                </div>
+                <div class="ticket-footer">
+                  <button class="btn btn-outline-primary"
+                          @click="showTicketDetail(ticket)"
+                          :disabled="ticket.status === 'USED'">
+                    查看詳情
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button
-                type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal"
-            >
-              取消
-            </button>
-            <button
-                type="button"
-                class="btn btn-primary"
-                @click="handleTopUp"
-                :disabled="!isValidTopUpAmount || isProcessing"
-            >
-              <span v-if="isProcessing" class="spinner-border spinner-border-sm me-2"></span>
-              {{ isProcessing ? '處理中...' : '確認儲值' }}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 轉帳Modal -->
-    <div
-        class="modal fade"
-        id="transferModal"
-        tabindex="-1"
-        ref="transferModal"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">轉帳</h5>
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-            ></button>
+        <!-- 優惠券列表 -->
+        <div v-if="activeTab === 'discount'" class="coupon-list">
+          <div v-if="discountCoupons.length === 0" class="text-center py-5">
+            <i class="fas fa-tag fa-3x mb-3 text-muted"></i>
+            <p class="text-muted">目前沒有優惠券</p>
           </div>
-          <div class="modal-body">
-            <div class="form-group mb-3">
-              <label class="form-label">收款人Email</label>
-              <input
-                  type="email"
-                  class="form-control"
-                  v-model="transferData.receiverEmail"
-                  placeholder="請輸入收款人Email"
-              >
+          <div v-else class="row g-4">
+            <div v-for="coupon in discountCoupons" :key="coupon.id" class="col-md-6">
+              <div class="coupon-card">
+                <div class="coupon-header">
+                  <h5>{{ coupon.title }}</h5>
+                  <span :class="getStatusClass(coupon.status)">
+                    {{ getStatusText(coupon.status) }}
+                  </span>
+                </div>
+                <div class="coupon-body">
+                  <p>{{ coupon.description }}</p>
+                  <p><i class="fas fa-clock"></i> 有效期限：{{ formatDate(coupon.expiryDate) }}</p>
+                </div>
+                <div class="coupon-footer">
+                  <button class="btn btn-outline-primary"
+                          @click="showCouponDetail(coupon)"
+                          :disabled="coupon.status === 'USED' || coupon.status === 'EXPIRED'">
+                    使用優惠券
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="form-group mb-3">
-              <label class="form-label">轉帳金額</label>
-              <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="transferData.amount"
-                  min="1"
-                  :max="walletInfo.balance"
-                  placeholder="請輸入轉帳金額"
-              >
-              <small class="text-muted">
-                可轉帳金額上限：NT$ {{ formatNumber(walletInfo.balance) }}
-              </small>
-            </div>
-            <div class="form-group">
-              <label class="form-label">備註（選填）</label>
-              <input
-                  type="text"
-                  class="form-control"
-                  v-model="transferData.note"
-                  placeholder="請輸入備註"
-              >
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button
-                type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal"
-            >
-              取消
-            </button>
-            <button
-                type="button"
-                class="btn btn-primary"
-                @click="handleTransfer"
-                :disabled="!isValidTransfer || isProcessing"
-            >
-              <span v-if="isProcessing" class="spinner-border spinner-border-sm me-2"></span>
-              {{ isProcessing ? '處理中...' : '確認轉帳' }}
-            </button>
           </div>
         </div>
       </div>
@@ -276,512 +91,260 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
-import { Modal } from 'bootstrap'
-
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
 export default {
   name: 'Wallet',
-
   components: {
     LoadingSpinner,
     AlertMessage
   },
-
   setup() {
     const store = useStore()
-    const topUpModal = ref(null)
-    const transferModal = ref(null)
-
-    // 狀態
+    const activeTab = ref('movie')
     const isLoading = ref(false)
     const error = ref(null)
-    const isProcessing = ref(false)
-    const currentPage = ref(1)
-    const selectedType = ref('')
-    const selectedMonth = ref('')
+    const movieTickets = ref([])
+    const discountCoupons = ref([])
 
-    // 儲值相關
-    const topUpAmounts = [1000, 2000, 3000, 5000, 10000]
-    const topUpAmount = ref(0)
-    const customTopUpAmount = ref(null)
-
-    // 轉帳相關
-    const transferData = ref({
-      receiverEmail: '',
-      amount: null,
-      note: ''
-    })
-
-    // 從store獲取數據
-    const walletInfo = computed(() => store.state.wallet.info)
-    const transactions = computed(() => store.state.wallet.transactions)
-    const totalPages = computed(() => store.state.wallet.totalPages)
-
-    // 計算屬性
-    const isValidTopUpAmount = computed(() => {
-      const amount = customTopUpAmount.value || topUpAmount.value
-      return amount >= 100 && amount <= 50000
-    })
-
-    const isValidTransfer = computed(() => {
-      return transferData.value.receiverEmail &&
-          transferData.value.amount > 0 &&
-          transferData.value.amount <= walletInfo.value.balance
-    })
-
-    // 分頁顯示
-    const displayedPages = computed(() => {
-      const delta = 2
-      const range = []
-      const rangeWithDots = []
-      let l
-
-      for (let i = 1; i <= totalPages.value; i++) {
-        if (
-            i === 1 ||
-            i === totalPages.value ||
-            i >= currentPage.value - delta &&
-            i <= currentPage.value + delta
-        ) {
-          range.push(i)
+    // 模擬票券資料
+    const mockData = {
+      movieTickets: [
+        {
+          id: 1,
+          movieTitle: '蜘蛛人：穿越新宇宙',
+          showTime: '2024-12-15T14:30:00',
+          hall: 'A廳',
+          seatNumber: 'A12',
+          status: 'VALID'
+        },
+        {
+          id: 2,
+          movieTitle: '玩具總動員4',
+          showTime: '2024-12-20T16:30:00',
+          hall: 'A廳',
+          seatNumber: 'B15',
+          status: 'USED'
+        },
+        {
+          id: 3,
+          movieTitle: '魔物獵人',
+          showTime: '2024-12-25T19:30:00',
+          hall: 'A廳',
+          seatNumber: 'C08',
+          status: 'EXPIRED'
         }
-      }
-
-      range.forEach((i) => {
-        if (l) {
-          if (i - l === 2) {
-            rangeWithDots.push(l + 1)
-          } else if (i - l !== 1) {
-            rangeWithDots.push('...')
-          }
+      ],
+      discountCoupons: [
+        {
+          id: 1,
+          title: '特約商店優惠',
+          description: '全館商品9折',
+          discountType: 'PERCENTAGE',
+          discountValue: 10.00,
+          status: 'VALID',
+          expiryDate: '2024-02-01'
+        },
+        {
+          id: 2,
+          title: '生日特別優惠',
+          description: '特約商店享85折優惠',
+          discountType: 'PERCENTAGE',
+          discountValue: 15.00,
+          status: 'VALID',
+          expiryDate: '2024-02-15'
+        },
+        {
+          id: 3,
+          title: '商品折扣券',
+          description: '指定商品折抵50元',
+          discountType: 'FIXED_AMOUNT',
+          discountValue: 50.00,
+          status: 'USED',
+          expiryDate: '2024-01-31'
         }
-        rangeWithDots.push(i)
-        l = i
-      })
+      ]
+    }
 
-      return rangeWithDots
-    })
-
-// 修改 fetchWalletInfo 函數
-    const fetchWalletInfo = async () => {
+    // 獲取票券資料
+    const fetchTickets = async () => {
       try {
         isLoading.value = true
         error.value = null
 
-        // 嘗試從後端獲取數據
-        try {
-          await store.dispatch('wallet/fetchWalletInfo')
-        } catch (err) {
-          console.log('Using mock data due to API error:', err)
-          // 如果API請求失敗，使用模擬數據
-          store.commit('wallet/SET_WALLET_INFO', mockWalletInfo)
+        const response = await store.dispatch('wallet/fetchTickets')
+
+        if (response && response.success) {
+          movieTickets.value = response.data.movieTickets
+          discountCoupons.value = response.data.discountCoupons
+        } else {
+          console.log('使用模擬數據')
+          movieTickets.value = mockData.movieTickets
+          discountCoupons.value = mockData.discountCoupons
         }
       } catch (err) {
-        error.value = '載入錢包資訊失敗，請稍後再試'
-        console.error('Error fetching wallet info:', err)
+        console.error('Fetch tickets error:', err)
+        movieTickets.value = mockData.movieTickets
+        discountCoupons.value = mockData.discountCoupons
       } finally {
         isLoading.value = false
       }
     }
 
-    // 修改 fetchTransactions 函數
-    const fetchTransactions = async () => {
-      try {
-        // 嘗試從後端獲取數據
-        try {
-          await store.dispatch('wallet/fetchTransactions', {
-            page: currentPage.value,
-            type: selectedType.value,
-            month: selectedMonth.value
-          })
-        } catch (err) {
-          console.log('Using mock transactions due to API error:', err)
-          // 如果API請求失敗，使用模擬數據
-          store.commit('wallet/SET_TRANSACTIONS', mockTransactions)
-          store.commit('wallet/SET_TOTAL_PAGES', 1)
-        }
-      } catch (err) {
-        console.error('Error fetching transactions:', err)
-      }
-    }
-
-    // 篩選交易記錄
-    const filterTransactions = () => {
-      currentPage.value = 1
-      fetchTransactions()
-    }
-
-    // 換頁
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        fetchTransactions()
-      }
-    }
-
-    // 顯示儲值Modal
-    const showTopUpModal = () => {
-      topUpAmount.value = 0
-      customTopUpAmount.value = null
-      const modal = new Modal(topUpModal.value)
-      modal.show()
-    }
-
-    // 選擇儲值金額
-    const selectTopUpAmount = (amount) => {
-      topUpAmount.value = amount
-      customTopUpAmount.value = null
-    }
-
-    const handleTopUp = async () => {
-      const amount = customTopUpAmount.value || topUpAmount.value
-      if (!isValidTopUpAmount.value) return
-
-      try {
-        isProcessing.value = true
-        try {
-          await store.dispatch('wallet/topUp', { amount })
-        } catch (err) {
-          console.log('Using mock top-up due to API error:', err)
-          // 模擬儲值成功
-          const newBalance = walletInfo.value.balance + amount
-          store.commit('wallet/SET_WALLET_INFO', {
-            ...mockWalletInfo,
-            balance: newBalance
-          })
-
-          // 添加新的交易記錄
-          const newTransaction = {
-            transactionId: Date.now(),
-            type: 'DEPOSIT',
-            amount: amount,
-            balance: newBalance,
-            description: '儲值',
-            transactionTime: new Date().toISOString(),
-            status: 'COMPLETED'
-          }
-
-          store.commit('wallet/SET_TRANSACTIONS', [newTransaction, ...transactions.value])
-        }
-        Modal.getInstance(topUpModal.value).hide()
-        await fetchWalletInfo()
-        await fetchTransactions()
-      } catch (err) {
-        error.value = '儲值失敗，請稍後再試'
-        console.error('Top up error:', err)
-      } finally {
-        isProcessing.value = false
-      }
-    }
-
-    // 顯示轉帳Modal
-    const showTransferModal = () => {
-      transferData.value = {
-        receiverEmail: '',
-        amount: null,
-        note: ''
-      }
-      const modal = new Modal(transferModal.value)
-      modal.show()
-    }
-
-    // 處理轉帳
-    const handleTransfer = async () => {
-      if (!isValidTransfer.value) return
-
-      try {
-        isProcessing.value = true
-        try {
-          await store.dispatch('wallet/transfer', transferData.value)
-        } catch (err) {
-          console.log('Using mock transfer due to API error:', err)
-          // 模擬轉帳成功
-          const newBalance = walletInfo.value.balance - transferData.value.amount
-          store.commit('wallet/SET_WALLET_INFO', {
-            ...mockWalletInfo,
-            balance: newBalance
-          })
-
-          // 添加新的交易記錄
-          const newTransaction = {
-            transactionId: Date.now(),
-            type: 'TRANSFER',
-            amount: transferData.value.amount,
-            balance: newBalance,
-            description: `轉帳給 ${transferData.value.receiverEmail}`,
-            transactionTime: new Date().toISOString(),
-            status: 'COMPLETED'
-          }
-
-          store.commit('wallet/SET_TRANSACTIONS', [newTransaction, ...transactions.value])
-        }
-        Modal.getInstance(transferModal.value).hide()
-        await fetchWalletInfo()
-        await fetchTransactions()
-      } catch (err) {
-        error.value = '轉帳失敗，請稍後再試'
-        console.error('Transfer error:', err)
-      } finally {
-        isProcessing.value = false
-      }
-    }
-
-    // 取得交易圖標
-    const getTransactionIcon = (type) => {
-      switch (type) {
-        case 'DEPOSIT':
-          return 'fas fa-plus-circle'
-        case 'PAYMENT':
-          return 'fas fa-shopping-cart'
-        case 'REFUND':
-          return 'fas fa-undo'
-        case 'TRANSFER':
-          return 'fas fa-exchange-alt'
-        default:
-          return 'fas fa-circle'
-      }
-    }
-
-    // 取得交易標題
-    const getTransactionTitle = (transaction) => {
-      switch (transaction.type) {
-        case 'DEPOSIT':
-          return '儲值'
-        case 'PAYMENT':
-          return transaction.description || '支付'
-        case 'REFUND':
-          return '退款'
-        case 'TRANSFER':
-          return `轉帳${transaction.isReceived ? '收入' : '支出'}`
-        default:
-          return transaction.description || '交易'
-      }
-    }
-
-    // 取得金額前綴
-    const getAmountPrefix = (type) => {
-      switch (type) {
-        case 'DEPOSIT':
-        case 'REFUND':
-          return '+'
-        case 'PAYMENT':
-        case 'TRANSFER':
-          return '-'
-        default:
-          return ''
-      }
-    }
-
-    // 取得金額樣式
-    const getAmountClass = (type) => {
-      switch (type) {
-        case 'DEPOSIT':
-        case 'REFUND':
-          return 'text-success'
-        case 'PAYMENT':
-        case 'TRANSFER':
-          return 'text-danger'
-        default:
-          return ''
-      }
-    }
-
-    // 格式化數字
-    const formatNumber = (number) => {
-      return number.toLocaleString('zh-TW')
-    }
-
     // 格式化日期時間
     const formatDateTime = (datetime) => {
-      return new Date(datetime).toLocaleString('zh-TW')
+      if (!datetime) return ''
+      return new Date(datetime).toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
 
-    // 初始化
-    onMounted(async () => {
-      await fetchWalletInfo()
-      await fetchTransactions()
-    })
-// 在setup函數內添加模擬數據
-    const mockWalletInfo = {
-      balance: 5000,
-      userId: 1,
-      status: 'ACTIVE'
+    // 格式化日期
+    const formatDate = (date) => {
+      if (!date) return ''
+      return new Date(date).toLocaleDateString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      })
     }
 
-    const mockTransactions = [
-      {
-        transactionId: 1,
-        type: 'DEPOSIT',
-        amount: 1000,
-        balance: 5000,
-        description: '儲值',
-        transactionTime: new Date().toISOString(),
-        status: 'COMPLETED'
-      },
-      {
-        transactionId: 2,
-        type: 'PAYMENT',
-        amount: 300,
-        balance: 4700,
-        description: '購票',
-        transactionTime: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        status: 'COMPLETED'
-      },
-      {
-        transactionId: 3,
-        type: 'REFUND',
-        amount: 300,
-        balance: 5000,
-        description: '退票',
-        transactionTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        status: 'COMPLETED'
+    // 取得狀態樣式
+    const getStatusClass = (status) => {
+      const classes = {
+        'VALID': 'status-valid',
+        'USED': 'status-used',
+        'EXPIRED': 'status-expired'
       }
-    ]
+      return classes[status] || 'status-default'
+    }
 
+    // 取得狀態文字
+    const getStatusText = (status) => {
+      const texts = {
+        'VALID': '可使用',
+        'USED': '已使用',
+        'EXPIRED': '已過期'
+      }
+      return texts[status] || '未知'
+    }
 
+    // 顯示票券詳情
+    const showTicketDetail = (ticket) => {
+      console.log('查看票券詳情:', ticket)
+    }
+
+    // 顯示優惠券詳情
+    const showCouponDetail = (coupon) => {
+      console.log('使用優惠券:', coupon)
+    }
+
+    onMounted(() => {
+      fetchTickets()
+    })
 
     return {
+      activeTab,
       isLoading,
       error,
-      isProcessing,
-      walletInfo,
-      transactions,
-      currentPage,
-      totalPages,
-      displayedPages,
-      selectedType,
-      selectedMonth,
-      topUpModal,
-      transferModal,
-      topUpAmounts,
-      topUpAmount,
-      customTopUpAmount,
-      transferData,
-      isValidTopUpAmount,
-      isValidTransfer,
-      showTopUpModal,
-      selectTopUpAmount,
-      handleTopUp,
-      showTransferModal,
-      handleTransfer,
-      getTransactionIcon,
-      getTransactionTitle,
-      getAmountPrefix,
-      getAmountClass,
-      formatNumber,
+      movieTickets,
+      discountCoupons,
       formatDateTime,
-      filterTransactions,
-      changePage,
-      fetchWalletInfo,
-      fetchTransactions
+      formatDate,
+      getStatusClass,
+      getStatusText,
+      showTicketDetail,
+      showCouponDetail
     }
   }
 }
 </script>
 
 <style scoped>
-.wallet-container {
-  padding: 2rem 0;
+.wallet-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
 }
 
-.balance-card {
-  background-color: var(--primary-color);
+.page-title {
+  color: #BA0043;
+  font-weight: 600;
+}
+
+.nav-tabs .nav-link {
+  color: #495057;
+  cursor: pointer;
+}
+
+.nav-tabs .nav-link.active {
+  color: #BA0043;
+  border-color: #BA0043;
+}
+
+.ticket-card, .coupon-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.ticket-header, .coupon-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.status-valid {
+  color: #28a745;
+}
+
+.status-used {
+  color: #6c757d;
+}
+
+.status-expired {
+  color: #dc3545;
+}
+
+.ticket-body, .coupon-body {
+  margin-bottom: 1rem;
+}
+
+.ticket-body p, .coupon-body p {
+  margin-bottom: 0.5rem;
+}
+
+.ticket-body i, .coupon-body i {
+  margin-right: 0.5rem;
+  color: #BA0043;
+}
+
+.btn-outline-primary {
+  color: #BA0043;
+  border-color: #BA0043;
+}
+
+.btn-outline-primary:hover {
+  background-color: #BA0043;
   color: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
 }
 
-.balance-info h3 {
-  margin-bottom: 1rem;
-  font-size: 1.25rem;
-}
-
-.balance-amount {
-  font-size: 2.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
-}
-
-.transactions-section {
-  background-color: white;
-  padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
-}
-
-.filters {
-  display: flex;
-  gap: 1rem;
-}
-
-.transaction-list {
-  margin-top: 1.5rem;
-}
-
-.transaction-item {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.transaction-item:last-child {
-  border-bottom: none;
-}
-
-.transaction-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin-right: 1rem;
-  background-color: var(--bg-light);
-}
-
-.transaction-info {
-  flex: 1;
-}
-
-.transaction-title {
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.transaction-time {
-  font-size: 0.875rem;
-  color: var(--text-light);
-}
-
-.transaction-amount {
-  font-weight: 600;
-}
-
-.amount-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+.btn-outline-primary:disabled {
+  color: #6c757d;
+  border-color: #6c757d;
 }
 
 @media (max-width: 768px) {
-  .balance-card,
-  .transactions-section {
-    padding: 1.5rem;
-  }
-
-  .filters {
-    flex-direction: column;
-  }
-
-  .amount-options {
-    grid-template-columns: repeat(2, 1fr);
+  .ticket-card, .coupon-card {
+    padding: 1rem;
   }
 }
 </style>

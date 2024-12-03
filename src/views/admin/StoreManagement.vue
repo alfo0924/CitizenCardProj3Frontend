@@ -390,16 +390,12 @@ import { debounce } from '@/utils/helpers'
 
 export default {
   name: 'StoreManagement',
-
   components: {
     LoadingSpinner,
     AlertMessage
   },
-
   setup() {
     const store = useStore()
-
-    // 響應式狀態
     const loading = ref(false)
     const saving = ref(false)
     const deleting = ref(false)
@@ -414,9 +410,63 @@ export default {
     const totalItems = ref(0)
     const itemsPerPage = 10
 
-    // Modal 實例
-    let storeModal = null
-    let deleteModal = null
+    // 模擬商店資料
+    const mockStores = [
+      {
+        id: 1,
+        name: '星巴克逢甲店',
+        category: '咖啡廳',
+        description: '提供優質咖啡和輕食的休閒空間',
+        address: '台中市西屯區文華路100號',
+        phone: '04-12345678',
+        email: 'fcustar@gmail.com',
+        website: 'https://www.starbucks.com.tw',
+        openingHours: '週一至週日 07:00-22:00',
+        imageUrl: '/images/stores/starbucks.jpg',
+        rating: 4.5,
+        ratingCount: 128,
+        status: 'active'
+      },
+      {
+        id: 2,
+        name: '麥當勞逢甲店',
+        category: '速食',
+        description: '24小時營業的速食餐廳',
+        address: '台中市西屯區文華路120號',
+        phone: '04-23456789',
+        email: 'fcumc@gmail.com',
+        website: 'https://www.mcdonalds.com.tw',
+        openingHours: '24小時營業',
+        imageUrl: '/images/stores/mcdonalds.jpg',
+        rating: 4.3,
+        ratingCount: 256,
+        status: 'active'
+      },
+      {
+        id: 3,
+        name: '全家便利商店',
+        category: '便利商店',
+        description: '24小時便利商店',
+        address: '台中市西屯區文華路80號',
+        phone: '04-34567890',
+        email: 'fcufamily@gmail.com',
+        website: 'https://www.family.com.tw',
+        openingHours: '24小時營業',
+        imageUrl: '/images/stores/family.jpg',
+        rating: 4.2,
+        ratingCount: 186,
+        status: 'pending'
+      }
+    ]
+
+    // 模擬類別資料
+    const mockCategories = [
+      { id: 1, name: '咖啡廳' },
+      { id: 2, name: '速食' },
+      { id: 3, name: '便利商店' },
+      { id: 4, name: '餐廳' },
+      { id: 5, name: '飲料店' }
+    ]
 
     // 表單數據
     const storeForm = ref({
@@ -450,7 +500,7 @@ export default {
       return range
     })
 
-    // 方法
+    // 獲取商店列表
     const fetchStores = async () => {
       loading.value = true
       error.value = ''
@@ -463,39 +513,58 @@ export default {
           sort: sortBy.value,
           search: searchQuery.value
         })
-        stores.value = response.data.content
-        totalItems.value = response.data.totalElements
+
+        if (response && response.success) {
+          stores.value = response.data.content
+          totalItems.value = response.data.totalElements
+        } else {
+          console.log('使用模擬數據')
+          stores.value = mockStores
+          totalItems.value = mockStores.length
+        }
       } catch (err) {
-        error.value = '載入商店資料失敗，請稍後再試'
+        error.value = '載入商店資料失敗'
         console.error('Error fetching stores:', err)
+        stores.value = mockStores
+        totalItems.value = mockStores.length
       } finally {
         loading.value = false
       }
     }
 
+    // 獲取類別列表
     const fetchCategories = async () => {
       try {
         const response = await store.dispatch('store/fetchCategories')
-        categories.value = response.data
+        if (response && response.success) {
+          categories.value = response.data
+        } else {
+          categories.value = mockCategories
+        }
       } catch (err) {
         console.error('Error fetching categories:', err)
+        categories.value = mockCategories
       }
     }
 
+    // 搜尋處理
     const handleSearch = debounce(() => {
       currentPage.value = 1
       fetchStores()
     }, 300)
 
+    // 篩選處理
     const handleFilter = () => {
       currentPage.value = 1
       fetchStores()
     }
 
+    // 排序處理
     const handleSort = () => {
       fetchStores()
     }
 
+    // 換頁
     const changePage = (page) => {
       if (page >= 1 && page <= totalPages.value) {
         currentPage.value = page
@@ -503,6 +572,7 @@ export default {
       }
     }
 
+    // 新增/編輯商店
     const showAddStoreModal = () => {
       storeForm.value = {
         id: null,
@@ -534,13 +604,14 @@ export default {
         storeModal.hide()
         fetchStores()
       } catch (err) {
-        error.value = '儲存失敗，請稍後再試'
+        error.value = '儲存失敗'
         console.error('Error saving store:', err)
       } finally {
         saving.value = false
       }
     }
 
+    // 刪除商店
     const confirmDelete = (store) => {
       storeToDelete.value = store
       deleteModal.show()
@@ -548,14 +619,13 @@ export default {
 
     const deleteStore = async () => {
       if (!storeToDelete.value) return
-
       deleting.value = true
       try {
         await store.dispatch('store/deleteStore', storeToDelete.value.id)
         deleteModal.hide()
         fetchStores()
       } catch (err) {
-        error.value = '刪除失敗，請稍後再試'
+        error.value = '刪除失敗'
         console.error('Error deleting store:', err)
       } finally {
         deleting.value = false
@@ -563,6 +633,7 @@ export default {
       }
     }
 
+    // 狀態相關方法
     const getStatusClass = (status) => {
       const statusMap = {
         'active': 'bg-success',
@@ -583,14 +654,11 @@ export default {
 
     // 生命週期鉤子
     onMounted(() => {
-      storeModal = new Modal(document.getElementById('storeModal'))
-      deleteModal = new Modal(document.getElementById('deleteModal'))
       fetchCategories()
       fetchStores()
     })
 
     return {
-      // 狀態
       loading,
       saving,
       deleting,
@@ -605,12 +673,8 @@ export default {
       storeForm,
       editingStore,
       storeToDelete,
-
-      // 計算屬性
       totalPages,
       displayedPages,
-
-      // 方法
       handleSearch,
       handleFilter,
       handleSort,
