@@ -258,23 +258,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
-
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
 export default {
   name: 'MovieManagement',
-
   components: {
     LoadingSpinner,
     AlertMessage
   },
-
   setup() {
     const store = useStore()
     const movieModal = ref(null)
-
-    // 狀態
     const isLoading = ref(false)
     const error = ref(null)
     const isProcessing = ref(false)
@@ -289,9 +284,44 @@ export default {
       status: 'SHOWING'
     })
 
-    // 從store獲取數據
-    const movies = computed(() => store.state.movie.movies)
-    const totalPages = computed(() => store.state.movie.totalPages)
+    // 模擬資料
+    const mockMovies = [
+      {
+        id: 1,
+        title: '蜘蛛人：穿越新宇宙',
+        releaseDate: '2024-01-15',
+        duration: 140,
+        description: '邁爾斯踏上了新的冒險旅程...',
+        posterUrl: '/posters/spider.jpg',
+        status: 'SHOWING'
+      },
+      {
+        id: 2,
+        title: '玩具總動員4',
+        releaseDate: '2024-01-20',
+        duration: 120,
+        description: '胡迪踏上尋找新主人的旅程...',
+        posterUrl: '/posters/toy4.jpg',
+        status: 'COMING'
+      },
+      {
+        id: 3,
+        title: '魔物獵人',
+        releaseDate: '2024-01-25',
+        duration: 130,
+        description: '改編自同名遊戲...',
+        posterUrl: '/posters/monster.jpg',
+        status: 'ENDED'
+      }
+    ]
+
+    // 從store獲取數據或使用模擬數據
+    const movies = computed(() => {
+      const storeMovies = store.state.movie.movies
+      return storeMovies && storeMovies.length > 0 ? storeMovies : mockMovies
+    })
+
+    const totalPages = computed(() => store.state.movie.totalPages || Math.ceil(mockMovies.length / 10))
 
     // 分頁顯示
     const displayedPages = computed(() => {
@@ -312,14 +342,24 @@ export default {
       try {
         isLoading.value = true
         error.value = null
-        await store.dispatch('movie/fetchMovies', {
+
+        // 嘗試從後端獲取數據
+        const response = await store.dispatch('movie/fetchMovies', {
           page: currentPage.value,
           status: selectedStatus.value,
           keyword: searchKeyword.value
         })
+
+        if (!response || !response.success) {
+          console.log('使用模擬數據')
+          // 如果後端請求失敗，使用模擬數據
+          store.commit('movie/setMovies', mockMovies)
+        }
       } catch (err) {
-        error.value = '載入電影列表失敗'
         console.error('Error fetching movies:', err)
+        error.value = '載入電影列表失敗'
+        // 發生錯誤時使用模擬數據
+        store.commit('movie/setMovies', mockMovies)
       } finally {
         isLoading.value = false
       }
@@ -367,6 +407,7 @@ export default {
       const file = event.target.files[0]
       if (file) {
         // TODO: 實作圖片上傳
+        console.log('Uploading image:', file.name)
       }
     }
 
@@ -415,28 +456,28 @@ export default {
     // 獲取狀態樣式
     const getStatusClass = (status) => {
       switch (status) {
-        case 'SHOWING':
-          return 'bg-success'
-        case 'COMING':
-          return 'bg-primary'
-        case 'ENDED':
-          return 'bg-secondary'
-        default:
-          return 'bg-secondary'
+      case 'SHOWING':
+        return 'bg-success'
+      case 'COMING':
+        return 'bg-primary'
+      case 'ENDED':
+        return 'bg-secondary'
+      default:
+        return 'bg-secondary'
       }
     }
 
     // 獲取狀態文字
     const getStatusText = (status) => {
       switch (status) {
-        case 'SHOWING':
-          return '上映中'
-        case 'COMING':
-          return '即將上映'
-        case 'ENDED':
-          return '已下檔'
-        default:
-          return '未知'
+      case 'SHOWING':
+        return '上映中'
+      case 'COMING':
+        return '即將上映'
+      case 'ENDED':
+        return '已下檔'
+      default:
+        return '未知'
       }
     }
 

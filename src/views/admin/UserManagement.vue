@@ -254,23 +254,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
-
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
 export default {
   name: 'UserManagement',
-
   components: {
     LoadingSpinner,
     AlertMessage
   },
-
   setup() {
     const store = useStore()
     const userModal = ref(null)
-
-    // 狀態
     const isLoading = ref(false)
     const error = ref(null)
     const isProcessing = ref(false)
@@ -285,11 +280,20 @@ export default {
       status: 'ACTIVE'
     })
 
-    // 從store獲取數據
-    const users = computed(() => store.state.user.users)
-    const totalPages = computed(() => store.state.user.totalPages)
+    // 模擬用戶數據
+    const mockUsers = [
+      { id: 1, name: '張三', email: 'zhang@example.com', role: 'USER', status: 'ACTIVE', createdAt: '2024-01-01T10:00:00' },
+      { id: 2, name: '李四', email: 'li@example.com', role: 'ADMIN', status: 'ACTIVE', createdAt: '2024-01-02T11:00:00' },
+      { id: 3, name: '王五', email: 'wang@example.com', role: 'USER', status: 'INACTIVE', createdAt: '2024-01-03T12:00:00' }
+    ]
 
-    // 分頁顯示
+    const users = computed(() => {
+      const storeUsers = store.state.user.users
+      return storeUsers && storeUsers.length > 0 ? storeUsers : mockUsers
+    })
+
+    const totalPages = computed(() => store.state.user.totalPages || Math.ceil(mockUsers.length / 10))
+
     const displayedPages = computed(() => {
       const range = []
       const delta = 2
@@ -303,38 +307,39 @@ export default {
       return range
     })
 
-    // 獲取會員列表
     const fetchUsers = async () => {
       try {
         isLoading.value = true
         error.value = null
-        await store.dispatch('user/fetchUsers', {
+        const response = await store.dispatch('user/fetchUsers', {
           page: currentPage.value,
           role: selectedRole.value,
           status: selectedStatus.value,
           keyword: searchKeyword.value
         })
+        if (!response || !response.success) {
+          console.log('使用模擬數據')
+          store.commit('user/setUsers', mockUsers)
+        }
       } catch (err) {
-        error.value = '載入會員列表失敗'
         console.error('Error fetching users:', err)
+        error.value = '載入用戶列表失敗'
+        store.commit('user/setUsers', mockUsers)
       } finally {
         isLoading.value = false
       }
     }
 
-    // 搜尋處理
     const handleSearch = () => {
       currentPage.value = 1
       fetchUsers()
     }
 
-    // 篩選處理
     const filterUsers = () => {
       currentPage.value = 1
       fetchUsers()
     }
 
-    // 換頁
     const changePage = (page) => {
       if (page >= 1 && page <= totalPages.value) {
         currentPage.value = page
@@ -342,7 +347,6 @@ export default {
       }
     }
 
-    // 開啟編輯Modal
     const openUserModal = (user = null) => {
       if (user) {
         editingUser.value = { ...user }
@@ -358,7 +362,6 @@ export default {
       modal.show()
     }
 
-    // 儲存會員
     const saveUser = async () => {
       try {
         isProcessing.value = true
@@ -370,94 +373,82 @@ export default {
         Modal.getInstance(userModal.value).hide()
         await fetchUsers()
       } catch (err) {
-        error.value = '儲存會員失敗'
+        error.value = '儲存用戶失敗'
         console.error('Error saving user:', err)
       } finally {
         isProcessing.value = false
       }
     }
 
-    // 切換會員狀態
     const toggleUserStatus = async (user) => {
       const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
       const actionText = newStatus === 'ACTIVE' ? '啟用' : '停用'
-
       try {
         await Swal.fire({
-          title: `確定要${actionText}此會員嗎？`,
-          text: `即將${actionText}會員「${user.name}」`,
+          title: `確定要${actionText}此用戶嗎？`,
+          text: `即將${actionText}用戶「${user.name}」`,
           icon: 'warning',
           showCancelButton: true,
           confirmButtonText: `確定${actionText}`,
           cancelButtonText: '取消'
         })
-
-        await store.dispatch('user/updateUser', {
-          ...user,
-          status: newStatus
-        })
+        await store.dispatch('user/updateUser', { ...user, status: newStatus })
         await fetchUsers()
-
         Swal.fire(
             `已${actionText}`,
-            `會員已成功${actionText}`,
+            `用戶已成功${actionText}`,
             'success'
         )
       } catch (err) {
-        error.value = `${actionText}會員失敗`
+        error.value = `${actionText}用戶失敗`
         console.error('Error toggling user status:', err)
       }
     }
 
-    // 獲取角色樣式
     const getRoleBadgeClass = (role) => {
       switch (role) {
-        case 'ADMIN':
-          return 'bg-danger'
-        case 'USER':
-          return 'bg-primary'
-        default:
-          return 'bg-secondary'
+      case 'ADMIN':
+        return 'bg-danger'
+      case 'USER':
+        return 'bg-primary'
+      default:
+        return 'bg-secondary'
       }
     }
 
-    // 獲取角色文字
     const getRoleText = (role) => {
       switch (role) {
-        case 'ADMIN':
-          return '管理員'
-        case 'USER':
-          return '一般會員'
-        default:
-          return '未知'
+      case 'ADMIN':
+        return '管理員'
+      case 'USER':
+        return '一般用戶'
+      default:
+        return '未知'
       }
     }
 
-    // 獲取狀態樣式
     const getStatusBadgeClass = (status) => {
       switch (status) {
-        case 'ACTIVE':
-          return 'bg-success'
-        case 'INACTIVE':
-          return 'bg-secondary'
-        default:
-          return 'bg-secondary'
+      case 'ACTIVE':
+        return 'bg-success'
+      case 'INACTIVE':
+        return 'bg-secondary'
+      default:
+        return 'bg-secondary'
       }
     }
 
-    // 獲取狀態文字
     const getStatusText = (status) => {
       switch (status) {
-        case 'ACTIVE':
-          return '啟用'
-        case 'INACTIVE':
-          return '停用'
-        default:
-          return '未知'
+      case 'ACTIVE':
+        return '啟用'
+      case 'INACTIVE':
+        return '停用'
+      default:
+        return '未知'
       }
     }
 
-    // 格式化日期時間
     const formatDateTime = (datetime) => {
       return new Date(datetime).toLocaleString('zh-TW')
     }
