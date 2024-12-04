@@ -4,7 +4,7 @@
       <!-- 店家基本資訊 -->
       <div class="store-info-section">
         <div class="store-image">
-          <img src="/images/discountStore/shop-158317_1280.png" alt="store-image" />
+          <img :src="`/images/discountStore/${card.id}.jpg`" alt="store-image" />
         </div>
         <div class="store-info">
           <span class="store-category">{{ card.category }}</span>

@@ -28,7 +28,7 @@
         <router-link v-for="card in displayedCards" :key="card.id"
           :to="{ name: 'StoreDetail', params: { id: card.id } }" class="store-card">
           <div class="card-image">
-            <img src="/images/discountStore/shop-158317_1280.png" alt="store-image">
+            <img :src="`/images/discountStore/${card.id}.jpg`" alt="store-image" />
           </div>
           <div class="card-content">
             <h4 class="store-name">{{ card.name }}</h4>
