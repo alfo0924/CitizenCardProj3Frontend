@@ -10,7 +10,7 @@
     <div v-else class="discounts-content">
       <h2 class="page-title">特店優惠專區</h2>
 
-      <!-- 搜尋和篩選 -->  
+      <!-- 搜尋和篩選 -->
       <div class="search-filter-container">
         <div class="search-box">
           <span class="search-icon">
@@ -31,7 +31,8 @@
       <div class="carousel-wrapper">
         <div class="cards-container">
           <transition-group name="card">
-            <div class="store-card" v-for="store in stores" :key="store.id">
+            <router-link v-for="store in stores" :key="store.id" :to="{ name: 'StoreDetail', params: { id: store.id } }"
+              class="store-card">
               <div class="card-image">
                 <img :src="`/images/discountStore/${store.id}.jpg`" alt="store-image" />
               </div>
@@ -45,7 +46,7 @@
                   <span class="tag">{{ store.tag }}</span>
                 </div>
               </div>
-            </div>
+            </router-link>
           </transition-group>
         </div>
       </div>
@@ -64,7 +65,7 @@
           <p class="info-desc">想要提升商店的曝光度嗎？</p>
           <p class="info-desc">免費加入桃園市民卡特約商店計劃發掘商機新視野！</p>
           <button class="join-btn">
-            免費加入特店計畫  
+            免費加入特店計畫
           </button>
         </div>
         <div class="info-image">
