@@ -25,6 +25,7 @@ const PromotionDetail = () => import('@/views/promotion/PromotionDetail.vue')
 // 特店優惠相關頁面
 const DiscountStore = () => import('@/views/discountStore/DiscountStore.vue')
 const StoreOverview = () => import('@/views/discountStore/StoreOverview.vue')
+const DiscountStoreDetail = () => import('@/views/discountStore/DiscountStoreDetail.vue')
 
 const routes = [
     {
@@ -181,6 +182,16 @@ const routes = [
             layout: 'default' // 保持與其他路由一致的布局設置
         }
     },
+    {
+        path: '/store/:id',
+        name: 'StoreDetail',
+        component: DiscountStoreDetail,
+        props: true,
+        meta: {
+            title: '特店優惠詳細資訊',
+            layout: 'default' // 保持與其他路由一致的布局設置
+        }
+    },
 
     // 優惠活動路由組
     {
@@ -299,8 +310,8 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     // 設置頁面標題
     document.title = to.meta.title
-      ? `${to.meta.title} - 市民卡系統`
-      : '市民卡系統'
+        ? `${to.meta.title} - 市民卡系統`
+        : '市民卡系統'
 
     try {
         const isLoggedIn = store.getters['auth/isLoggedIn']

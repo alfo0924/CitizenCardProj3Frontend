@@ -4,6 +4,7 @@ import auth from './modules/auth'
 import movie from './modules/movie'
 import wallet from './modules/wallet'
 import discount from './modules/discount'
+import discountStore from './modules/discountStore'
 
 const store = createStore({
     state: {
@@ -98,7 +99,8 @@ const store = createStore({
         auth,
         movie,
         wallet,
-        discount
+        discount,
+        discountStore,
     },
 
     plugins: [
