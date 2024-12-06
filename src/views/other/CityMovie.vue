@@ -290,7 +290,7 @@ const confirmBooking = () => {
 }
 
 .fixed-header {
-  position: fixed;
+  //position: fixed;
   top: 160px; /* 更新這個值，讓它在導航欄下方 */
   left: 0;
   right: 0;
