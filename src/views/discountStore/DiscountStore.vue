@@ -8,291 +8,368 @@
 
     <!-- 優惠列表 -->
     <div v-else class="discounts-content">
-      <h2 class="page-title mb-4">特店優惠專區</h2>
+      <h2 class="page-title">特店優惠專區</h2>
+
       <!-- 搜尋和篩選 -->
-      <div class="shadow-sm p-3 bg-white rounded filters mb-4">
-        <div class="row">
-          <!-- 搜尋框 -->
-          <div class="col-md-4">
-            <div class="input-group">
-              <span class="input-group-text">
-                <i class="fas fa-search"></i>
-              </span>
-              <input type="text" class="form-control" placeholder="搜尋" v-model="searchKeyword" @input="handleSearch">
-              <button type="button" class="btn btn-secondary ml-3">
-                <span>
-                  <i class="bi bi-filter-left">進階搜尋</i>
-                </span>
-              </button>
-            </div>
-          </div>
+      <div class="search-filter-container">
+        <div class="search-box">
+          <span class="search-icon">
+            <i class="fas fa-search"></i>
+          </span>
+          <input type="text" placeholder="搜尋" v-model="searchKeyword" @input="handleSearch">
+          <button class="advanced-search-btn">
+            <i class="bi bi-filter-left"></i>
+            進階搜尋
+          </button>
         </div>
       </div>
-      <div>
-        <h3 class="hot-title  mb-4">熱門優惠</h3>
-      </div>
-      <div class="hot-discount-store-block hot-card-group row mb-4">
-        <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
-          <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
-          <div class="card-body">
-            <h3 class="card-title text-dark">Store Name</h3>
-              <h4 class="card-text text-dark">Discounts Content</h4>
-              <h5 class="card-text text-dark">Discounts Time</h5>
-              <p class="card-text text-dark">Discounts Store Location</p>
-              <div class="d-flex flex-wrap">
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
+
+      <!-- 熱門優惠標題 -->
+      <h3 class="section-title">熱門優惠</h3>
+
+      <!-- 優惠卡片區域 -->
+      <div class="carousel-wrapper">
+        <div class="cards-container">
+          <transition-group name="card">
+            <router-link v-for="store in stores" :key="store.id" :to="{ name: 'StoreDetail', params: { id: store.id } }"
+              class="store-card">
+              <div class="card-image">
+                <img :src="`/images/discountStore/${store.id}.jpg`" alt="store-image" />
               </div>
-          </div>
-        </div>
-        <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
-          <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
-          <div class="card-body">
-            <h3 class="card-title text-dark">Store Name</h3>
-              <h4 class="card-text text-dark">Discounts Content</h4>
-              <h5 class="card-text text-dark">Discounts Time</h5>
-              <p class="card-text text-dark">Discounts Store Location</p>
-              <div class="d-flex flex-wrap">
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
+              <div class="card-content">
+                <h4 class="store-name">{{ store.name }}</h4>
+                <p class="discount-info">{{ store.shortContent }}</p>
+                <p class="time-info">{{ store.time }}</p>
+                <p class="location-info">{{ store.address }}</p>
+                <div class="tags">
+                  <span class="tag">{{ store.category }}</span>
+                  <span class="tag">{{ store.tag }}</span>
+                </div>
               </div>
-          </div>
-        </div>
-        <div class="card m-3 col-lg-3 col-md-5 col-sm-11">
-          <img src="\images\discountStore\shop-158317_1280.png" class="card-img-top" alt="store-image">
-          <div class="card-body">
-            <h3 class="card-title text-dark">Store Name</h3>
-              <h4 class="card-text text-dark">Discounts Content</h4>
-              <h5 class="card-text text-dark">Discounts Time</h5>
-              <p class="card-text text-dark">Discounts Store Location</p>
-              <div class="d-flex flex-wrap">
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-medium</p>
-                <p class="tag d-inline bg-primary text-white px-1 mx-1 rounded-pill">tag-large-content</p>
-              </div>
-          </div>
+            </router-link>
+          </transition-group>
         </div>
       </div>
-      <div class="mb-4">
-        <div class="d-flex justify-content-end">
-          <router-link to="/discountstore/overview" class="btn btn-primary active" type="button">更多店家</router-link>
-        </div>
+
+      <!-- 更多按鈕 -->
+      <div class="more-btn-container">
+        <router-link to="/discountstore/overview" class="more-btn">
+          更多店家
+        </router-link>
       </div>
-      <div class="bottom-info row px-2 mb-4">
-        <div class="info-content d-flex justify-content-center align-items-center col-5">
-          <p class="">Free Cooperation invitation</p>
+
+      <!-- 底部資訊 -->
+      <div class="bottom-info">
+        <div class="info-content">
+          <h3 class="info-title">桃園市民卡特約商店優惠合作</h3>
+          <p class="info-desc">想要提升商店的曝光度嗎？</p>
+          <p class="info-desc">免費加入桃園市民卡特約商店計劃發掘商機新視野！</p>
+          <button class="join-btn">
+            免費加入特店計畫
+          </button>
         </div>
-          <img class="info-content col-5" src="\images\discountStore\shop-158317_1280.png" alt="">
+        <div class="info-image">
+          <div class="speech-bubble">加入逢甲市民卡特店計畫</div>
+          <img src="/images/discountStore/shop-158317_1280.png" alt="store illustration">
+        </div>
       </div>
     </div>
   </div>
 </template>
+
 <script>
-import { ref, computed, onMounted } from 'vue'
-import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
-import AlertMessage from '@/components/common/AlertMessage.vue'
+import _ from 'lodash';
+import storeData from './StoreInfo.json';
 
 export default {
   name: 'Discounts',
-
-  components: {
-    LoadingSpinner,
-    AlertMessage
-  },
-
-  setup() {
-    const store = useStore()
-    const router = useRouter()
-
-    // 狀態
-    const isLoading = ref(false)
-    const error = ref(null)
-    const searchKeyword = ref('')
-    const selectedType = ref('')
-    const selectedStatus = ref('')
-    const currentPage = ref(1)
-
-    // 從store獲取數據
-    const discounts = computed(() => store.state.discount.discounts)
-    const totalPages = computed(() => store.state.discount.totalPages)
-
-    // 分頁顯示
-    const displayedPages = computed(() => {
-      const delta = 2
-      const range = []
-      const rangeWithDots = []
-      let l
-
-      for (let i = 1; i <= totalPages.value; i++) {
-        if (
-          i === 1 ||
-          i === totalPages.value ||
-          i >= currentPage.value - delta &&
-          i <= currentPage.value + delta
-        ) {
-          range.push(i)
-        }
-      }
-
-      range.forEach((i) => {
-        if (l) {
-          if (i - l === 2) {
-            rangeWithDots.push(l + 1)
-          } else if (i - l !== 1) {
-            rangeWithDots.push('...')
-          }
-        }
-        rangeWithDots.push(i)
-        l = i
-      })
-
-      return rangeWithDots
-    })
-
-    // 獲取優惠列表
-    const fetchDiscounts = async () => {
-      try {
-        isLoading.value = true
-        error.value = null
-        await store.dispatch('discount/fetchDiscounts', {
-          page: currentPage.value,
-          type: selectedType.value,
-          status: selectedStatus.value,
-          keyword: searchKeyword.value
-        })
-      } catch (err) {
-        error.value = '載入優惠列表失敗，請稍後再試'
-        console.error('Error fetching discounts:', err)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    // 搜尋處理
-    const handleSearch = () => {
-      currentPage.value = 1
-      fetchDiscounts()
-    }
-
-    // 篩選處理
-    const filterDiscounts = () => {
-      currentPage.value = 1
-      fetchDiscounts()
-    }
-
-    // 換頁
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        fetchDiscounts()
-      }
-    }
-
-    // 檢查優惠是否過期
-    const isExpired = (discount) => {
-      return new Date(discount.endDate) < new Date()
-    }
-
-    // 檢查優惠是否可用
-    const canUseDiscount = (discount) => {
-      return discount.status === 'ACTIVE' && !isExpired(discount)
-    }
-
-    // 使用優惠
-    const useDiscount = async (discount) => {
-      try {
-        isLoading.value = true
-        error.value = null
-        await store.dispatch('discount/useDiscount', {
-          discountId: discount.id
-        })
-        router.push('/wallet')
-      } catch (err) {
-        error.value = '使用優惠失敗，請稍後再試'
-        console.error('Error using discount:', err)
-      } finally {
-        isLoading.value = false
-      }
-    }
-
-    // 格式化優惠值
-    const formatDiscountValue = (discount) => {
-      switch (discount.type) {
-        case 'CASH':
-          return `NT$ ${discount.value}`
-        case 'PERCENTAGE':
-          return `${discount.value}% OFF`
-        case 'FIXED':
-          return `折抵 NT$ ${discount.value}`
-        default:
-          return discount.value
-      }
-    }
-
-    // 獲取優惠類型文字
-    const getDiscountType = (type) => {
-      switch (type) {
-        case 'CASH':
-          return '現金折扣'
-        case 'PERCENTAGE':
-          return '折扣優惠'
-        case 'FIXED':
-          return '固定折抵'
-        default:
-          return '優惠'
-      }
-    }
-
-    // 獲取按鈕文字
-    const getActionButtonText = (discount) => {
-      if (discount.status === 'USED') return '已使用'
-      if (isExpired(discount)) return '已過期'
-      return '立即使用'
-    }
-
-    // 格式化日期
-    const formatDate = (date) => {
-      return new Date(date).toLocaleDateString('zh-TW')
-    }
-
-    onMounted(() => {
-      fetchDiscounts()
-    })
-
+  data() {
     return {
-      isLoading,
-      error,
-      discounts,
-      searchKeyword,
-      selectedType,
-      selectedStatus,
-      currentPage,
-      totalPages,
-      displayedPages,
-      handleSearch,
-      filterDiscounts,
-      changePage,
-      isExpired,
-      canUseDiscount,
-      useDiscount,
-      formatDiscountValue,
-      getDiscountType,
-      getActionButtonText,
-      formatDate
+      isLoading: false,
+      error: null,
+      searchKeyword: '',
+      currentIndex: 0,
+      stores: _.take(_.orderBy(storeData.stores, 'priority', 'desc'), 5),
     }
+  },
+  methods: {
+    handleSearch() {
+      // 搜尋處理邏輯
+    },
   }
 }
 </script>
 
 <style scoped>
-  @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css");
+.discounts-container {
+  padding: 2rem 1rem;
+}
 
-  .card-body {
-    background-color: #CED4DA;
+.page-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: rgba(186, 0, 67, 0.9);
+  margin-bottom: 2rem;
+}
 
+.search-filter-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+  border-color: rgba(186, 0, 67, 0.5);
+  box-shadow: 0 0 0 2px rgba(186, 0, 67, 0.1);
+  outline: none;
+}
+
+.advanced-search-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgba(186, 0, 67, 0.1);
+  color: rgba(186, 0, 67, 0.9);
+  border: none;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.advanced-search-btn:hover {
+  background: rgba(186, 0, 67, 0.2);
+}
+
+.section-title {
+  font-size: 1.5rem;
+  color: rgba(186, 0, 67, 0.9);
+  margin: 2rem 0;
+}
+
+/* 輪播相關樣式 */
+.carousel-wrapper {
+  position: relative;
+  padding: 0 50px;
+  margin-bottom: 2rem;
+}
+
+.cards-container {
+  display: flex;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  gap: 2rem;
+  padding: 1rem 0;
+}
+
+.store-card {
+  flex: 0 0 calc(33.333% - 1.33rem);
+  background: white;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid rgba(186, 0, 67, 0.3);
+  color: rgba(186, 0, 67, 0.9);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 2;
+}
+
+.store-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-image img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 1.5rem;
+}
+
+.store-name {
+  font-size: 1.25rem;
+  color: rgba(186, 0, 67, 0.9);
+  margin-bottom: 1rem;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.tag {
+  padding: 0.25rem 0.75rem;
+  background: rgba(186, 0, 67, 0.1);
+  color: rgba(186, 0, 67, 0.9);
+  border-radius: 1rem;
+  font-size: 0.875rem;
+}
+
+.more-btn-container {
+  display: flex;
+  justify-content: flex-end;
+  margin: 2rem 0;
+}
+
+.more-btn {
+  padding: 0.75rem 2rem;
+  background: rgba(186, 0, 67, 0.9);
+  color: white;
+  border-radius: 2rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.more-btn:hover {
+  background: rgba(186, 0, 67, 1);
+  transform: scale(1.05);
+}
+
+/* 底部資訊樣式 */
+.bottom-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: 3rem;
+  background: #FFF5F7;
+  border-radius: 1rem;
+  margin-top: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.info-content {
+  flex: 1;
+  z-index: 1;
+}
+
+.info-title {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: rgba(186, 0, 67, 0.9);
+  margin-bottom: 1rem;
+}
+
+.info-desc {
+  font-size: 1.1rem;
+  color: #4A5568;
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.join-btn {
+  margin-top: 1.5rem;
+  padding: 0.75rem 2rem;
+  background: rgba(186, 0, 67, 0.9);
+  color: white;
+  border: none;
+  border-radius: 2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.join-btn:hover {
+  background: rgba(186, 0, 67, 1);
+  transform: scale(1.05);
+}
+
+.info-image {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.info-image img {
+  max-width: 100%;
+  height: auto;
+}
+
+.speech-bubble {
+  position: absolute;
+  top: -20px;
+  right: 20%;
+  background: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 0.9rem;
+  color: rgba(186, 0, 67, 0.9);
+}
+
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  border-color: white transparent transparent;
+}
+
+@media (max-width: 768px) {
+  .carousel-wrapper {
+    padding: 0 30px;
   }
+
+  .carousel-arrow {
+    width: 30px;
+    height: 30px;
+    font-size: 1rem;
+  }
+
+  .store-card {
+    flex: 0 0 calc(100% - 1rem);
+  }
+
+  .bottom-info {
+    flex-direction: column;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .info-image {
+    margin-top: 2rem;
+  }
+
+  .speech-bubble {
+    right: 10%;
+  }
+}
 </style>
