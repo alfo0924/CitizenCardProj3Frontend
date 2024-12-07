@@ -1,29 +1,20 @@
-// services/auth.service.js
 import api from './api.config'
 
 class AuthService {
     // 登入
     async login(credentials) {
-        try {
-            const response = await api.post('/auth/login', credentials)
-            if (response.token) {
-                localStorage.setItem('token', response.token)
-                localStorage.setItem('user', JSON.stringify(response.user))
-            }
-            return response
-        } catch (error) {
-            throw error
+        const response = await api.post('/auth/login', credentials)
+        if (response.token) {
+            localStorage.setItem('token', response.token)
+            localStorage.setItem('user', JSON.stringify(response.user))
         }
+        return response
     }
 
     // 註冊
     async register(userData) {
-        try {
-            const response = await api.post('/auth/register', userData)
-            return response
-        } catch (error) {
-            throw error
-        }
+        const response = await api.post('/auth/register', userData)
+        return response
     }
 
     // 登出
@@ -32,86 +23,37 @@ class AuthService {
         localStorage.removeItem('user')
     }
 
-    // 重設密碼請求
-    async requestPasswordReset(email) {
-        try {
-            const response = await api.post('/auth/password-reset-request', { email })
-            return response
-        } catch (error) {
-            throw error
+    // 更新個人資料
+    async updateProfile(userData) {
+        const response = await api.put('/auth/profile', userData)
+        if (response.user) {
+            localStorage.setItem('user', JSON.stringify(response.user))
         }
-    }
-
-    // 重設密碼
-    async resetPassword(token, newPassword) {
-        try {
-            const response = await api.post('/auth/reset-password', {
-                token,
-                newPassword
-            })
-            return response
-        } catch (error) {
-            throw error
-        }
+        return response
     }
 
     // 變更密碼
     async changePassword(oldPassword, newPassword) {
-        try {
-            const response = await api.post('/auth/change-password', {
-                oldPassword,
-                newPassword
-            })
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 更新個人資料
-    async updateProfile(userData) {
-        try {
-            const response = await api.put('/auth/profile', userData)
-            if (response.user) {
-                localStorage.setItem('user', JSON.stringify(response.user))
-            }
-            return response
-        } catch (error) {
-            throw error
-        }
+        const response = await api.post('/auth/change-password', {
+            oldPassword,
+            newPassword
+        })
+        return response
     }
 
     // 驗證Email
     async verifyEmail(token) {
-        try {
-            const response = await api.post('/auth/verify-email', { token })
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 重新發送驗證Email
-    async resendVerificationEmail() {
-        try {
-            const response = await api.post('/auth/resend-verification')
-            return response
-        } catch (error) {
-            throw error
-        }
+        const response = await api.post('/auth/verify-email', { token })
+        return response
     }
 
     // 刷新Token
     async refreshToken() {
-        try {
-            const response = await api.post('/auth/refresh-token')
-            if (response.token) {
-                localStorage.setItem('token', response.token)
-            }
-            return response
-        } catch (error) {
-            throw error
+        const response = await api.post('/auth/refresh-token')
+        if (response.token) {
+            localStorage.setItem('token', response.token)
         }
+        return response
     }
 
     // 獲取當前用戶
@@ -132,10 +74,11 @@ class AuthService {
 
     // 檢查Token是否過期
     isTokenExpired(token) {
+        if (!token) return true
         try {
             const decoded = JSON.parse(atob(token.split('.')[1]))
             return decoded.exp < Date.now() / 1000
-        } catch (error) {
+        } catch {
             return true
         }
     }
