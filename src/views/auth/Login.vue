@@ -1,149 +1,128 @@
 <template>
-  <div class="login-container">
-    <div class="login-form">
-      <h2 class="text-center mb-4">帳號登入</h2>
+  <div class="login-page">
+    <div class="login-container">
+      <div class="login-form">
+        <h2 class="text-center mb-4">會員登入</h2>
 
-      <!-- Error Message -->
-      <div v-if="error" class="alert alert-danger" role="alert">
-        {{ error }}
-      </div>
+        <AlertMessage
+            v-if="error"
+            type="error"
+            :message="error"
+            @close="error = ''"
+        />
 
-      <form @submit.prevent="handleSubmit">
-        <!-- Account Input -->
-        <div class="form-group mb-3">
-          <label for="email" class="form-label">帳號</label>
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-envelope"></i>
-            </span>
-            <input
-                type="email"
-                class="form-control"
-                id="email"
-                v-model="formData.email"
-                :class="{ 'is-invalid': validationErrors.email }"
-                placeholder="輸入電子信箱"
-                required
-                autocomplete="email"
-            />
+        <form @submit.prevent="handleSubmit">
+          <!-- Email輸入 -->
+          <div class="form-group mb-3">
+            <label for="email" class="form-label">電子郵件</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fas fa-envelope"></i>
+              </span>
+              <input
+                  type="email"
+                  class="form-control"
+                  id="email"
+                  v-model="formData.email"
+                  :class="{ 'is-invalid': validationErrors.email }"
+                  required
+                  placeholder="請輸入電子郵件"
+                  autocomplete="email"
+              >
+            </div>
+            <div class="invalid-feedback" v-if="validationErrors.email">
+              {{ validationErrors.email }}
+            </div>
           </div>
-          <div class="invalid-feedback" v-if="validationErrors.email">
-            {{ validationErrors.email }}
-          </div>
-        </div>
 
-        <!-- Password Input -->
-        <div class="form-group mb-3">
-          <label for="password" class="form-label">密碼</label>
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-lock"></i>
-            </span>
+          <!-- 密碼輸入 -->
+          <div class="form-group mb-3">
+            <label for="password" class="form-label">密碼</label>
+            <div class="input-group">
+              <span class="input-group-text">
+                <i class="fas fa-lock"></i>
+              </span>
+              <input
+                  :type="showPassword ? 'text' : 'password'"
+                  class="form-control"
+                  id="password"
+                  v-model="formData.password"
+                  :class="{ 'is-invalid': validationErrors.password }"
+                  required
+                  placeholder="請輸入密碼"
+                  autocomplete="current-password"
+              >
+              <button
+                  type="button"
+                  class="btn btn-outline-secondary"
+                  @click="togglePasswordVisibility"
+              >
+                <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback" v-if="validationErrors.password">
+              {{ validationErrors.password }}
+            </div>
+          </div>
+
+          <!-- 記住我 -->
+          <div class="form-check mb-3">
             <input
-                :type="showPassword ? 'text' : 'password'"
-                class="form-control"
-                id="password"
-                v-model="formData.password"
-                :class="{ 'is-invalid': validationErrors.password }"
-                placeholder="請輸入大小寫，至少8碼以上"
-                required
-                autocomplete="current-password"
-            />
-            <button
-                type="button"
-                class="btn btn-outline-secondary"
-                @click="togglePasswordVisibility"
+                type="checkbox"
+                class="form-check-input"
+                id="rememberMe"
+                v-model="formData.rememberMe"
             >
-              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
-            </button>
+            <label class="form-check-label" for="rememberMe">記住我</label>
           </div>
-          <div class="invalid-feedback" v-if="validationErrors.password">
-            {{ validationErrors.password }}
+
+          <!-- 登入按鈕 -->
+          <button
+              type="submit"
+              class="btn btn-primary w-100 mb-3"
+              :disabled="isLoading"
+          >
+            <LoadingSpinner v-if="isLoading" size="sm" class="me-2"/>
+            {{ isLoading ? '登入中...' : '登入' }}
+          </button>
+
+          <!-- 註冊連結 -->
+          <div class="text-center">
+            <span class="text-muted">還沒有帳號？</span>
+            <router-link to="/register" class="text-primary ms-1">立即註冊</router-link>
           </div>
-          <router-link to="/forgot-password" class="forgot-password text-danger">
-            忘記密碼了嗎？
-          </router-link>
-        </div>
-
-        <!-- Remember Me -->
-        <div class="form-check mb-3">
-          <input
-              type="checkbox"
-              class="form-check-input"
-              id="rememberMe"
-              v-model="formData.rememberMe"
-          />
-          <label class="form-check-label" for="rememberMe">記住我</label>
-        </div>
-
-        <!-- reCAPTCHA Placeholder -->
-        <div class="recaptcha-container d-flex align-items-center mb-3">
-          <input type="checkbox" id="not-robot" class="form-check-input me-2" required />
-          <label for="not-robot" class="form-check-label">我不是機器人</label>
-          <div class="ms-auto recaptcha-text">
-            <small>reCAPTCHA</small><br />
-            <small>隱私權 • 條款</small>
-          </div>
-        </div>
-
-        <!-- Login Button -->
-        <button
-            type="submit"
-            class="btn btn-login w-100 mb-3"
-            :disabled="isLoading"
-        >
-          <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
-          {{ isLoading ? '登入中...' : '登入' }}
-        </button>
-
-<!--        <div class="social-login">-->
-<!--          <button type="button" class="btn btn-outline-primary w-100 mb-2" @click="handleGoogleLogin">-->
-<!--            <i class="fab fa-google me-2"></i>使用 Google 帳號登入-->
-<!--          </button>-->
-<!--          <button type="button" class="btn btn-outline-primary w-100" @click="handleFacebookLogin">-->
-<!--            <i class="fab fa-facebook me-2"></i>使用 Facebook 帳號登入-->
-<!--          </button>-->
-<!--        </div>-->
-
-        <!-- Register Link -->
-        <div class="text-center">
-          <router-link to="/register" class="text-secondary">立即註冊</router-link>
-        </div>
-      </form>
-
-      <!-- Back Buttons -->
-      <div class="back-button mt-4 pt-4 border-top">
-        <button class="btn btn-outline-secondary" @click="goBack">
-          <i class="fas fa-arrow-left"></i> 返回
-        </button>
-        <button class="btn btn-outline-primary ms-2" @click="goHome">
-          <i class="fas fa-home"></i> 回到首頁
-        </button>
+        </form>
       </div>
     </div>
   </div>
 </template>
-
 <script>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import AlertMessage from '@/components/common/AlertMessage.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
-  name: 'LoginForm',
+  name: 'Login',
+
+  components: {
+    AlertMessage,
+    LoadingSpinner
+  },
 
   setup() {
-    const router = useRouter()
     const store = useStore()
+    const router = useRouter()
 
-    // Form data
+    // 表單數據
     const formData = reactive({
       email: '',
       password: '',
       rememberMe: false
     })
 
-    // State
+    // 狀態控制
     const isLoading = ref(false)
     const error = ref('')
     const showPassword = ref(false)
@@ -152,13 +131,12 @@ export default {
       password: ''
     })
 
-    // Form validation
+    // 表單驗證
     const validateForm = () => {
       let isValid = true
       validationErrors.email = ''
       validationErrors.password = ''
 
-      // Email validation
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
         isValid = false
@@ -167,7 +145,6 @@ export default {
         isValid = false
       }
 
-      // Password validation
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
@@ -176,6 +153,7 @@ export default {
       return isValid
     }
 
+    // 處理表單提交
     const handleSubmit = async () => {
       if (!validateForm()) return
 
@@ -183,46 +161,29 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        const response = await store.dispatch('auth/login', {
+        await store.dispatch('auth/login', {
           email: formData.email,
           password: formData.password,
           rememberMe: formData.rememberMe
         })
 
-        if (response.success) {
-          // 顯示登入成功提示
-          store.dispatch('setNotification', {
-            type: 'success',
-            message: '登入成功！歡迎回來'
-          })
-
-          // 獲取重定向路徑，如果沒有則導向用戶首頁
-          const redirectPath = router.currentRoute.value.query.redirect || '/profile'
-          router.push(redirectPath)
-        } else {
-          error.value = response.message || '登入失敗，請稍後再試'
-        }
+        router.push('/')
       } catch (err) {
-        error.value = '登入時發生錯誤，請稍後再試'
+        error.value = err.message || '登入失敗，請檢查帳號密碼是否正確'
         console.error('Login error:', err)
       } finally {
         isLoading.value = false
       }
     }
 
-    // Toggle password visibility
+    // 切換密碼顯示
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
     }
 
-    // Navigation
-    const goBack = () => {
-      router.back()
-    }
-
-    const goHome = () => {
-      router.push('/')
-    }
+    // 導航
+    const goBack = () => router.back()
+    const goHome = () => router.push('/')
 
     return {
       formData,
@@ -238,108 +199,104 @@ export default {
   }
 }
 </script>
-
 <style scoped>
+.login-page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
 .login-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #BA0043;
   padding: 1rem;
 }
 
 .login-form {
   background-color: white;
   padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 450px;
-  font-size: 1.2rem;
+  max-width: 400px;
 }
 
-.form-label {
-  font-weight: 600;
+.form-group {
+  position: relative;
+  margin-bottom: 1.5rem;
 }
 
 .input-group-text {
   background-color: transparent;
+  border-right: none;
 }
 
-.form-control {
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  padding: 0.75rem;
+.input-group .form-control {
+  border-left: none;
 }
 
-.form-control:focus {
-  border-color: #BA0043;
-  box-shadow: 0 0 0 0.2rem rgba(186, 0, 67, 0.25);
+.input-group .form-control:focus {
+  border-color: #dee2e6;
+  box-shadow: none;
 }
 
-.forgot-password {
-  display: inline-block;
-  font-size: 0.875rem;
-  color: #c53030;
-  margin-top: 0.5rem;
-  text-decoration: none;
-}
-
-.forgot-password:hover {
-  text-decoration: underline;
-}
-
-.recaptcha-container {
-  padding: 0.5rem;
-  border: 1px solid #dee2e6;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-}
-
-.recaptcha-container .form-check-label {
-  font-weight: 500;
-  color: #333;
-}
-
-.recaptcha-text {
-  text-align: right;
-  font-size: 0.75rem;
-  color: #555;
-}
-
-.btn-login {
+.btn-primary {
   background-color: #BA0043;
-  color: #fff;
-  font-weight: 600;
-  padding: 0.75rem;
-  border-radius: 4px;
-  border: none;
+  border-color: #BA0043;
   transition: all 0.3s ease;
 }
 
-.btn-login:hover:not(:disabled) {
-  background-color: #800000;
+.btn-primary:hover:not(:disabled) {
+  background-color: #990038;
+  border-color: #990038;
+  transform: translateY(-1px);
 }
 
-.btn-login:disabled {
-  background-color: #d4d4d4;
-  cursor: not-allowed;
+.btn-primary:disabled {
+  background-color: #BA0043;
+  border-color: #BA0043;
+  opacity: 0.65;
 }
 
-.back-button {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
+.form-check-input:checked {
+  background-color: #BA0043;
+  border-color: #BA0043;
 }
 
 .invalid-feedback {
   display: block;
+  font-size: 0.875rem;
+}
+
+.form-control.is-invalid {
+  border-color: #dc3545;
+  background-image: none;
+}
+
+.form-control.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
 @media (max-width: 576px) {
   .login-form {
     padding: 1.5rem;
   }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-form {
+  animation: fadeIn 0.5s ease-out;
 }
 </style>
