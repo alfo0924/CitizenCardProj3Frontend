@@ -3,10 +3,12 @@
     <div class="register-form">
       <h2 class="text-center mb-4">會員註冊</h2>
 
-      <!-- 錯誤訊息顯示 -->
-      <div v-if="error" class="alert alert-danger" role="alert">
-        {{ error }}
-      </div>
+      <AlertMessage
+          v-if="error"
+          type="error"
+          :message="error"
+          @close="error = ''"
+      />
 
       <form @submit.prevent="handleSubmit" class="needs-validation" novalidate>
         <!-- 姓名輸入 -->
@@ -114,112 +116,13 @@
           </div>
         </div>
 
-        <!-- 手機號碼 -->
-        <div class="form-group mb-3">
-          <label for="phone" class="form-label">手機號碼</label>
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-phone"></i>
-            </span>
-            <input
-                type="tel"
-                class="form-control"
-                id="phone"
-                v-model="formData.phone"
-                :class="{ 'is-invalid': validationErrors.phone }"
-                required
-                placeholder="請輸入手機號碼"
-            >
-          </div>
-          <div class="invalid-feedback" v-if="validationErrors.phone">
-            {{ validationErrors.phone }}
-          </div>
-        </div>
-
-        <!-- 生日 -->
-        <div class="form-group mb-3">
-          <label for="birthday" class="form-label">生日</label>
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-calendar"></i>
-            </span>
-            <input
-                type="date"
-                class="form-control"
-                id="birthday"
-                v-model="formData.birthday"
-                :class="{ 'is-invalid': validationErrors.birthday }"
-                required
-            >
-          </div>
-          <div class="invalid-feedback" v-if="validationErrors.birthday">
-            {{ validationErrors.birthday }}
-          </div>
-        </div>
-
-        <!-- 性別 -->
-        <div class="form-group mb-3">
-          <label class="form-label">性別</label>
-          <div class="d-flex">
-            <div class="form-check me-3">
-              <input
-                  type="radio"
-                  class="form-check-input"
-                  id="male"
-                  value="MALE"
-                  v-model="formData.gender"
-                  required
-              >
-              <label class="form-check-label" for="male">男</label>
-            </div>
-            <div class="form-check me-3">
-              <input
-                  type="radio"
-                  class="form-check-input"
-                  id="female"
-                  value="FEMALE"
-                  v-model="formData.gender"
-              >
-              <label class="form-check-label" for="female">女</label>
-            </div>
-            <div class="form-check">
-              <input
-                  type="radio"
-                  class="form-check-input"
-                  id="other"
-                  value="OTHER"
-                  v-model="formData.gender"
-              >
-              <label class="form-check-label" for="other">其他</label>
-            </div>
-          </div>
-        </div>
-
-        <!-- 服務條款 -->
-        <div class="form-check mb-3">
-          <input
-              type="checkbox"
-              class="form-check-input"
-              id="terms"
-              v-model="formData.agreeToTerms"
-              :class="{ 'is-invalid': validationErrors.agreeToTerms }"
-              required
-          >
-          <label class="form-check-label" for="terms">
-            我同意 <a href="#" @click.prevent="showTerms">服務條款</a> 和 <a href="#" @click.prevent="showPrivacy">隱私政策</a>
-          </label>
-          <div class="invalid-feedback" v-if="validationErrors.agreeToTerms">
-            {{ validationErrors.agreeToTerms }}
-          </div>
-        </div>
-
         <!-- 註冊按鈕 -->
         <button
             type="submit"
             class="btn btn-primary w-100 mb-3"
             :disabled="isLoading"
         >
-          <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <LoadingSpinner v-if="isLoading" size="sm" class="me-2"/>
           {{ isLoading ? '註冊中...' : '註冊' }}
         </button>
 
@@ -232,14 +135,20 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
+import AlertMessage from '@/components/common/AlertMessage.vue'
+import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
   name: 'RegisterForm',
+
+  components: {
+    AlertMessage,
+    LoadingSpinner
+  },
 
   setup() {
     const store = useStore()
@@ -275,33 +184,20 @@ export default {
     const passwordStrength = computed(() => {
       if (!formData.password) return 0
       let strength = 0
-
-      // 長度檢查
       if (formData.password.length >= 8) strength += 20
-
-      // 包含數字
       if (/\d/.test(formData.password)) strength += 20
-
-      // 包含小寫字母
       if (/[a-z]/.test(formData.password)) strength += 20
-
-      // 包含大寫字母
       if (/[A-Z]/.test(formData.password)) strength += 20
-
-      // 包含特殊字符
       if (/[!@#$%^&*]/.test(formData.password)) strength += 20
-
       return strength
     })
 
-    // 密碼強度文字
     const passwordStrengthText = computed(() => {
       if (passwordStrength.value < 40) return '弱'
       if (passwordStrength.value < 80) return '中'
       return '強'
     })
 
-    // 密碼強度顏色
     const passwordStrengthClass = computed(() => {
       if (passwordStrength.value < 40) return 'bg-danger'
       if (passwordStrength.value < 80) return 'bg-warning'
@@ -311,19 +207,15 @@ export default {
     // 表單驗證
     const validateForm = () => {
       let isValid = true
-
-      // 重置錯誤訊息
-      Object.keys(validationErrors).forEach((key) => {
+      Object.keys(validationErrors).forEach(key => {
         validationErrors[key] = ''
       })
 
-      // 姓名驗證
       if (!formData.name) {
         validationErrors.name = '請輸入姓名'
         isValid = false
       }
 
-      // Email驗證
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
         isValid = false
@@ -332,7 +224,6 @@ export default {
         isValid = false
       }
 
-      // 密碼驗證
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
@@ -341,7 +232,6 @@ export default {
         isValid = false
       }
 
-      // 確認密碼驗證
       if (!formData.confirmPassword) {
         validationErrors.confirmPassword = '請確認密碼'
         isValid = false
@@ -350,7 +240,6 @@ export default {
         isValid = false
       }
 
-      // 手機號碼驗證
       if (!formData.phone) {
         validationErrors.phone = '請輸入手機號碼'
         isValid = false
@@ -359,13 +248,11 @@ export default {
         isValid = false
       }
 
-      // 生日驗證
       if (!formData.birthday) {
         validationErrors.birthday = '請選擇生日'
         isValid = false
       }
 
-      // 服務條款驗證
       if (!formData.agreeToTerms) {
         validationErrors.agreeToTerms = '請同意服務條款和隱私政策'
         isValid = false
@@ -382,34 +269,18 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        const response = await store.dispatch('auth/register', formData)
-
-        if (response.success) {
-          router.push('/login')
-        } else {
-          error.value = response.message || '註冊失敗，請稍後再試'
-        }
+        await store.dispatch('auth/register', formData)
+        router.push('/login')
       } catch (err) {
-        error.value = '註冊時發生錯誤，請稍後再試'
+        error.value = err.message || '註冊失敗，請稍後再試'
         console.error('Registration error:', err)
       } finally {
         isLoading.value = false
       }
     }
 
-    // 切換密碼顯示
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
-    }
-
-    // 顯示服務條款
-    const showTerms = () => {
-      // 實作服務條款顯示邏輯
-    }
-
-    // 顯示隱私政策
-    const showPrivacy = () => {
-      // 實作隱私政策顯示邏輯
     }
 
     return {
@@ -422,29 +293,26 @@ export default {
       passwordStrengthText,
       passwordStrengthClass,
       handleSubmit,
-      togglePasswordVisibility,
-      showTerms,
-      showPrivacy
+      togglePasswordVisibility
     }
   }
 }
 </script>
-
 <style scoped>
 .register-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--bg-light);
+  background-color: #f8f9fa;
   padding: 2rem 1rem;
 }
 
 .register-form {
   background-color: white;
   padding: 2rem;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 500px;
 }
@@ -464,7 +332,7 @@ export default {
 }
 
 .input-group .form-control:focus {
-  border-color: var(--border-color);
+  border-color: #dee2e6;
   box-shadow: none;
 }
 
@@ -482,96 +350,77 @@ export default {
 }
 
 .progress-bar.bg-danger {
-  background-color: var(--danger-color) !important;
+  background-color: #dc3545 !important;
 }
 
 .progress-bar.bg-warning {
-  background-color: var(--warning-color) !important;
+  background-color: #ffc107 !important;
 }
 
 .progress-bar.bg-success {
-  background-color: var(--success-color) !important;
-}
-
-.form-check {
-  margin-bottom: 0.5rem;
-}
-
-.form-check-input:checked {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: #28a745 !important;
 }
 
 .btn-primary {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: #BA0043;
+  border-color: #BA0043;
   transition: all 0.3s ease;
 }
 
-.btn-primary:hover {
-  background-color: var(--primary-dark);
-  border-color: var(--primary-dark);
+.btn-primary:hover:not(:disabled) {
+  background-color: #990038;
+  border-color: #990038;
   transform: translateY(-1px);
 }
 
 .btn-primary:disabled {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: #BA0043;
+  border-color: #BA0043;
   opacity: 0.65;
+}
+
+.form-check-input:checked {
+  background-color: #BA0043;
+  border-color: #BA0043;
 }
 
 .invalid-feedback {
   display: block;
   font-size: 0.875rem;
-  color: var(--danger-color);
+  color: #dc3545;
 }
 
 .form-control.is-invalid {
-  border-color: var(--danger-color);
+  border-color: #dc3545;
   background-image: none;
 }
 
 .form-control.is-invalid:focus {
-  border-color: var(--danger-color);
+  border-color: #dc3545;
   box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
 }
 
-/* 日期輸入框樣式 */
 input[type="date"] {
   padding: 0.375rem 0.75rem;
 }
 
-/* 性別選擇樣式 */
-.gender-group {
-  display: flex;
-  gap: 1.5rem;
-}
-
-/* 連結樣式 */
 a {
-  color: var(--primary-color);
+  color: #BA0043;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 a:hover {
-  color: var(--primary-dark);
+  color: #990038;
   text-decoration: underline;
 }
 
-/* 響應式調整 */
 @media (max-width: 576px) {
   .register-form {
     padding: 1.5rem;
   }
-
-  .gender-group {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
 }
 
-/* 動畫效果 */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -585,30 +434,5 @@ a:hover {
 
 .register-form {
   animation: fadeIn 0.5s ease-out;
-}
-
-/* 載入動畫 */
-.spinner-border {
-  width: 1rem;
-  height: 1rem;
-  border-width: 0.15em;
-}
-
-/* 工具提示 */
-.tooltip {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 1000;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.875rem;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: white;
-  border-radius: var(--border-radius-sm);
-  display: none;
-}
-
-.form-group:hover .tooltip {
-  display: block;
 }
 </style>

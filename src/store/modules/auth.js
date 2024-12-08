@@ -25,7 +25,7 @@ const actions = {
 
         try {
             const response = await api.post('/auth/login', credentials)
-            const { token, user } = response.data
+            const { token, user } = response
 
             localStorage.setItem('token', token)
             localStorage.setItem('user', JSON.stringify(user))
@@ -33,11 +33,9 @@ const actions = {
             commit('SET_TOKEN', token)
             commit('SET_USER', user)
 
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-            return response.data
+            return response
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '登入失敗')
+            commit('SET_ERROR', error.message || '登入失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -50,9 +48,9 @@ const actions = {
 
         try {
             const response = await api.post('/auth/register', userData)
-            return response.data
+            return response
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '註冊失敗')
+            commit('SET_ERROR', error.message || '註冊失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -62,44 +60,50 @@ const actions = {
     async logout({ commit }) {
         try {
             await api.post('/auth/logout')
-            localStorage.removeItem('token')
-            localStorage.removeItem('user')
-            delete api.defaults.headers.common['Authorization']
-            commit('CLEAR_USER')
         } catch (error) {
             console.error('Logout error:', error)
+        } finally {
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            commit('CLEAR_USER')
         }
     },
 
-    async updateProfile({ commit }, userData) {
+    async validateEmail({ commit }, email) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.put('/user/profile', userData)
-            const updatedUser = response.data
-
-            localStorage.setItem('user', JSON.stringify(updatedUser))
-            commit('SET_USER', updatedUser)
-
-            return response.data
+            const response = await api.post('/auth/validate-email', { email })
+            return response
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '更新資料失敗')
+            commit('SET_ERROR', error.message || '驗證信箱失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
         }
     },
 
-    async changePassword({ commit }, passwords) {
+    async checkToken({ commit }) {
+        try {
+            const response = await api.get('/auth/check')
+            return response
+        } catch (error) {
+            commit('CLEAR_USER')
+            throw error
+        }
+    },
+
+    async getProfile({ commit }) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.post('/auth/change-password', passwords)
-            return response.data
+            const response = await api.get('/auth/profile')
+            commit('SET_USER', response)
+            return response
         } catch (error) {
-            commit('SET_ERROR', error.response?.data?.message || '變更密碼失敗')
+            commit('SET_ERROR', error.message || '獲取資料失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
