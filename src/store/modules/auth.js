@@ -25,17 +25,19 @@ const actions = {
 
         try {
             const response = await api.post('/auth/login', credentials)
-            const { token, user } = response
 
-            localStorage.setItem('token', token)
-            localStorage.setItem('user', JSON.stringify(user))
+            if (response.token && response.user) {
+                localStorage.setItem('token', response.token)
+                localStorage.setItem('user', JSON.stringify(response.user))
 
-            commit('SET_TOKEN', token)
-            commit('SET_USER', user)
+                commit('SET_TOKEN', response.token)
+                commit('SET_USER', response.user)
+            }
 
             return response
         } catch (error) {
-            commit('SET_ERROR', error.message || '登入失敗')
+            const errorMessage = error.response?.data?.message || '登入失敗，請檢查帳號密碼'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -47,10 +49,18 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.post('/auth/register', userData)
+            const response = await api.post('/auth/register', {
+                name: userData.name,
+                email: userData.email,
+                password: userData.password,
+                phone: userData.phone,
+                birthday: userData.birthday,
+                gender: userData.gender
+            })
             return response
         } catch (error) {
-            commit('SET_ERROR', error.message || '註冊失敗')
+            const errorMessage = error.response?.data?.message || '註冊失敗'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -59,7 +69,12 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            await api.post('/auth/logout')
+            const token = localStorage.getItem('token')
+            if (token) {
+                await api.post('/auth/logout', null, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            }
         } catch (error) {
             console.error('Logout error:', error)
         } finally {
@@ -77,7 +92,8 @@ const actions = {
             const response = await api.post('/auth/validate-email', { email })
             return response
         } catch (error) {
-            commit('SET_ERROR', error.message || '驗證信箱失敗')
+            const errorMessage = error.response?.data?.message || '驗證信箱失敗'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -86,7 +102,13 @@ const actions = {
 
     async checkToken({ commit }) {
         try {
-            const response = await api.get('/auth/check')
+            const token = localStorage.getItem('token')
+            if (!token) {
+                throw new Error('No token found')
+            }
+            const response = await api.get('/auth/check', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
             return response
         } catch (error) {
             commit('CLEAR_USER')
@@ -99,11 +121,18 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.get('/auth/profile')
+            const token = localStorage.getItem('token')
+            if (!token) {
+                throw new Error('No token found')
+            }
+            const response = await api.get('/auth/profile', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
             commit('SET_USER', response)
             return response
         } catch (error) {
-            commit('SET_ERROR', error.message || '獲取資料失敗')
+            const errorMessage = error.response?.data?.message || '獲取資料失敗'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)

@@ -4,16 +4,16 @@ import router from '@/router'
 
 // 創建axios實例，設定基本配置
 const api = axios.create({
-    // 設定API基礎URL，如果環境變數未設定則使用本地開發環境
-    baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080',
-    // 請求超時時間設定為10秒
-    timeout: 10000,
-    // 設定請求標頭
+    baseURL: 'http://localhost:8080', // 移除/api前綴
+    timeout: 15000, // 增加超時時間
     headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json'
     }
 })
+
+// 添加跨域配置
+api.defaults.withCredentials = true
 
 // 請求攔截器：在發送請求前執行
 api.interceptors.request.use(

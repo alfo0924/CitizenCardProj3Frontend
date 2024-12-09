@@ -162,8 +162,7 @@ export default {
       confirmPassword: '',
       phone: '',
       birthday: '',
-      gender: '',
-      agreeToTerms: false
+      gender: ''
     })
 
     // 狀態控制
@@ -177,7 +176,7 @@ export default {
       confirmPassword: '',
       phone: '',
       birthday: '',
-      agreeToTerms: ''
+      gender: ''
     })
 
     // 密碼強度計算
@@ -253,8 +252,8 @@ export default {
         isValid = false
       }
 
-      if (!formData.agreeToTerms) {
-        validationErrors.agreeToTerms = '請同意服務條款和隱私政策'
+      if (!formData.gender) {
+        validationErrors.gender = '請選擇性別'
         isValid = false
       }
 
@@ -269,16 +268,27 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        await store.dispatch('auth/register', formData)
-        router.push('/login')
+        // 構建符合後端資料庫結構的請求數據
+        const registerData = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          birthday: formData.birthday,
+          gender: formData.gender
+        }
+
+        const response = await store.dispatch('auth/register', registerData)
+        if (response) {
+          router.push('/login')
+        }
       } catch (err) {
-        error.value = err.message || '註冊失敗，請稍後再試'
+        error.value = err.response?.data?.message || '註冊失敗，請稍後再試'
         console.error('Registration error:', err)
       } finally {
         isLoading.value = false
       }
     }
-
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
     }
