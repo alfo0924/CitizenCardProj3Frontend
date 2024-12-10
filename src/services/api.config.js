@@ -2,96 +2,92 @@ import axios from 'axios'
 import store from '@/store'
 import router from '@/router'
 
-// 創建axios實例，設定基本配置
+// 創建axios實例
 const api = axios.create({
-    baseURL: 'http://localhost:8080', // 移除/api前綴
-    timeout: 15000, // 增加超時時間
+    baseURL: 'http://localhost:8080',
+    timeout: 15000,
     headers: {
         'Content-Type': 'application/json',
-        Accept: 'application/json'
+        'Accept': 'application/json'
     }
 })
 
-// 添加跨域配置
-api.defaults.withCredentials = true
-
-// 請求攔截器：在發送請求前執行
+// 請求攔截器
 api.interceptors.request.use(
     config => {
-        // 從本地存儲獲取認證令牌
         const token = localStorage.getItem('token')
-        // 如果存在令牌，加入到請求標頭中
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
         return config
     },
     error => {
-        // 請求錯誤處理
         return Promise.reject(error)
     }
 )
 
-// 響應攔截器：處理伺服器回應
+// 響應攔截器
 api.interceptors.response.use(
-    // 成功回應直接返回數據
     response => response.data,
-    // 錯誤回應處理
     error => {
-        const { response } = error
+        if (error.code === 'ERR_NETWORK') {
+            console.error('Network error:', error)
+            return Promise.reject(new Error('網路連線錯誤，請檢查網路狀態'))
+        }
 
+        const { response } = error
         if (response) {
-            // 根據不同的錯誤狀態碼處理
             switch (response.status) {
-                case 401: // 未授權
+                case 400:
+                    store.dispatch('setError', response.data?.message || '請求參數錯誤')
+                    break
+                case 401:
                     store.dispatch('auth/logout')
                     router.push({
                         path: '/login',
                         query: { redirect: router.currentRoute.value.fullPath }
                     })
                     break
-                case 403: // 禁止訪問
+                case 403:
                     router.push('/403')
                     break
-                case 404: // 找不到資源
+                case 404:
                     router.push('/404')
                     break
-                case 500: // 伺服器錯誤
+                case 500:
                     router.push('/500')
                     break
             }
         }
 
-        // 設定錯誤訊息
         const errorMessage = response?.data?.message || '發生錯誤，請稍後再試'
         store.dispatch('setError', errorMessage)
         return Promise.reject(error)
     }
 )
 
-// API端點定義
+// API端點
 export const endpoints = {
-    // 認證相關端點
     auth: {
         register: '/auth/register',
         login: '/auth/login',
-        logout: '/auth/logout'
+        logout: '/auth/logout',
+        validateEmail: '/auth/validate-email',
+        profile: '/auth/profile',
+        check: '/auth/check'
     },
 
-    // 用戶相關端點
     user: {
         profile: '/user/profile',
         updateProfile: '/user/profile'
     },
 
-    // 電影相關端點
     movie: {
         list: '/movies',
         detail: id => `/movies/${id}`,
         schedules: id => `/movies/${id}/schedules`
     },
 
-    // 票券相關端點
     wallet: {
         tickets: '/wallet/tickets',
         coupons: '/wallet/coupons',
@@ -100,30 +96,56 @@ export const endpoints = {
     }
 }
 
-// API方法封裝
+// API方法
 export const apiService = {
-    // GET請求方法
     get: async (url, params = {}) => {
-        const response = await api.get(url, { params })
-        return response
+        try {
+            const response = await api.get(url, { params })
+            return response
+        } catch (error) {
+            console.error('GET request failed:', error)
+            throw error
+        }
     },
 
-    // POST請求方法
     post: async (url, data = {}) => {
-        const response = await api.post(url, data)
-        return response
+        try {
+            const response = await api.post(url, data)
+            return response
+        } catch (error) {
+            console.error('POST request failed:', error)
+            throw error
+        }
     },
 
-    // PATCH請求方法
+    put: async (url, data = {}) => {
+        try {
+            const response = await api.put(url, data)
+            return response
+        } catch (error) {
+            console.error('PUT request failed:', error)
+            throw error
+        }
+    },
+
     patch: async (url, data = {}) => {
-        const response = await api.patch(url, data)
-        return response
+        try {
+            const response = await api.patch(url, data)
+            return response
+        } catch (error) {
+            console.error('PATCH request failed:', error)
+            throw error
+        }
     },
 
-    // DELETE請求方法
     delete: async url => {
-        const response = await api.delete(url)
-        return response
+        try {
+            const response = await api.delete(url)
+            return response
+        } catch (error) {
+            console.error('DELETE request failed:', error)
+            throw error
+        }
     }
 }
 

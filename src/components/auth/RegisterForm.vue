@@ -268,7 +268,6 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        // 構建符合後端資料庫結構的請求數據
         const registerData = {
           name: formData.name,
           email: formData.email,

@@ -16,27 +16,23 @@ export default {
   name: 'LoadingSpinner',
 
   props: {
-    // 是否顯示為覆蓋層
     isOverlay: {
       type: Boolean,
       default: false
     },
-    // 載入提示文字
     text: {
       type: String,
       default: '載入中...'
     },
-    // 尺寸: small, medium, large
     size: {
       type: String,
-      default: 'medium',
-      validator: (value) => ['small', 'medium', 'large'].includes(value)
+      default: 'md',
+      validator: value => ['sm', 'md', 'lg'].includes(value)
     },
-    // 顏色主題: primary, secondary, success, danger, warning, info
     theme: {
       type: String,
       default: 'primary',
-      validator: (value) => [
+      validator: value => [
         'primary',
         'secondary',
         'success',
@@ -48,19 +44,16 @@ export default {
   },
 
   computed: {
-    // 尺寸類名
     sizeClass() {
       return {
-        'spinner-small': this.size === 'small',
-        'spinner-medium': this.size === 'medium',
-        'spinner-large': this.size === 'large'
+        'spinner-sm': this.size === 'sm',
+        'spinner-md': this.size === 'md',
+        'spinner-lg': this.size === 'lg'
       }
     },
-    // 顏色類名
     colorClass() {
       return `text-${this.theme}`
     },
-    // 文字顏色類名
     textColorClass() {
       return `text-${this.theme}`
     }
@@ -76,7 +69,6 @@ export default {
   padding: 1rem;
 }
 
-/* 覆蓋層樣式 */
 .loading-spinner-container.overlay {
   position: fixed;
   top: 0;
@@ -94,77 +86,72 @@ export default {
   gap: 0.5rem;
 }
 
-/* 尺寸變體 */
-.spinner-small .spinner-border {
+.spinner-sm .spinner-border {
   width: 1rem;
   height: 1rem;
   border-width: 0.15em;
 }
 
-.spinner-medium .spinner-border {
+.spinner-md .spinner-border {
   width: 2rem;
   height: 2rem;
   border-width: 0.25em;
 }
 
-.spinner-large .spinner-border {
+.spinner-lg .spinner-border {
   width: 3rem;
   height: 3rem;
   border-width: 0.3em;
 }
 
-/* 文字樣式 */
 .loading-text {
   font-size: 0.875rem;
   margin-top: 0.5rem;
 }
 
-/* 尺寸對應的文字大小 */
-.spinner-small .loading-text {
+.spinner-sm .loading-text {
   font-size: 0.75rem;
 }
 
-.spinner-medium .loading-text {
+.spinner-md .loading-text {
   font-size: 0.875rem;
 }
 
-.spinner-large .loading-text {
+.spinner-lg .loading-text {
   font-size: 1rem;
-}
-
-/* 動畫效果 */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .spinner-border {
   animation: spin 1s linear infinite;
 }
 
-/* 主題顏色 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .text-primary {
-  color: var(--primary-color) !important;
+  color: #BA0043 !important;
 }
 
 .text-secondary {
-  color: var(--secondary-color) !important;
+  color: #6c757d !important;
 }
 
 .text-success {
-  color: var(--success-color) !important;
+  color: #28a745 !important;
 }
 
 .text-danger {
-  color: var(--danger-color) !important;
+  color: #dc3545 !important;
 }
 
 .text-warning {
-  color: var(--warning-color) !important;
+  color: #ffc107 !important;
 }
 
 .text-info {
-  color: var(--info-color) !important;
+  color: #17a2b8 !important;
 }
 </style>

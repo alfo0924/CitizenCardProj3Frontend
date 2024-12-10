@@ -55,6 +55,65 @@
           </div>
         </div>
 
+        <!-- 生日 -->
+        <div class="form-group mb-3">
+          <label for="birthday" class="form-label">生日</label>
+          <div class="input-group">
+    <span class="input-group-text">
+      <i class="fas fa-calendar"></i>
+    </span>
+            <input
+                type="date"
+                class="form-control"
+                id="birthday"
+                v-model="formData.birthday"
+                :class="{ 'is-invalid': validationErrors.birthday }"
+                required
+            >
+          </div>
+          <div class="invalid-feedback" v-if="validationErrors.birthday">
+            {{ validationErrors.birthday }}
+          </div>
+        </div>
+
+        <!-- 性別 -->
+        <div class="form-group mb-3">
+          <label class="form-label">性別</label>
+          <div class="d-flex">
+            <div class="form-check me-3">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="male"
+                  value="MALE"
+                  v-model="formData.gender"
+                  required
+              >
+              <label class="form-check-label" for="male">男</label>
+            </div>
+            <div class="form-check me-3">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="female"
+                  value="FEMALE"
+                  v-model="formData.gender"
+              >
+              <label class="form-check-label" for="female">女</label>
+            </div>
+            <div class="form-check">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="other"
+                  value="OTHER"
+                  v-model="formData.gender"
+              >
+              <label class="form-check-label" for="other">其他</label>
+            </div>
+          </div>
+        </div>
+
         <!-- 密碼輸入 -->
         <div class="form-group mb-3">
           <label for="password" class="form-label">密碼</label>

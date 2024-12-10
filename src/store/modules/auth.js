@@ -49,17 +49,26 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.post('/auth/register', {
+            const registerData = {
                 name: userData.name,
                 email: userData.email,
                 password: userData.password,
                 phone: userData.phone,
                 birthday: userData.birthday,
-                gender: userData.gender
-            })
+                gender: userData.gender,
+                role: 'ROLE_USER',
+                active: true,
+                emailVerified: false,
+                lastLoginTime: null,
+                lastLoginIp: null,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+
+            const response = await api.post('/auth/register', registerData)
             return response
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '註冊失敗'
+            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -69,17 +78,13 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            const token = localStorage.getItem('token')
-            if (token) {
-                await api.post('/auth/logout', null, {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-            }
+            await api.post('/auth/logout')
         } catch (error) {
             console.error('Logout error:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
+            localStorage.removeItem('wallet')
             commit('CLEAR_USER')
         }
     },
@@ -102,13 +107,7 @@ const actions = {
 
     async checkToken({ commit }) {
         try {
-            const token = localStorage.getItem('token')
-            if (!token) {
-                throw new Error('No token found')
-            }
-            const response = await api.get('/auth/check', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
+            const response = await api.get('/auth/check')
             return response
         } catch (error) {
             commit('CLEAR_USER')
@@ -121,13 +120,7 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const token = localStorage.getItem('token')
-            if (!token) {
-                throw new Error('No token found')
-            }
-            const response = await api.get('/auth/profile', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
+            const response = await api.get('/auth/profile')
             commit('SET_USER', response)
             return response
         } catch (error) {
