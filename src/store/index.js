@@ -5,7 +5,7 @@ import movie from './modules/movie'
 import wallet from './modules/wallet'
 import discount from './modules/discount'
 import discountStore from './modules/discountStore'
-import axios from 'axios'
+import api from '@/services/api.config'
 
 const store = createStore({
     state: {
@@ -77,8 +77,8 @@ const store = createStore({
 
         async fetchSystemStats({ commit }) {
             try {
-                const response = await axios.get('/api/system/stats')
-                commit('SET_SYSTEM_STATS', response.data)
+                const response = await api.get('/system/stats')
+                commit('SET_SYSTEM_STATS', response)
             } catch (error) {
                 console.error('Error fetching system stats:', error)
                 commit('SET_SYSTEM_STATS', {
@@ -141,14 +141,13 @@ const initializeStore = async () => {
     const token = localStorage.getItem('token')
     if (token) {
         try {
-            await store.dispatch('auth/checkToken', token)
+            await store.dispatch('auth/checkToken')
         } catch (error) {
             console.error('Failed to restore auth state:', error)
             localStorage.removeItem('token')
             localStorage.removeItem('user')
         }
     }
-    store.dispatch('fetchSystemStats')
 }
 
 initializeStore()

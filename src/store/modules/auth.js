@@ -53,13 +53,13 @@ const actions = {
                 password: userData.password,
                 phone: userData.phone,
                 birthday: userData.birthday,
-                gender: userData.gender,
-                role: 'ROLE_USER',
-                active: true,
-                emailVerified: false
+                gender: userData.gender
             }
 
             const response = await api.post('/auth/register', registerData)
+            if (!response.success) {
+                throw new Error(response.message || '註冊失敗')
+            }
             return response
         } catch (error) {
             console.error('Registration error:', error)
@@ -73,17 +73,13 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            const token = localStorage.getItem('token')
-            if (token) {
-                await api.post('/auth/logout')
-            }
+            await api.post('/auth/logout')
         } catch (error) {
             console.error('Logout error:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             commit('CLEAR_USER')
-            commit('SET_ERROR', null)
         }
     },
 
@@ -105,6 +101,10 @@ const actions = {
 
     async checkToken({ commit }) {
         try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+                throw new Error('未找到登入令牌')
+            }
             const response = await api.get('/auth/check')
             return response
         } catch (error) {
