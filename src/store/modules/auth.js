@@ -53,14 +53,18 @@ const actions = {
                 password: userData.password,
                 phone: userData.phone,
                 birthday: userData.birthday,
-                gender: userData.gender,
-                role: 'ROLE_USER'
+                gender: userData.gender
             }
 
             const response = await api.post('/auth/register', registerData)
-            return response
+            if (response && response.success) {
+                return response
+            } else {
+                throw new Error(response?.message || '註冊失敗')
+            }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
+            console.error('Registration error:', error)
+            const errorMessage = error.response?.data?.message || error.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -70,10 +74,7 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            const token = localStorage.getItem('token')
-            if (token) {
-                await api.post('/auth/logout')
-            }
+            await api.post('/auth/logout')
         } catch (error) {
             console.error('Logout error:', error)
         } finally {
