@@ -9,7 +9,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    withCredentials: true
 })
 
 // 請求攔截器
@@ -19,10 +20,6 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
-        // 添加CORS相關標頭
-        config.headers['Access-Control-Allow-Origin'] = 'http://localhost:3009'
-        config.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS'
-        config.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         return config
     },
     error => {

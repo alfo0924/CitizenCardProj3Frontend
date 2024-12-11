@@ -3,12 +3,7 @@
     <div class="register-form">
       <h2 class="text-center mb-4">會員註冊</h2>
 
-      <AlertMessage
-          v-if="error"
-          type="error"
-          :message="error"
-          @close="error = ''"
-      />
+      <AlertMessage v-if="error" type="error" :message="error" @close="error = ''" />
 
       <form @submit.prevent="handleSubmit" class="needs-validation" novalidate>
         <!-- 姓名輸入 -->
@@ -116,6 +111,80 @@
           </div>
         </div>
 
+        <!-- 手機號碼 -->
+        <div class="form-group mb-3">
+          <label for="phone" class="form-label">手機號碼</label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-phone"></i>
+            </span>
+            <input
+                type="tel"
+                class="form-control"
+                id="phone"
+                v-model="formData.phone"
+                :class="{ 'is-invalid': validationErrors.phone }"
+                required
+                placeholder="請輸入手機號碼"
+            >
+          </div>
+          <div class="invalid-feedback" v-if="validationErrors.phone">
+            {{ validationErrors.phone }}
+          </div>
+        </div>
+
+        <!-- 生日 -->
+        <div class="form-group mb-3">
+          <label for="birthday" class="form-label">生日</label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-calendar"></i>
+            </span>
+            <input
+                type="date"
+                class="form-control"
+                id="birthday"
+                v-model="formData.birthday"
+                :class="{ 'is-invalid': validationErrors.birthday }"
+                required
+            >
+          </div>
+          <div class="invalid-feedback" v-if="validationErrors.birthday">
+            {{ validationErrors.birthday }}
+          </div>
+        </div>
+
+        <!-- 性別 -->
+        <div class="form-group mb-3">
+          <label class="form-label">性別</label>
+          <div class="d-flex">
+            <div class="form-check me-3">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="male"
+                  value="MALE"
+                  v-model="formData.gender"
+                  required
+              >
+              <label class="form-check-label" for="male">男</label>
+            </div>
+            <div class="form-check me-3">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="female"
+                  value="FEMALE"
+                  v-model="formData.gender"
+              >
+              <label class="form-check-label" for="female">女</label>
+            </div>
+          </div>
+          <div class="invalid-feedback" v-if="validationErrors.gender">
+            {{ validationErrors.gender }}
+          </div>
+        </div>
+
         <!-- 註冊按鈕 -->
         <button
             type="submit"
@@ -144,7 +213,6 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
   name: 'RegisterForm',
-
   components: {
     AlertMessage,
     LoadingSpinner
@@ -268,19 +336,8 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        const registerData = {
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          phone: formData.phone,
-          birthday: formData.birthday,
-          gender: formData.gender
-        }
-
-        const response = await store.dispatch('auth/register', registerData)
-        if (response) {
-          router.push('/login')
-        }
+        await store.dispatch('auth/register', formData)
+        router.push('/login')
       } catch (err) {
         error.value = err.response?.data?.message || '註冊失敗，請稍後再試'
         console.error('Registration error:', err)
@@ -288,6 +345,7 @@ export default {
         isLoading.value = false
       }
     }
+
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
     }
