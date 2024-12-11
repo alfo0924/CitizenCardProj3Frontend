@@ -55,13 +55,11 @@ const actions = {
                 birthday: userData.birthday,
                 gender: userData.gender,
                 role: 'ROLE_USER',
-                active: true
+                active: true,
+                emailVerified: false
             }
 
             const response = await api.post('/auth/register', registerData)
-            if (!response.success) {
-                throw new Error(response.message || '註冊失敗')
-            }
             return response
         } catch (error) {
             console.error('Registration error:', error)
@@ -85,6 +83,7 @@ const actions = {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             commit('CLEAR_USER')
+            commit('SET_ERROR', null)
         }
     },
 

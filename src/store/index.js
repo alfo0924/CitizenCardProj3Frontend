@@ -5,6 +5,7 @@ import movie from './modules/movie'
 import wallet from './modules/wallet'
 import discount from './modules/discount'
 import discountStore from './modules/discountStore'
+import axios from 'axios'
 
 const store = createStore({
     state: {
@@ -15,32 +16,31 @@ const store = createStore({
             visitorCount: 0,
             userCount: 0,
             movieCount: 0
-        }
+        },
+        layout: 'default'
     },
 
     mutations: {
         SET_LOADING(state, status) {
             state.isLoading = status
         },
-
         SET_ERROR(state, error) {
             state.error = error
         },
-
         CLEAR_ERROR(state) {
             state.error = null
         },
-
         SET_NOTIFICATION(state, notification) {
             state.notification = notification
         },
-
         CLEAR_NOTIFICATION(state) {
             state.notification = null
         },
-
         SET_SYSTEM_STATS(state, stats) {
             state.systemStats = stats
+        },
+        SET_LAYOUT(state, layout) {
+            state.layout = layout
         }
     },
 
@@ -71,12 +71,14 @@ const store = createStore({
             commit('CLEAR_NOTIFICATION')
         },
 
-        // 系統統計數據
+        setLayout({ commit }, layout) {
+            commit('SET_LAYOUT', layout)
+        },
+
         async fetchSystemStats({ commit }) {
             try {
-                const response = await fetch('/api/system/stats')
-                const data = await response.json()
-                commit('SET_SYSTEM_STATS', data)
+                const response = await axios.get('/api/system/stats')
+                commit('SET_SYSTEM_STATS', response.data)
             } catch (error) {
                 console.error('Error fetching system stats:', error)
                 commit('SET_SYSTEM_STATS', {
@@ -92,7 +94,8 @@ const store = createStore({
         isLoading: state => state.isLoading,
         error: state => state.error,
         notification: state => state.notification,
-        systemStats: state => state.systemStats
+        systemStats: state => state.systemStats,
+        currentLayout: state => state.layout
     },
 
     modules: {
@@ -100,7 +103,7 @@ const store = createStore({
         movie,
         wallet,
         discount,
-        discountStore,
+        discountStore
     },
 
     plugins: [
@@ -113,7 +116,6 @@ const store = createStore({
     strict: process.env.NODE_ENV !== 'production'
 })
 
-// 全局請求攔截器
 store.subscribeAction({
     before: (action) => {
         if (!action.type.includes('setLoading')) {
@@ -135,19 +137,17 @@ store.subscribeAction({
     }
 })
 
-// 初始化時從 localStorage 恢復認證狀態
 const initializeStore = async () => {
     const token = localStorage.getItem('token')
     if (token) {
         try {
-            await store.dispatch('auth/restoreToken', token)
+            await store.dispatch('auth/checkToken', token)
         } catch (error) {
             console.error('Failed to restore auth state:', error)
             localStorage.removeItem('token')
+            localStorage.removeItem('user')
         }
     }
-
-    // 獲取系統統計數據
     store.dispatch('fetchSystemStats')
 }
 
