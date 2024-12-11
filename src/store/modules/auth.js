@@ -53,17 +53,14 @@ const actions = {
                 password: userData.password,
                 phone: userData.phone,
                 birthday: userData.birthday,
-                gender: userData.gender
+                gender: userData.gender,
+                role: 'ROLE_USER'
             }
 
             const response = await api.post('/auth/register', registerData)
-            if (response.success) {
-                return response
-            } else {
-                throw new Error(response.message || '註冊失敗')
-            }
+            return response
         } catch (error) {
-            const errorMessage = error.response?.data?.message || error.message || '註冊失敗，請稍後再試'
+            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -73,7 +70,10 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            await api.post('/auth/logout')
+            const token = localStorage.getItem('token')
+            if (token) {
+                await api.post('/auth/logout')
+            }
         } catch (error) {
             console.error('Logout error:', error)
         } finally {
@@ -101,10 +101,6 @@ const actions = {
 
     async checkToken({ commit }) {
         try {
-            const token = localStorage.getItem('token')
-            if (!token) {
-                throw new Error('未找到登入令牌')
-            }
             const response = await api.get('/auth/check')
             return response
         } catch (error) {

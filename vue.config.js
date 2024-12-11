@@ -13,21 +13,26 @@ module.exports = defineConfig({
     host: 'localhost',
     open: true,
     proxy: {
-      '/': {
+      '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        ws: true
+        pathRewrite: {
+          '^/api': ''
+        }
+      },
+      '/auth': {
+        target: 'http://localhost:8080',
+        changeOrigin: true
       }
     },
     client: {
       overlay: {
         warnings: false,
         errors: true
-      },
-      webSocketURL: 'ws://localhost:3009/ws'
+      }
     },
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': 'http://localhost:3009',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
       'Access-Control-Allow-Credentials': 'true'

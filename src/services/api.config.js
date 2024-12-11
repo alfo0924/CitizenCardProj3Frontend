@@ -9,7 +9,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    withCredentials: true
 })
 
 // 請求攔截器
@@ -33,7 +34,7 @@ api.interceptors.response.use(
     error => {
         if (error.code === 'ERR_NETWORK') {
             console.error('Network error:', error)
-            throw new Error('網路連線錯誤，請檢查網路狀態')
+            return Promise.reject(new Error('網路連線錯誤，請檢查網路狀態'))
         }
 
         const { response } = error
@@ -52,20 +53,23 @@ api.interceptors.response.use(
                     })
                     break
                 case 403:
+                    store.dispatch('setError', '無權限訪問')
                     router.push('/403')
                     break
                 case 404:
+                    store.dispatch('setError', '資源不存在')
                     router.push('/404')
                     break
                 case 500:
+                    store.dispatch('setError', '伺服器錯誤')
                     router.push('/500')
                     break
+                default:
+                    store.dispatch('setError', errorMessage)
             }
-
-            store.dispatch('setError', errorMessage)
         }
 
-        throw error
+        return Promise.reject(error)
     }
 )
 
