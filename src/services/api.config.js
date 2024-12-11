@@ -9,7 +9,8 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    withCredentials: true // 添加跨域認證支持
 })
 
 // 請求攔截器
@@ -22,6 +23,7 @@ api.interceptors.request.use(
         return config
     },
     error => {
+        console.error('Request error:', error)
         return Promise.reject(error)
     }
 )
@@ -37,9 +39,11 @@ api.interceptors.response.use(
 
         const { response } = error
         if (response) {
+            const errorMessage = response.data?.message || '發生錯誤，請稍後再試'
+
             switch (response.status) {
                 case 400:
-                    store.dispatch('setError', response.data?.message || '請求參數錯誤')
+                    store.dispatch('setError', errorMessage)
                     break
                 case 401:
                     store.dispatch('auth/logout')
@@ -49,19 +53,22 @@ api.interceptors.response.use(
                     })
                     break
                 case 403:
+                    store.dispatch('setError', '無權限訪問')
                     router.push('/403')
                     break
                 case 404:
+                    store.dispatch('setError', '資源不存在')
                     router.push('/404')
                     break
                 case 500:
+                    store.dispatch('setError', '伺服器錯誤')
                     router.push('/500')
                     break
+                default:
+                    store.dispatch('setError', errorMessage)
             }
         }
 
-        const errorMessage = response?.data?.message || '發生錯誤，請稍後再試'
-        store.dispatch('setError', errorMessage)
         return Promise.reject(error)
     }
 )

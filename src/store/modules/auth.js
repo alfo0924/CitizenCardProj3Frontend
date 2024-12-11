@@ -29,11 +29,9 @@ const actions = {
             if (response.token && response.user) {
                 localStorage.setItem('token', response.token)
                 localStorage.setItem('user', JSON.stringify(response.user))
-
                 commit('SET_TOKEN', response.token)
                 commit('SET_USER', response.user)
             }
-
             return response
         } catch (error) {
             const errorMessage = error.response?.data?.message || '登入失敗，請檢查帳號密碼'
@@ -55,14 +53,7 @@ const actions = {
                 password: userData.password,
                 phone: userData.phone,
                 birthday: userData.birthday,
-                gender: userData.gender,
-                role: 'ROLE_USER',
-                active: true,
-                emailVerified: false,
-                lastLoginTime: null,
-                lastLoginIp: null,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                gender: userData.gender
             }
 
             const response = await api.post('/auth/register', registerData)
@@ -84,7 +75,6 @@ const actions = {
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            localStorage.removeItem('wallet')
             commit('CLEAR_USER')
         }
     },
@@ -137,24 +127,19 @@ const mutations = {
     SET_TOKEN(state, token) {
         state.token = token
     },
-
     SET_USER(state, user) {
         state.user = user
     },
-
     CLEAR_USER(state) {
         state.token = null
         state.user = null
     },
-
     SET_LOADING(state, status) {
         state.isLoading = status
     },
-
     SET_ERROR(state, error) {
         state.error = error
     },
-
     CLEAR_ERROR(state) {
         state.error = null
     }
