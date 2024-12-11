@@ -13,14 +13,7 @@ module.exports = defineConfig({
     host: 'localhost',
     open: true,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        pathRewrite: {
-          '^/api': ''
-        }
-      },
-      '/auth': {
+      '/': {
         target: 'http://localhost:8080',
         changeOrigin: true,
         ws: true
@@ -30,7 +23,8 @@ module.exports = defineConfig({
       overlay: {
         warnings: false,
         errors: true
-      }
+      },
+      webSocketURL: 'ws://localhost:3009/ws'
     },
     headers: {
       'Access-Control-Allow-Origin': '*',
