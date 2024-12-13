@@ -77,8 +77,10 @@ const store = createStore({
 
         async fetchSystemStats({ commit }) {
             try {
-                const response = await api.get('/system/stats')
-                commit('SET_SYSTEM_STATS', response)
+                const response = await api.get('/api/system/stats')
+                if (response.success) {
+                    commit('SET_SYSTEM_STATS', response.data)
+                }
             } catch (error) {
                 console.error('Error fetching system stats:', error)
                 commit('SET_SYSTEM_STATS', {
@@ -108,7 +110,7 @@ const store = createStore({
 
     plugins: [
         createPersistedState({
-            paths: ['auth.token', 'auth.user'],
+            paths: ['auth.token', 'auth.user', 'layout'],
             storage: window.localStorage
         })
     ],
@@ -142,6 +144,7 @@ const initializeStore = async () => {
     if (token) {
         try {
             await store.dispatch('auth/checkToken')
+            await store.dispatch('fetchSystemStats')
         } catch (error) {
             console.error('Failed to restore auth state:', error)
             localStorage.removeItem('token')
