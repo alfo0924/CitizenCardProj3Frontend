@@ -6,7 +6,8 @@ const state = {
     refreshToken: localStorage.getItem('refreshToken') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
     isLoading: false,
-    error: null
+    error: null,
+    wallet: JSON.parse(localStorage.getItem('wallet')) || null
 }
 
 const getters = {
@@ -18,9 +19,14 @@ const getters = {
     userEmail: state => state.user?.email || '',
     userPhone: state => state.user?.phone || '',
     userRole: state => state.user?.role || '',
+    userBirthday: state => state.user?.birthday || '',
+    userGender: state => state.user?.gender || '',
+    userAddress: state => state.user?.address || '',
+    walletBalance: state => state.wallet?.balance || 0,
     authError: state => state.error,
     isLoading: state => state.isLoading,
-    isEmailVerified: state => state.user?.emailVerified || false
+    isEmailVerified: state => state.user?.emailVerified || false,
+    lastLoginTime: state => state.user?.lastLoginTime || null
 }
 
 const actions = {
@@ -36,7 +42,13 @@ const actions = {
                 localStorage.setItem('token', token)
                 localStorage.setItem('refreshToken', refreshToken)
                 localStorage.setItem('user', JSON.stringify(user))
+                if (user.wallet) {
+                    localStorage.setItem('wallet', JSON.stringify(user.wallet))
+                }
                 commit('SET_AUTH_DATA', { token, refreshToken, user })
+                if (user.wallet) {
+                    commit('SET_WALLET', user.wallet)
+                }
             }
             return response.data
         } catch (error) {
@@ -53,26 +65,29 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
+            const now = new Date().toISOString()
             const registerData = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone.trim(),
-                birthday: new Date(userData.birthday).toISOString().split('T')[0],
+                confirmPassword: userData.confirmPassword,
+                phone: userData.phone?.trim(),
+                birthday: userData.birthday,
                 gender: userData.gender,
                 address: userData.address?.trim(),
                 role: 'ROLE_USER',
                 active: true,
                 emailVerified: false,
                 version: 0,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
+                createdAt: now,
+                updatedAt: now,
+                lastLoginTime: now,
+                lastLoginIp: '0.0.0.0'
             }
 
             const response = await api.post('/auth/register', registerData)
             return response.data
         } catch (error) {
-            console.error('Registration error:', error)
             const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
             throw error
@@ -137,6 +152,9 @@ const actions = {
             const response = await api.get('/auth/check')
             if (response.data.valid && response.data.user) {
                 commit('SET_USER', response.data.user)
+                if (response.data.user.wallet) {
+                    commit('SET_WALLET', response.data.user.wallet)
+                }
             } else {
                 await dispatch('logout')
             }
@@ -154,6 +172,10 @@ const actions = {
         try {
             const response = await api.get('/auth/profile')
             commit('SET_USER', response.data)
+            if (response.data.wallet) {
+                commit('SET_WALLET', response.data.wallet)
+                localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
+            }
             localStorage.setItem('user', JSON.stringify(response.data))
             return response.data
         } catch (error) {
@@ -182,10 +204,14 @@ const mutations = {
     SET_USER(state, user) {
         state.user = user
     },
+    SET_WALLET(state, wallet) {
+        state.wallet = wallet
+    },
     CLEAR_AUTH_DATA(state) {
         state.token = null
         state.refreshToken = null
         state.user = null
+        state.wallet = null
         state.error = null
     },
     SET_LOADING(state, status) {

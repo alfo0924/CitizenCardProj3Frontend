@@ -231,7 +231,10 @@ export default {
       role: 'ROLE_USER',
       active: true,
       emailVerified: false,
-      version: 0
+      version: 0,
+      lastLoginTime: null,
+      lastLoginIp: '',
+      avatar: '/avatars/default-avatar.jpg'
     })
 
     // 狀態控制
@@ -253,16 +256,11 @@ export default {
     const passwordStrength = computed(() => {
       if (!formData.password) return 0
       let strength = 0
-      // 長度檢查
       if (formData.password.length >= 8) strength += 20
-      // 數字檢查
       if (/\d/.test(formData.password)) strength += 20
-      // 小寫字母檢查
       if (/[a-z]/.test(formData.password)) strength += 20
-      // 大寫字母檢查
       if (/[A-Z]/.test(formData.password)) strength += 20
-      // 特殊字符檢查
-      if (/[!@#$%^&*]/.test(formData.password)) strength += 20
+      if (/[@#$%^&+=]/.test(formData.password)) strength += 20
       return strength
     })
 
@@ -286,8 +284,8 @@ export default {
       })
 
       // 姓名驗證
-      if (!formData.name || formData.name.length < 2) {
-        validationErrors.name = '姓名長度必須至少為2個字符'
+      if (!formData.name || formData.name.length < 2 || formData.name.length > 50) {
+        validationErrors.name = '姓名長度必須在2-50個字元之間'
         isValid = false
       }
 
@@ -304,11 +302,8 @@ export default {
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
-      } else if (formData.password.length < 8) {
-        validationErrors.password = '密碼長度至少8個字符'
-        isValid = false
       } else if (!/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\S+$).{8,}$/.test(formData.password)) {
-        validationErrors.password = '密碼必須包含大小寫字母、數字和特殊字符'
+        validationErrors.password = '密碼必須包含大小寫字母、數字和特殊字符，且長度至少為8位'
         isValid = false
       }
 
@@ -322,11 +317,8 @@ export default {
       }
 
       // 手機號碼驗證
-      if (!formData.phone) {
-        validationErrors.phone = '請輸入手機號碼'
-        isValid = false
-      } else if (!/^09\d{8}$/.test(formData.phone)) {
-        validationErrors.phone = '請輸入有效的手機號碼格式'
+      if (formData.phone && !/^09\d{8}$/.test(formData.phone)) {
+        validationErrors.phone = '請輸入有效的手機號碼格式（例如：0912345678）'
         isValid = false
       }
 
@@ -347,6 +339,9 @@ export default {
       if (!formData.gender) {
         validationErrors.gender = '請選擇性別'
         isValid = false
+      } else if (!['MALE', 'FEMALE'].includes(formData.gender)) {
+        validationErrors.gender = '性別必須是 MALE 或 FEMALE'
+        isValid = false
       }
 
       return isValid
@@ -360,11 +355,15 @@ export default {
         isLoading.value = true
         error.value = ''
 
+        const now = new Date().toISOString()
         const registerData = {
           ...formData,
+          email: formData.email.toLowerCase().trim(),
           birthday: new Date(formData.birthday).toISOString().split('T')[0],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          createdAt: now,
+          updatedAt: now,
+          lastLoginTime: now,
+          lastLoginIp: '0.0.0.0'
         }
 
         await store.dispatch('auth/register', registerData)
@@ -396,6 +395,7 @@ export default {
   }
 }
 </script>
+
 
 <style scoped>
 .register-container {
