@@ -52,8 +52,11 @@ const actions = {
                 email: userData.email,
                 password: userData.password,
                 phone: userData.phone,
-                birthday: userData.birthday,
-                gender: userData.gender
+                birthday: new Date(userData.birthday).toISOString().split('T')[0],
+                gender: userData.gender,
+                role: 'ROLE_USER',
+                active: true,
+                emailVerified: false
             }
 
             const response = await api.post('/auth/register', registerData)
@@ -73,7 +76,10 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            await api.post('/auth/logout')
+            const token = localStorage.getItem('token')
+            if (token) {
+                await api.post('/auth/logout')
+            }
         } catch (error) {
             console.error('Logout error:', error)
         } finally {

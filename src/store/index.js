@@ -77,9 +77,9 @@ const store = createStore({
 
         async fetchSystemStats({ commit }) {
             try {
-                const response = await api.get('/api/system/stats')
-                if (response.success) {
-                    commit('SET_SYSTEM_STATS', response.data)
+                const response = await api.get('/system/stats')
+                if (response) {
+                    commit('SET_SYSTEM_STATS', response)
                 }
             } catch (error) {
                 console.error('Error fetching system stats:', error)
@@ -130,10 +130,7 @@ store.subscribeAction({
         }
     },
     error: (action, error) => {
-        console.error('Action error:', {
-            action: action.type,
-            error
-        })
+        console.error('Action error:', error)
         store.dispatch('setLoading', false)
         store.dispatch('setError', error.message || '發生錯誤，請稍後再試')
     }

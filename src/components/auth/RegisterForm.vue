@@ -230,8 +230,11 @@ export default {
       confirmPassword: '',
       phone: '',
       birthday: '',
-      gender: ''
+      gender: '',
+      role: 'ROLE_USER',
+      active: true
     })
+
 
     // 狀態控制
     const isLoading = ref(false)
@@ -246,6 +249,15 @@ export default {
       birthday: '',
       gender: ''
     })
+    const handleError = (err) => {
+      if (err.response?.data?.message) {
+        error.value = err.response.data.message
+      } else if (err.message) {
+        error.value = err.message
+      } else {
+        error.value = '註冊失敗，請稍後再試'
+      }
+    }
 
     // 密碼強度計算
     const passwordStrength = computed(() => {
@@ -325,6 +337,18 @@ export default {
         isValid = false
       }
 
+      if (!formData.birthday) {
+        validationErrors.birthday = '請選擇生日'
+        isValid = false
+      } else {
+        const birthDate = new Date(formData.birthday)
+        const today = new Date()
+        if (birthDate >= today) {
+          validationErrors.birthday = '生日不能大於今天'
+          isValid = false
+        }
+      }
+
       return isValid
     }
 
@@ -336,7 +360,13 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        await store.dispatch('auth/register', formData)
+        // 轉換日期格式
+        const registerData = {
+          ...formData,
+          birthday: new Date(formData.birthday).toISOString().split('T')[0]
+        }
+
+        await store.dispatch('auth/register', registerData)
         router.push('/login')
       } catch (err) {
         error.value = err.response?.data?.message || '註冊失敗，請稍後再試'
@@ -345,6 +375,7 @@ export default {
         isLoading.value = false
       }
     }
+
 
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
