@@ -2,7 +2,6 @@
   <div class="register-container">
     <div class="register-form">
       <h2 class="text-center mb-4">會員註冊</h2>
-
       <AlertMessage v-if="error" type="error" :message="error" @close="error = ''" />
 
       <form @submit.prevent="handleSubmit" class="needs-validation" novalidate>
@@ -85,7 +84,7 @@
                   :style="{ width: passwordStrength + '%' }"
               ></div>
             </div>
-            <small class="text-muted">{{ passwordStrengthText }}</small>
+            <small class="text-muted">密碼強度: {{ passwordStrengthText }}</small>
           </div>
         </div>
 
@@ -396,7 +395,6 @@ export default {
 }
 </script>
 
-
 <style scoped>
 .register-container {
   min-height: 100vh;
@@ -414,6 +412,7 @@ export default {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 500px;
+  animation: fadeIn 0.5s ease-out;
 }
 
 .form-group {
@@ -529,9 +528,5 @@ a:hover {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.register-form {
-  animation: fadeIn 0.5s ease-out;
 }
 </style>

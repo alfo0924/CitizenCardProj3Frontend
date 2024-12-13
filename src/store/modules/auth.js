@@ -35,9 +35,12 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.post('/auth/login', credentials)
-            const { token, refreshToken, user } = response.data
+            const response = await api.post('/auth/login', {
+                email: credentials.email.toLowerCase().trim(),
+                password: credentials.password
+            })
 
+            const { token, refreshToken, user } = response.data
             if (token && user) {
                 localStorage.setItem('token', token)
                 localStorage.setItem('refreshToken', refreshToken)
@@ -65,6 +68,10 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
+            if (userData.password !== userData.confirmPassword) {
+                throw new Error('密碼與確認密碼不一致')
+            }
+
             const now = new Date().toISOString()
             const registerData = {
                 name: userData.name.trim(),
@@ -82,13 +89,19 @@ const actions = {
                 createdAt: now,
                 updatedAt: now,
                 lastLoginTime: now,
-                lastLoginIp: '0.0.0.0'
+                lastLoginIp: '0.0.0.0',
+                avatar: '/avatars/default-avatar.jpg'
             }
 
             const response = await api.post('/auth/register', registerData)
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
+            let errorMessage = '註冊失敗，請稍後再試'
+            if (error.response?.data?.message) {
+                errorMessage = error.response.data.message
+            } else if (error.message) {
+                errorMessage = error.message
+            }
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -103,7 +116,7 @@ const actions = {
                 await api.post('/auth/logout', { token })
             }
         } catch (error) {
-            console.error('Logout error:', error)
+            console.error('登出失敗:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('refreshToken')

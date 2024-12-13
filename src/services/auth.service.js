@@ -10,6 +10,9 @@ class AuthService {
             if (response.data) {
                 const { token, refreshToken, user } = response.data
                 this.setAuthData(token, refreshToken, user)
+                if (user.wallet) {
+                    localStorage.setItem('wallet', JSON.stringify(user.wallet))
+                }
             }
             return response.data
         } catch (error) {
@@ -37,8 +40,14 @@ class AuthService {
                 createdAt: now,
                 updatedAt: now,
                 lastLoginTime: now,
-                lastLoginIp: '0.0.0.0'
+                lastLoginIp: '0.0.0.0',
+                avatar: '/avatars/default-avatar.jpg'
             }
+
+            if (!formattedData.password || formattedData.password !== formattedData.confirmPassword) {
+                throw new Error('密碼與確認密碼不一致')
+            }
+
             const response = await api.post('/auth/register', formattedData)
             return response.data
         } catch (error) {
@@ -69,6 +78,9 @@ class AuthService {
                     ...currentUser,
                     ...response.data
                 })
+                if (response.data.wallet) {
+                    localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
+                }
             }
             return response.data
         } catch (error) {
@@ -89,6 +101,9 @@ class AuthService {
                     ...user,
                     ...response.data
                 })
+                if (response.data.wallet) {
+                    localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
+                }
             }
             return response.data
         } catch (error) {
