@@ -3,6 +3,7 @@ import api from '@/services/api.config'
 
 const state = {
     token: localStorage.getItem('token') || null,
+    refreshToken: localStorage.getItem('refreshToken') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
     isLoading: false,
     error: null
@@ -13,9 +14,13 @@ const getters = {
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
     userName: state => state.user?.name || '',
-    userAvatar: state => state.user?.avatar || '',
+    userAvatar: state => state.user?.avatar || '/avatars/default-avatar.jpg',
+    userEmail: state => state.user?.email || '',
+    userPhone: state => state.user?.phone || '',
+    userRole: state => state.user?.role || '',
     authError: state => state.error,
-    isLoading: state => state.isLoading
+    isLoading: state => state.isLoading,
+    isEmailVerified: state => state.user?.emailVerified || false
 }
 
 const actions = {
@@ -25,14 +30,15 @@ const actions = {
 
         try {
             const response = await api.post('/auth/login', credentials)
+            const { token, refreshToken, user } = response.data
 
-            if (response.token && response.user) {
-                localStorage.setItem('token', response.token)
-                localStorage.setItem('user', JSON.stringify(response.user))
-                commit('SET_TOKEN', response.token)
-                commit('SET_USER', response.user)
+            if (token && user) {
+                localStorage.setItem('token', token)
+                localStorage.setItem('refreshToken', refreshToken)
+                localStorage.setItem('user', JSON.stringify(user))
+                commit('SET_AUTH_DATA', { token, refreshToken, user })
             }
-            return response
+            return response.data
         } catch (error) {
             const errorMessage = error.response?.data?.message || '登入失敗，請檢查帳號密碼'
             commit('SET_ERROR', errorMessage)
@@ -48,22 +54,23 @@ const actions = {
 
         try {
             const registerData = {
-                name: userData.name,
-                email: userData.email,
+                name: userData.name.trim(),
+                email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone,
+                phone: userData.phone.trim(),
                 birthday: new Date(userData.birthday).toISOString().split('T')[0],
                 gender: userData.gender,
+                address: userData.address?.trim(),
                 role: 'ROLE_USER',
                 active: true,
-                emailVerified: false
+                emailVerified: false,
+                version: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             }
 
             const response = await api.post('/auth/register', registerData)
-            if (!response.success) {
-                throw new Error(response.message || '註冊失敗')
-            }
-            return response
+            return response.data
         } catch (error) {
             console.error('Registration error:', error)
             const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
@@ -78,14 +85,32 @@ const actions = {
         try {
             const token = localStorage.getItem('token')
             if (token) {
-                await api.post('/auth/logout')
+                await api.post('/auth/logout', { token })
             }
         } catch (error) {
             console.error('Logout error:', error)
         } finally {
             localStorage.removeItem('token')
+            localStorage.removeItem('refreshToken')
             localStorage.removeItem('user')
-            commit('CLEAR_USER')
+            localStorage.removeItem('wallet')
+            commit('CLEAR_AUTH_DATA')
+        }
+    },
+
+    async refreshToken({ commit, state }) {
+        try {
+            const response = await api.post('/auth/refresh-token', {
+                refreshToken: state.refreshToken
+            })
+            const { token, refreshToken } = response.data
+            localStorage.setItem('token', token)
+            localStorage.setItem('refreshToken', refreshToken)
+            commit('SET_TOKENS', { token, refreshToken })
+            return token
+        } catch (error) {
+            commit('CLEAR_AUTH_DATA')
+            throw error
         }
     },
 
@@ -94,8 +119,10 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const response = await api.post('/auth/validate-email', { email })
-            return response
+            const response = await api.post('/auth/validate-email', {
+                email: email.toLowerCase().trim()
+            })
+            return response.data
         } catch (error) {
             const errorMessage = error.response?.data?.message || '驗證信箱失敗'
             commit('SET_ERROR', errorMessage)
@@ -105,16 +132,17 @@ const actions = {
         }
     },
 
-    async checkToken({ commit }) {
+    async checkToken({ commit, dispatch }) {
         try {
-            const token = localStorage.getItem('token')
-            if (!token) {
-                throw new Error('未找到登入令牌')
-            }
             const response = await api.get('/auth/check')
-            return response
+            if (response.data.valid && response.data.user) {
+                commit('SET_USER', response.data.user)
+            } else {
+                await dispatch('logout')
+            }
+            return response.data
         } catch (error) {
-            commit('CLEAR_USER')
+            await dispatch('logout')
             throw error
         }
     },
@@ -125,8 +153,9 @@ const actions = {
 
         try {
             const response = await api.get('/auth/profile')
-            commit('SET_USER', response)
-            return response
+            commit('SET_USER', response.data)
+            localStorage.setItem('user', JSON.stringify(response.data))
+            return response.data
         } catch (error) {
             const errorMessage = error.response?.data?.message || '獲取資料失敗'
             commit('SET_ERROR', errorMessage)
@@ -138,15 +167,26 @@ const actions = {
 }
 
 const mutations = {
+    SET_AUTH_DATA(state, { token, refreshToken, user }) {
+        state.token = token
+        state.refreshToken = refreshToken
+        state.user = user
+    },
+    SET_TOKENS(state, { token, refreshToken }) {
+        state.token = token
+        state.refreshToken = refreshToken
+    },
     SET_TOKEN(state, token) {
         state.token = token
     },
     SET_USER(state, user) {
         state.user = user
     },
-    CLEAR_USER(state) {
+    CLEAR_AUTH_DATA(state) {
         state.token = null
+        state.refreshToken = null
         state.user = null
+        state.error = null
     },
     SET_LOADING(state, status) {
         state.isLoading = status

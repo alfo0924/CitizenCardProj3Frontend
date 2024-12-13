@@ -213,11 +213,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
   name: 'RegisterForm',
-  components: {
-    AlertMessage,
-    LoadingSpinner
-  },
-
+  components: { AlertMessage, LoadingSpinner },
   setup() {
     const store = useStore()
     const router = useRouter()
@@ -231,10 +227,12 @@ export default {
       phone: '',
       birthday: '',
       gender: '',
+      address: '',
       role: 'ROLE_USER',
-      active: true
+      active: true,
+      emailVerified: false,
+      version: 0
     })
-
 
     // 狀態控制
     const isLoading = ref(false)
@@ -247,26 +245,23 @@ export default {
       confirmPassword: '',
       phone: '',
       birthday: '',
-      gender: ''
+      gender: '',
+      address: ''
     })
-    const handleError = (err) => {
-      if (err.response?.data?.message) {
-        error.value = err.response.data.message
-      } else if (err.message) {
-        error.value = err.message
-      } else {
-        error.value = '註冊失敗，請稍後再試'
-      }
-    }
 
     // 密碼強度計算
     const passwordStrength = computed(() => {
       if (!formData.password) return 0
       let strength = 0
+      // 長度檢查
       if (formData.password.length >= 8) strength += 20
+      // 數字檢查
       if (/\d/.test(formData.password)) strength += 20
+      // 小寫字母檢查
       if (/[a-z]/.test(formData.password)) strength += 20
+      // 大寫字母檢查
       if (/[A-Z]/.test(formData.password)) strength += 20
+      // 特殊字符檢查
       if (/[!@#$%^&*]/.test(formData.password)) strength += 20
       return strength
     })
@@ -290,11 +285,13 @@ export default {
         validationErrors[key] = ''
       })
 
-      if (!formData.name) {
-        validationErrors.name = '請輸入姓名'
+      // 姓名驗證
+      if (!formData.name || formData.name.length < 2) {
+        validationErrors.name = '姓名長度必須至少為2個字符'
         isValid = false
       }
 
+      // 電子郵件驗證
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
         isValid = false
@@ -303,14 +300,19 @@ export default {
         isValid = false
       }
 
+      // 密碼驗證
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
       } else if (formData.password.length < 8) {
         validationErrors.password = '密碼長度至少8個字符'
         isValid = false
+      } else if (!/^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\S+$).{8,}$/.test(formData.password)) {
+        validationErrors.password = '密碼必須包含大小寫字母、數字和特殊字符'
+        isValid = false
       }
 
+      // 確認密碼驗證
       if (!formData.confirmPassword) {
         validationErrors.confirmPassword = '請確認密碼'
         isValid = false
@@ -319,6 +321,7 @@ export default {
         isValid = false
       }
 
+      // 手機號碼驗證
       if (!formData.phone) {
         validationErrors.phone = '請輸入手機號碼'
         isValid = false
@@ -327,16 +330,7 @@ export default {
         isValid = false
       }
 
-      if (!formData.birthday) {
-        validationErrors.birthday = '請選擇生日'
-        isValid = false
-      }
-
-      if (!formData.gender) {
-        validationErrors.gender = '請選擇性別'
-        isValid = false
-      }
-
+      // 生日驗證
       if (!formData.birthday) {
         validationErrors.birthday = '請選擇生日'
         isValid = false
@@ -347,6 +341,12 @@ export default {
           validationErrors.birthday = '生日不能大於今天'
           isValid = false
         }
+      }
+
+      // 性別驗證
+      if (!formData.gender) {
+        validationErrors.gender = '請選擇性別'
+        isValid = false
       }
 
       return isValid
@@ -360,10 +360,11 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        // 轉換日期格式
         const registerData = {
           ...formData,
-          birthday: new Date(formData.birthday).toISOString().split('T')[0]
+          birthday: new Date(formData.birthday).toISOString().split('T')[0],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         }
 
         await store.dispatch('auth/register', registerData)
@@ -375,7 +376,6 @@ export default {
         isLoading.value = false
       }
     }
-
 
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
@@ -396,6 +396,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 .register-container {
   min-height: 100vh;
