@@ -70,7 +70,7 @@
 
           <button
               type="submit"
-              class="btn btn-primary w-100 mb-3"
+              class="btn btn-danger w-100 mb-3"
               :disabled="isLoading || !isFormValid"
           >
             <LoadingSpinner v-if="isLoading" size="sm" class="me-2"/>
@@ -244,14 +244,14 @@ export default {
 }
 
 .btn-primary {
-  background-color: #0056b3;
-  border-color: #0056b3;
+  background-color: #b51d1d;
+  border-color: #ba0043;
   transition: all 0.3s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #004494;
-  border-color: #004494;
+  background-color: #ba0043;
+  border-color: #b51d1d;
 }
 
 .invalid-feedback {
