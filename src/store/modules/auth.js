@@ -20,7 +20,7 @@ const getters = {
     userGender: state => state.user?.gender || '',
     userRole: state => state.user?.role || '',
     userAddress: state => state.user?.address || '',
-    userAvatar: state => state.user?.avatar || '/avatars/default-avatar.jpg',
+    userAvatar: state => state.user?.avatar || '',
     isActive: state => state.user?.active || false,
     isEmailVerified: state => state.user?.email_verified || false,
     lastLoginTime: state => state.user?.last_login_time || null,
@@ -66,30 +66,25 @@ const actions = {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
-            // 基本資料驗證
-            if (!userData.password || !userData.confirmPassword) {
-                throw new Error('請輸入密碼')
-            }
-            if (userData.password !== userData.confirmPassword) {
-                throw new Error('密碼與確認密碼不一致')
-            }
-
-            // 只發送必要的註冊資料
             const registerData = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                confirmPassword: userData.confirmPassword,
-                phone: userData.phone?.trim() || null,
-                birthday: userData.birthday || null,
-                gender: userData.gender || null,
-                address: userData.address?.trim() || null
+                phone: userData.phone?.trim(),
+                birthday: userData.birthday,
+                gender: userData.gender,
+                role: 'ROLE_USER',
+                address: userData.address?.trim(),
+                avatar: '',
+                active: true,
+                email_verified: false,
+                version: 0
             }
 
             const response = await api.post('/auth/register', registerData)
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || error.message || '註冊失敗，請稍後再試'
+            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -144,24 +139,6 @@ const actions = {
             throw error
         } finally {
             commit('SET_LOADING', false)
-        }
-    },
-
-    async checkToken({ commit, dispatch }) {
-        try {
-            const response = await api.get('/auth/check')
-            if (response.data.valid && response.data.user) {
-                commit('SET_USER', response.data.user)
-                if (response.data.user.wallet) {
-                    commit('SET_WALLET', response.data.user.wallet)
-                }
-            } else {
-                await dispatch('logout')
-            }
-            return response.data
-        } catch (error) {
-            await dispatch('logout')
-            throw error
         }
     },
 

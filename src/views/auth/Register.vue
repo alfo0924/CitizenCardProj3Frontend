@@ -22,9 +22,10 @@
                 type="text"
                 class="form-control"
                 id="name"
-                v-model="formData.name"
+                v-model.trim="formData.name"
                 :class="{ 'is-invalid': validationErrors.name }"
                 required
+                maxlength="50"
                 placeholder="請輸入姓名"
             >
           </div>
@@ -44,9 +45,10 @@
                 type="email"
                 class="form-control"
                 id="email"
-                v-model="formData.email"
+                v-model.trim="formData.email"
                 :class="{ 'is-invalid': validationErrors.email }"
                 required
+                maxlength="100"
                 placeholder="請輸入電子郵件"
             >
           </div>
@@ -69,6 +71,7 @@
                 v-model="formData.password"
                 :class="{ 'is-invalid': validationErrors.password }"
                 required
+                maxlength="255"
                 placeholder="請輸入密碼"
             >
             <button
@@ -98,6 +101,7 @@
                 v-model="formData.confirmPassword"
                 :class="{ 'is-invalid': validationErrors.confirmPassword }"
                 required
+                maxlength="255"
                 placeholder="請再次輸入密碼"
             >
           </div>
@@ -117,8 +121,9 @@
                 type="tel"
                 class="form-control"
                 id="phone"
-                v-model="formData.phone"
+                v-model.trim="formData.phone"
                 :class="{ 'is-invalid': validationErrors.phone }"
+                maxlength="20"
                 placeholder="請輸入手機號碼"
             >
           </div>
@@ -140,6 +145,7 @@
                 id="birthday"
                 v-model="formData.birthday"
                 :class="{ 'is-invalid': validationErrors.birthday }"
+                required
             >
           </div>
           <div class="invalid-feedback" v-if="validationErrors.birthday">
@@ -158,6 +164,7 @@
                   id="male"
                   value="MALE"
                   v-model="formData.gender"
+                  required
               >
               <label class="form-check-label" for="male">男</label>
             </div>
@@ -171,6 +178,9 @@
               >
               <label class="form-check-label" for="female">女</label>
             </div>
+          </div>
+          <div class="invalid-feedback" v-if="validationErrors.gender">
+            {{ validationErrors.gender }}
           </div>
         </div>
 
@@ -242,31 +252,27 @@ export default {
         validationErrors[key] = ''
       })
 
-      // 姓名驗證
-      if (!formData.name || formData.name.trim().length < 2) {
-        validationErrors.name = '姓名長度必須至少2個字符'
+      if (!formData.name || formData.name.trim().length < 2 || formData.name.trim().length > 50) {
+        validationErrors.name = '姓名長度必須在2-50個字元之間'
         isValid = false
       }
 
-      // Email驗證
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
         isValid = false
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) || formData.email.length > 100) {
         validationErrors.email = '請輸入有效的電子郵件格式'
         isValid = false
       }
 
-      // 密碼驗證
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
-      } else if (formData.password.length < 8) {
-        validationErrors.password = '密碼長度至少8個字符'
+      } else if (formData.password.length < 8 || formData.password.length > 255) {
+        validationErrors.password = '密碼長度必須在8-255個字元之間'
         isValid = false
       }
 
-      // 確認密碼驗證
       if (!formData.confirmPassword) {
         validationErrors.confirmPassword = '請確認密碼'
         isValid = false
@@ -275,19 +281,16 @@ export default {
         isValid = false
       }
 
-      // 手機號碼驗證
-      if (formData.phone && !/^09\d{8}$/.test(formData.phone)) {
+      if (formData.phone && (!/^09\d{8}$/.test(formData.phone) || formData.phone.length > 20)) {
         validationErrors.phone = '請輸入有效的手機號碼格式'
         isValid = false
       }
 
-      // 生日驗證
       if (!formData.birthday) {
         validationErrors.birthday = '請選擇生日'
         isValid = false
       }
 
-      // 性別驗證
       if (!formData.gender) {
         validationErrors.gender = '請選擇性別'
         isValid = false
