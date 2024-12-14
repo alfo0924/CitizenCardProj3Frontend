@@ -39,22 +39,35 @@ const actions = {
                 email: credentials.email.toLowerCase().trim(),
                 password: credentials.password
             })
+
             const { token, refreshToken, user } = response.data
             if (token && user) {
                 localStorage.setItem('token', token)
                 localStorage.setItem('refreshToken', refreshToken)
                 localStorage.setItem('user', JSON.stringify(user))
+                commit('SET_AUTH_DATA', { token, refreshToken, user })
+
                 if (user.wallet) {
                     localStorage.setItem('wallet', JSON.stringify(user.wallet))
-                }
-                commit('SET_AUTH_DATA', { token, refreshToken, user })
-                if (user.wallet) {
                     commit('SET_WALLET', user.wallet)
                 }
             }
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '登入失敗，請檢查帳號密碼'
+            let errorMessage = '登入失敗，請稍後再試'
+            if (error.response) {
+                switch (error.response.status) {
+                    case 401:
+                        errorMessage = '帳號或密碼錯誤'
+                        break
+                    case 403:
+                        errorMessage = '帳戶已被停用'
+                        break
+                    case 404:
+                        errorMessage = '用戶不存在'
+                        break
+                }
+            }
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -70,21 +83,29 @@ const actions = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone?.trim(),
-                birthday: userData.birthday,
-                gender: userData.gender,
+                phone: userData.phone?.trim() || null,
+                birthday: userData.birthday || null,
+                gender: userData.gender || null,
                 role: 'ROLE_USER',
-                address: userData.address?.trim(),
-                avatar: '',
+                address: userData.address?.trim() || null,
                 active: true,
-                email_verified: false,
-                version: 0
+                email_verified: false
             }
 
             const response = await api.post('/auth/register', registerData)
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
+            let errorMessage = '註冊失敗，請稍後再試'
+            if (error.response) {
+                switch (error.response.status) {
+                    case 400:
+                        errorMessage = error.response.data.message || '輸入資料格式不正確'
+                        break
+                    case 409:
+                        errorMessage = '此電子郵件已被註冊'
+                        break
+                }
+            }
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {
@@ -98,8 +119,6 @@ const actions = {
             if (token) {
                 await api.post('/auth/logout', { token })
             }
-        } catch (error) {
-            console.error('登出失敗:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('refreshToken')
@@ -134,8 +153,7 @@ const actions = {
             })
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '驗證信箱失敗'
-            commit('SET_ERROR', errorMessage)
+            commit('SET_ERROR', '驗證信箱失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -155,8 +173,7 @@ const actions = {
             localStorage.setItem('user', JSON.stringify(response.data))
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '獲取資料失敗'
-            commit('SET_ERROR', errorMessage)
+            commit('SET_ERROR', '獲取資料失敗')
             throw error
         } finally {
             commit('SET_LOADING', false)

@@ -46,19 +46,19 @@ api.interceptors.response.use(
                     break
                 case 401:
                     store.dispatch('auth/logout')
-                    router.push({
-                        path: '/login',
-                        query: { redirect: router.currentRoute.value.fullPath }
-                    })
+                    router.push('/login')
                     break
                 case 403:
-                    store.dispatch('setError', '無權限訪問')
+                    store.dispatch('setError', '帳戶已被停用')
                     break
                 case 404:
-                    store.dispatch('setError', '資源不存在')
+                    store.dispatch('setError', '找不到資源')
+                    break
+                case 409:
+                    store.dispatch('setError', '資料已存在')
                     break
                 case 500:
-                    store.dispatch('setError', '伺服器錯誤')
+                    store.dispatch('setError', '系統錯誤，請稍後再試')
                     break
                 default:
                     store.dispatch('setError', errorMessage)
@@ -79,6 +79,10 @@ export const endpoints = {
         profile: '/auth/profile',
         check: '/auth/check'
     },
+    user: {
+        profile: '/users/profile',
+        update: '/users/profile'
+    },
     movies: {
         list: '/movies',
         detail: id => `/movies/${id}`,
@@ -88,10 +92,6 @@ export const endpoints = {
         list: '/schedules',
         detail: id => `/schedules/${id}`,
         seats: id => `/schedules/${id}/seats`
-    },
-    wallet: {
-        info: '/wallet',
-        balance: '/wallet/balance'
     },
     movieTickets: {
         list: '/movie-tickets',
@@ -104,10 +104,13 @@ export const endpoints = {
         detail: id => `/discount-coupons/${id}`,
         qrcode: id => `/discount-coupons/${id}/qrcode`
     },
+    wallet: {
+        info: '/wallet',
+        balance: '/wallet/balance'
+    },
     stores: {
         list: '/stores',
-        detail: id => `/stores/${id}`,
-        categories: '/stores/categories'
+        detail: id => `/stores/${id}`
     }
 }
 
