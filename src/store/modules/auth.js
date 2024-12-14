@@ -25,7 +25,9 @@ const getters = {
     isEmailVerified: state => state.user?.email_verified || false,
     lastLoginTime: state => state.user?.last_login_time || null,
     lastLoginIp: state => state.user?.last_login_ip || '',
-    walletBalance: state => state.wallet?.balance || 0
+    walletBalance: state => state.wallet?.balance || 0,
+    authError: state => state.error,
+    isLoading: state => state.isLoading
 }
 
 const actions = {
@@ -38,25 +40,21 @@ const actions = {
                 password: credentials.password
             })
 
-            const { data } = response
-            if (!data || !data.token || !data.user) {
+            const { token, refreshToken, user, wallet } = response.data
+            if (!token || !user) {
                 throw new Error('無效的響應數據')
             }
-
-            const { token, refreshToken, user } = data
 
             localStorage.setItem('token', token)
             localStorage.setItem('refreshToken', refreshToken)
             localStorage.setItem('user', JSON.stringify(user))
 
-            commit('SET_AUTH_DATA', { token, refreshToken, user })
-
-            if (user.wallet) {
-                localStorage.setItem('wallet', JSON.stringify(user.wallet))
-                commit('SET_WALLET', user.wallet)
+            if (wallet) {
+                localStorage.setItem('wallet', JSON.stringify(wallet))
             }
 
-            return data
+            commit('SET_AUTH_DATA', { token, refreshToken, user, wallet })
+            return response.data
         } catch (error) {
             const errorMessage = error.response?.data?.message || '登入失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
@@ -77,13 +75,7 @@ const actions = {
                 phone: userData.phone?.trim(),
                 birthday: userData.birthday,
                 gender: userData.gender,
-                role: 'ROLE_USER',
-                address: userData.address?.trim(),
-                active: true,
-                email_verified: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                version: 0
+                address: userData.address?.trim()
             }
 
             const response = await api.post('/auth/register', registerData)
@@ -99,10 +91,9 @@ const actions = {
 
     async logout({ commit }) {
         try {
-            const token = localStorage.getItem('token')
-            if (token) {
-                await api.post('/auth/logout')
-            }
+            await api.post('/auth/logout')
+        } catch (error) {
+            console.error('Logout error:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('refreshToken')
@@ -118,7 +109,6 @@ const actions = {
         try {
             const response = await api.get('/auth/profile')
             const userData = response.data
-
             commit('SET_USER', userData)
             localStorage.setItem('user', JSON.stringify(userData))
 
@@ -138,10 +128,11 @@ const actions = {
 }
 
 const mutations = {
-    SET_AUTH_DATA(state, { token, refreshToken, user }) {
+    SET_AUTH_DATA(state, { token, refreshToken, user, wallet }) {
         state.token = token
         state.refreshToken = refreshToken
         state.user = user
+        state.wallet = wallet
     },
     SET_USER(state, user) {
         state.user = user
