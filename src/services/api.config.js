@@ -53,15 +53,12 @@ api.interceptors.response.use(
                     break
                 case 403:
                     store.dispatch('setError', '無權限訪問')
-                    router.push('/403')
                     break
                 case 404:
                     store.dispatch('setError', '資源不存在')
-                    router.push('/404')
                     break
                 case 500:
                     store.dispatch('setError', '伺服器錯誤')
-                    router.push('/500')
                     break
                 default:
                     store.dispatch('setError', errorMessage)
@@ -72,7 +69,7 @@ api.interceptors.response.use(
     }
 )
 
-// API端點
+// API端點配置
 export const endpoints = {
     auth: {
         register: '/auth/register',
@@ -82,25 +79,40 @@ export const endpoints = {
         profile: '/auth/profile',
         check: '/auth/check'
     },
-    user: {
-        profile: '/user/profile',
-        updateProfile: '/user/profile'
-    },
-    movie: {
+    movies: {
         list: '/movies',
         detail: id => `/movies/${id}`,
         schedules: id => `/movies/${id}/schedules`
     },
+    schedules: {
+        list: '/schedules',
+        detail: id => `/schedules/${id}`,
+        seats: id => `/schedules/${id}/seats`
+    },
     wallet: {
-        tickets: '/wallet/tickets',
-        coupons: '/wallet/coupons',
-        useTicket: id => `/wallet/tickets/${id}/use`,
-        useCoupon: id => `/wallet/coupons/${id}/use`
+        info: '/wallet',
+        balance: '/wallet/balance'
+    },
+    movieTickets: {
+        list: '/movie-tickets',
+        detail: id => `/movie-tickets/${id}`,
+        create: '/movie-tickets',
+        qrcode: id => `/movie-tickets/${id}/qrcode`
+    },
+    discountCoupons: {
+        list: '/discount-coupons',
+        detail: id => `/discount-coupons/${id}`,
+        qrcode: id => `/discount-coupons/${id}/qrcode`
+    },
+    stores: {
+        list: '/stores',
+        detail: id => `/stores/${id}`,
+        categories: '/stores/categories'
     }
 }
 
-// API方法
-export const apiService = {
+// API服務方法
+const apiService = {
     get: async (url, params = {}) => {
         try {
             const response = await api.get(url, { params })
@@ -131,16 +143,6 @@ export const apiService = {
         }
     },
 
-    patch: async (url, data = {}) => {
-        try {
-            const response = await api.patch(url, data)
-            return response
-        } catch (error) {
-            console.error('PATCH request failed:', error)
-            throw error
-        }
-    },
-
     delete: async url => {
         try {
             const response = await api.delete(url)
@@ -152,4 +154,4 @@ export const apiService = {
     }
 }
 
-export default api
+export { api as default, apiService }

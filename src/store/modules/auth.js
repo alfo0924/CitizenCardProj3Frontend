@@ -14,18 +14,20 @@ const getters = {
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
     userName: state => state.user?.name || '',
-    userAvatar: state => state.user?.avatar || '/avatars/default-avatar.jpg',
     userEmail: state => state.user?.email || '',
     userPhone: state => state.user?.phone || '',
-    userRole: state => state.user?.role || '',
     userBirthday: state => state.user?.birthday || '',
     userGender: state => state.user?.gender || '',
+    userRole: state => state.user?.role || '',
     userAddress: state => state.user?.address || '',
+    userAvatar: state => state.user?.avatar || '/avatars/default-avatar.jpg',
+    isActive: state => state.user?.active || false,
+    isEmailVerified: state => state.user?.email_verified || false,
+    lastLoginTime: state => state.user?.last_login_time || null,
+    lastLoginIp: state => state.user?.last_login_ip || '',
     walletBalance: state => state.wallet?.balance || 0,
     authError: state => state.error,
-    isLoading: state => state.isLoading,
-    isEmailVerified: state => state.user?.emailVerified || false,
-    lastLoginTime: state => state.user?.lastLoginTime || null
+    isLoading: state => state.isLoading
 }
 
 const actions = {
@@ -64,40 +66,30 @@ const actions = {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
+            // 基本資料驗證
+            if (!userData.password || !userData.confirmPassword) {
+                throw new Error('請輸入密碼')
+            }
             if (userData.password !== userData.confirmPassword) {
                 throw new Error('密碼與確認密碼不一致')
             }
 
-            const now = new Date().toISOString()
+            // 只發送必要的註冊資料
             const registerData = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
                 confirmPassword: userData.confirmPassword,
-                phone: userData.phone?.trim(),
-                birthday: userData.birthday,
-                gender: userData.gender,
-                address: userData.address?.trim(),
-                role: 'ROLE_USER',
-                active: true,
-                emailVerified: false,
-                version: 0,
-                createdAt: now,
-                updatedAt: now,
-                lastLoginTime: now,
-                lastLoginIp: '0.0.0.0',
-                avatar: '/avatars/default-avatar.jpg'
+                phone: userData.phone?.trim() || null,
+                birthday: userData.birthday || null,
+                gender: userData.gender || null,
+                address: userData.address?.trim() || null
             }
 
             const response = await api.post('/auth/register', registerData)
             return response.data
         } catch (error) {
-            let errorMessage = '註冊失敗，請稍後再試'
-            if (error.response?.data?.message) {
-                errorMessage = error.response.data.message
-            } else if (error.message) {
-                errorMessage = error.message
-            }
+            const errorMessage = error.response?.data?.message || error.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
             throw error
         } finally {

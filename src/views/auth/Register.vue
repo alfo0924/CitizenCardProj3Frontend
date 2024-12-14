@@ -55,65 +55,6 @@
           </div>
         </div>
 
-        <!-- 生日 -->
-        <div class="form-group mb-3">
-          <label for="birthday" class="form-label">生日</label>
-          <div class="input-group">
-            <span class="input-group-text">
-              <i class="fas fa-calendar"></i>
-            </span>
-            <input
-                type="date"
-                class="form-control"
-                id="birthday"
-                v-model="formData.birthday"
-                :class="{ 'is-invalid': validationErrors.birthday }"
-                required
-            >
-          </div>
-          <div class="invalid-feedback" v-if="validationErrors.birthday">
-            {{ validationErrors.birthday }}
-          </div>
-        </div>
-
-        <!-- 性別 -->
-        <div class="form-group mb-3">
-          <label class="form-label">性別</label>
-          <div class="d-flex">
-            <div class="form-check me-3">
-              <input
-                  type="radio"
-                  class="form-check-input"
-                  id="male"
-                  value="MALE"
-                  v-model="formData.gender"
-                  required
-              >
-              <label class="form-check-label" for="male">男</label>
-            </div>
-            <div class="form-check me-3">
-              <input
-                  type="radio"
-                  class="form-check-input"
-                  id="female"
-                  value="FEMALE"
-                  v-model="formData.gender"
-              >
-              <label class="form-check-label" for="female">女</label>
-            </div>
-            <div class="form-check">
-              <input
-                  type="radio"
-                  class="form-check-input"
-                  id="other"
-                  value="OTHER"
-                  v-model="formData.gender"
-              >
-              <label class="form-check-label" for="other">其他</label>
-            </div>
-          </div>
-        </div>
-
         <!-- 密碼輸入 -->
         <div class="form-group mb-3">
           <label for="password" class="form-label">密碼</label>
@@ -178,7 +119,6 @@
                 id="phone"
                 v-model="formData.phone"
                 :class="{ 'is-invalid': validationErrors.phone }"
-                required
                 placeholder="請輸入手機號碼"
             >
           </div>
@@ -187,22 +127,50 @@
           </div>
         </div>
 
-        <!-- 服務條款 -->
-        <div class="form-check mb-3">
-          <input
-              type="checkbox"
-              class="form-check-input"
-              id="terms"
-              v-model="formData.agreeToTerms"
-              :class="{ 'is-invalid': validationErrors.agreeToTerms }"
-              required
-          >
-          <label class="form-check-label" for="terms">
-            我同意 <a href="#" @click.prevent="showTerms">服務條款</a> 和
-            <a href="#" @click.prevent="showPrivacy">隱私政策</a>
-          </label>
-          <div class="invalid-feedback" v-if="validationErrors.agreeToTerms">
-            {{ validationErrors.agreeToTerms }}
+        <!-- 生日 -->
+        <div class="form-group mb-3">
+          <label for="birthday" class="form-label">生日</label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-calendar"></i>
+            </span>
+            <input
+                type="date"
+                class="form-control"
+                id="birthday"
+                v-model="formData.birthday"
+                :class="{ 'is-invalid': validationErrors.birthday }"
+            >
+          </div>
+          <div class="invalid-feedback" v-if="validationErrors.birthday">
+            {{ validationErrors.birthday }}
+          </div>
+        </div>
+
+        <!-- 性別 -->
+        <div class="form-group mb-3">
+          <label class="form-label">性別</label>
+          <div class="d-flex">
+            <div class="form-check me-3">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="male"
+                  value="MALE"
+                  v-model="formData.gender"
+              >
+              <label class="form-check-label" for="male">男</label>
+            </div>
+            <div class="form-check me-3">
+              <input
+                  type="radio"
+                  class="form-check-input"
+                  id="female"
+                  value="FEMALE"
+                  v-model="formData.gender"
+              >
+              <label class="form-check-label" for="female">女</label>
+            </div>
           </div>
         </div>
 
@@ -252,8 +220,7 @@ export default {
       confirmPassword: '',
       phone: '',
       birthday: '',
-      gender: '',
-      agreeToTerms: false
+      gender: ''
     })
 
     const isLoading = ref(false)
@@ -266,8 +233,7 @@ export default {
       confirmPassword: '',
       phone: '',
       birthday: '',
-      gender: '',
-      agreeToTerms: ''
+      gender: ''
     })
 
     const validateForm = () => {
@@ -276,11 +242,13 @@ export default {
         validationErrors[key] = ''
       })
 
-      if (!formData.name) {
-        validationErrors.name = '請輸入姓名'
+      // 姓名驗證
+      if (!formData.name || formData.name.trim().length < 2) {
+        validationErrors.name = '姓名長度必須至少2個字符'
         isValid = false
       }
 
+      // Email驗證
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
         isValid = false
@@ -289,16 +257,7 @@ export default {
         isValid = false
       }
 
-      if (!formData.birthday) {
-        validationErrors.birthday = '請選擇生日'
-        isValid = false
-      }
-
-      if (!formData.gender) {
-        validationErrors.gender = '請選擇性別'
-        isValid = false
-      }
-
+      // 密碼驗證
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
@@ -307,6 +266,7 @@ export default {
         isValid = false
       }
 
+      // 確認密碼驗證
       if (!formData.confirmPassword) {
         validationErrors.confirmPassword = '請確認密碼'
         isValid = false
@@ -315,16 +275,21 @@ export default {
         isValid = false
       }
 
-      if (!formData.phone) {
-        validationErrors.phone = '請輸入手機號碼'
-        isValid = false
-      } else if (!/^09\d{8}$/.test(formData.phone)) {
+      // 手機號碼驗證
+      if (formData.phone && !/^09\d{8}$/.test(formData.phone)) {
         validationErrors.phone = '請輸入有效的手機號碼格式'
         isValid = false
       }
 
-      if (!formData.agreeToTerms) {
-        validationErrors.agreeToTerms = '請同意服務條款和隱私政策'
+      // 生日驗證
+      if (!formData.birthday) {
+        validationErrors.birthday = '請選擇生日'
+        isValid = false
+      }
+
+      // 性別驗證
+      if (!formData.gender) {
+        validationErrors.gender = '請選擇性別'
         isValid = false
       }
 
@@ -339,10 +304,10 @@ export default {
         error.value = ''
 
         const registerData = {
-          name: formData.name,
-          email: formData.email,
+          name: formData.name.trim(),
+          email: formData.email.toLowerCase().trim(),
           password: formData.password,
-          phone: formData.phone,
+          phone: formData.phone?.trim(),
           birthday: formData.birthday,
           gender: formData.gender
         }
@@ -367,14 +332,6 @@ export default {
       showPassword.value = !showPassword.value
     }
 
-    const showTerms = () => {
-      // TODO: 實作服務條款彈窗
-    }
-
-    const showPrivacy = () => {
-      // TODO: 實作隱私政策彈窗
-    }
-
     return {
       formData,
       isLoading,
@@ -382,14 +339,11 @@ export default {
       showPassword,
       validationErrors,
       handleSubmit,
-      togglePasswordVisibility,
-      showTerms,
-      showPrivacy
+      togglePasswordVisibility
     }
   }
 }
 </script>
-
 <style scoped>
 .register-container {
   min-height: 100vh;
