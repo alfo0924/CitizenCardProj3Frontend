@@ -59,9 +59,9 @@
         <div class="form-group mb-3">
           <label for="birthday" class="form-label">生日</label>
           <div class="input-group">
-    <span class="input-group-text">
-      <i class="fas fa-calendar"></i>
-    </span>
+            <span class="input-group-text">
+              <i class="fas fa-calendar"></i>
+            </span>
             <input
                 type="date"
                 class="form-control"
@@ -251,6 +251,8 @@ export default {
       password: '',
       confirmPassword: '',
       phone: '',
+      birthday: '',
+      gender: '',
       agreeToTerms: false
     })
 
@@ -263,6 +265,8 @@ export default {
       password: '',
       confirmPassword: '',
       phone: '',
+      birthday: '',
+      gender: '',
       agreeToTerms: ''
     })
 
@@ -282,6 +286,16 @@ export default {
         isValid = false
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
         validationErrors.email = '請輸入有效的電子郵件格式'
+        isValid = false
+      }
+
+      if (!formData.birthday) {
+        validationErrors.birthday = '請選擇生日'
+        isValid = false
+      }
+
+      if (!formData.gender) {
+        validationErrors.gender = '請選擇性別'
         isValid = false
       }
 
@@ -324,10 +338,25 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        await store.dispatch('auth/register', formData)
-        router.push('/login')
+        const registerData = {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          birthday: formData.birthday,
+          gender: formData.gender
+        }
+
+        await store.dispatch('auth/register', registerData)
+        router.push({
+          path: '/login',
+          query: {
+            registered: 'success',
+            email: formData.email
+          }
+        })
       } catch (err) {
-        error.value = err.message || '註冊失敗，請稍後再試'
+        error.value = err.response?.data?.message || '註冊失敗，請稍後再試'
         console.error('Registration error:', err)
       } finally {
         isLoading.value = false
@@ -339,11 +368,11 @@ export default {
     }
 
     const showTerms = () => {
-      // TODO: Implement terms modal
+      // TODO: 實作服務條款彈窗
     }
 
     const showPrivacy = () => {
-      // TODO: Implement privacy modal
+      // TODO: 實作隱私政策彈窗
     }
 
     return {

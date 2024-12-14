@@ -1,4 +1,3 @@
-// store/modules/auth.js
 import api from '@/services/api.config'
 
 const state = {
@@ -33,13 +32,11 @@ const actions = {
     async login({ commit }, credentials) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
             const response = await api.post('/auth/login', {
                 email: credentials.email.toLowerCase().trim(),
                 password: credentials.password
             })
-
             const { token, refreshToken, user } = response.data
             if (token && user) {
                 localStorage.setItem('token', token)
@@ -66,7 +63,6 @@ const actions = {
     async register({ commit }, userData) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
             if (userData.password !== userData.confirmPassword) {
                 throw new Error('密碼與確認密碼不一致')
@@ -145,7 +141,6 @@ const actions = {
     async validateEmail({ commit }, email) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
             const response = await api.post('/auth/validate-email', {
                 email: email.toLowerCase().trim()
@@ -181,7 +176,6 @@ const actions = {
     async getProfile({ commit }) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
             const response = await api.get('/auth/profile')
             commit('SET_USER', response.data)
