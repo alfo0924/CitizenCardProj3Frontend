@@ -4,20 +4,14 @@ import auth from './modules/auth'
 import movie from './modules/movie'
 import wallet from './modules/wallet'
 import discount from './modules/discount'
-import discountStore from './modules/discountStore'
+import storeModule from './modules/store'  // 改名為 storeModule
 import api from '@/services/api.config'
 
-const store = createStore({
+const vuexStore = createStore({  // 改名為 vuexStore
     state: {
         isLoading: false,
         error: null,
-        notification: null,
-        systemStats: {
-            visitorCount: 0,
-            userCount: 0,
-            movieCount: 0
-        },
-        layout: 'default'
+        notification: null
     },
 
     mutations: {
@@ -35,12 +29,6 @@ const store = createStore({
         },
         CLEAR_NOTIFICATION(state) {
             state.notification = null
-        },
-        SET_SYSTEM_STATS(state, stats) {
-            state.systemStats = stats
-        },
-        SET_LAYOUT(state, layout) {
-            state.layout = layout
         }
     },
 
@@ -69,35 +57,13 @@ const store = createStore({
 
         clearNotification({ commit }) {
             commit('CLEAR_NOTIFICATION')
-        },
-
-        setLayout({ commit }, layout) {
-            commit('SET_LAYOUT', layout)
-        },
-
-        async fetchSystemStats({ commit }) {
-            try {
-                const response = await api.get('/system/stats')
-                if (response) {
-                    commit('SET_SYSTEM_STATS', response)
-                }
-            } catch (error) {
-                console.error('Error fetching system stats:', error)
-                commit('SET_SYSTEM_STATS', {
-                    visitorCount: 0,
-                    userCount: 0,
-                    movieCount: 0
-                })
-            }
         }
     },
 
     getters: {
         isLoading: state => state.isLoading,
         error: state => state.error,
-        notification: state => state.notification,
-        systemStats: state => state.systemStats,
-        currentLayout: state => state.layout
+        notification: state => state.notification
     },
 
     modules: {
@@ -105,12 +71,12 @@ const store = createStore({
         movie,
         wallet,
         discount,
-        discountStore
+        store: storeModule  // 使用重命名的模塊
     },
 
     plugins: [
         createPersistedState({
-            paths: ['auth.token', 'auth.user', 'layout'],
+            paths: ['auth.token', 'auth.user'],
             storage: window.localStorage
         })
     ],
@@ -118,21 +84,21 @@ const store = createStore({
     strict: process.env.NODE_ENV !== 'production'
 })
 
-store.subscribeAction({
+vuexStore.subscribeAction({
     before: (action) => {
         if (!action.type.includes('setLoading')) {
-            store.dispatch('setLoading', true)
+            vuexStore.dispatch('setLoading', true)
         }
     },
     after: (action) => {
         if (!action.type.includes('setLoading')) {
-            store.dispatch('setLoading', false)
+            vuexStore.dispatch('setLoading', false)
         }
     },
     error: (action, error) => {
         console.error('Action error:', error)
-        store.dispatch('setLoading', false)
-        store.dispatch('setError', error.message || '發生錯誤，請稍後再試')
+        vuexStore.dispatch('setLoading', false)
+        vuexStore.dispatch('setError', error.message || '系統發生錯誤')
     }
 })
 
@@ -140,10 +106,9 @@ const initializeStore = async () => {
     const token = localStorage.getItem('token')
     if (token) {
         try {
-            await store.dispatch('auth/checkToken')
-            await store.dispatch('fetchSystemStats')
+            await vuexStore.dispatch('auth/checkToken')
         } catch (error) {
-            console.error('Failed to restore auth state:', error)
+            console.error('認證狀態恢復失敗:', error)
             localStorage.removeItem('token')
             localStorage.removeItem('user')
         }
@@ -152,4 +117,4 @@ const initializeStore = async () => {
 
 initializeStore()
 
-export default store
+export default vuexStore
