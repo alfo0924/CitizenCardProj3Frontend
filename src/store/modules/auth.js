@@ -38,26 +38,25 @@ const actions = {
                 password: credentials.password
             })
 
-            if (!response.data || !response.data.token) {
+            const { data } = response
+            if (!data || !data.token || !data.user) {
                 throw new Error('無效的響應數據')
             }
 
-            const { token, refreshToken, ...userData } = response.data
+            const { token, refreshToken, user } = data
 
-            // 保存認證數據
             localStorage.setItem('token', token)
             localStorage.setItem('refreshToken', refreshToken)
-            localStorage.setItem('user', JSON.stringify(userData))
+            localStorage.setItem('user', JSON.stringify(user))
 
-            commit('SET_AUTH_DATA', { token, refreshToken, user: userData })
+            commit('SET_AUTH_DATA', { token, refreshToken, user })
 
-            // 處理錢包數據
-            if (userData.wallet) {
-                localStorage.setItem('wallet', JSON.stringify(userData.wallet))
-                commit('SET_WALLET', userData.wallet)
+            if (user.wallet) {
+                localStorage.setItem('wallet', JSON.stringify(user.wallet))
+                commit('SET_WALLET', user.wallet)
             }
 
-            return response.data
+            return data
         } catch (error) {
             const errorMessage = error.response?.data?.message || '登入失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
@@ -81,7 +80,10 @@ const actions = {
                 role: 'ROLE_USER',
                 address: userData.address?.trim(),
                 active: true,
-                email_verified: false
+                email_verified: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                version: 0
             }
 
             const response = await api.post('/auth/register', registerData)
