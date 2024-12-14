@@ -4,12 +4,12 @@ class AuthService {
     async login(credentials) {
         try {
             const response = await api.post('/auth/login', {
-                ...credentials,
-                email: credentials.email.toLowerCase().trim()
+                email: credentials.email.toLowerCase().trim(),
+                password: credentials.password
             })
-            if (response.data) {
-                const { token, refreshToken, user } = response.data
-                this.setAuthData(token, refreshToken, user)
+            if (response.data && response.data.token && response.data.user) {
+                const { token, user } = response.data
+                this.setAuthData(token, user)
                 if (user.wallet) {
                     localStorage.setItem('wallet', JSON.stringify(user.wallet))
                 }
@@ -23,7 +23,6 @@ class AuthService {
 
     async register(userData) {
         try {
-            // 資料驗證
             this.validateRegisterData(userData)
 
             const now = new Date().toISOString()
@@ -36,13 +35,12 @@ class AuthService {
                 gender: userData.gender,
                 role: 'ROLE_USER',
                 active: true,
-                emailVerified: false,
-                version: 0,
-                createdAt: now,
-                updatedAt: now,
-                lastLoginTime: now,
-                lastLoginIp: '0.0.0.0',
-                avatar: '/avatars/default-avatar.jpg'
+                email_verified: false,
+                created_at: now,
+                updated_at: now,
+                last_login_time: now,
+                last_login_ip: '0.0.0.0',
+                version: 0
             }
 
             const response = await api.post('/auth/register', formattedData)
@@ -57,29 +55,14 @@ class AuthService {
         if (!userData.name || userData.name.trim().length < 2) {
             throw new Error('姓名長度必須大於2個字元')
         }
-
         if (!userData.email || !this.isValidEmail(userData.email)) {
             throw new Error('請輸入有效的電子郵件')
         }
-
         if (!userData.password || userData.password.length < 8) {
             throw new Error('密碼長度必須至少8個字元')
         }
-
-        if (userData.password !== userData.confirmPassword) {
-            throw new Error('密碼與確認密碼不一致')
-        }
-
-        if (!userData.phone || !this.isValidPhone(userData.phone)) {
+        if (userData.phone && !this.isValidPhone(userData.phone)) {
             throw new Error('請輸入有效的手機號碼')
-        }
-
-        if (!userData.birthday) {
-            throw new Error('請選擇生日')
-        }
-
-        if (!userData.gender || !['MALE', 'FEMALE', 'OTHER'].includes(userData.gender)) {
-            throw new Error('請選擇有效的性別')
         }
     }
 
@@ -109,10 +92,7 @@ class AuthService {
             const response = await api.get('/auth/profile')
             if (response.data) {
                 const currentUser = this.getCurrentUser()
-                this.setAuthData(this.getToken(), this.getRefreshToken(), {
-                    ...currentUser,
-                    ...response.data
-                })
+                this.setAuthData(this.getToken(), { ...currentUser, ...response.data })
                 if (response.data.wallet) {
                     localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
                 }
@@ -128,14 +108,11 @@ class AuthService {
         try {
             const response = await api.put('/auth/profile', {
                 ...profileData,
-                updatedAt: new Date().toISOString()
+                updated_at: new Date().toISOString()
             })
             if (response.data) {
                 const user = this.getCurrentUser()
-                this.setAuthData(this.getToken(), this.getRefreshToken(), {
-                    ...user,
-                    ...response.data
-                })
+                this.setAuthData(this.getToken(), { ...user, ...response.data })
                 if (response.data.wallet) {
                     localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
                 }
@@ -147,31 +124,16 @@ class AuthService {
         }
     }
 
-    async validateEmail(email) {
-        try {
-            if (!this.isValidEmail(email)) {
-                throw new Error('無效的電子郵件格式')
-            }
-            const response = await api.post('/auth/validate-email', {
-                email: email.toLowerCase().trim()
-            })
-            return response.data
-        } catch (error) {
-            throw new Error(error.response?.data?.message || '電子郵件驗證失敗')
-        }
-    }
-
-    setAuthData(token, refreshToken, user) {
-        if (!token || !refreshToken || !user) {
+    setAuthData(token, user) {
+        if (!token || !user) {
             throw new Error('無效的認證資料')
         }
         localStorage.setItem('token', token)
-        localStorage.setItem('refreshToken', refreshToken)
         localStorage.setItem('user', JSON.stringify(user))
     }
 
     clearAuthData() {
-        const items = ['token', 'refreshToken', 'user', 'wallet', 'tickets', 'coupons']
+        const items = ['token', 'user', 'wallet']
         items.forEach(item => localStorage.removeItem(item))
     }
 
@@ -189,10 +151,6 @@ class AuthService {
         return localStorage.getItem('token')
     }
 
-    getRefreshToken() {
-        return localStorage.getItem('refreshToken')
-    }
-
     isLoggedIn() {
         const token = this.getToken()
         return !!token && !this.isTokenExpired(token)
@@ -205,36 +163,6 @@ class AuthService {
             return decoded.exp < Date.now() / 1000
         } catch {
             return true
-        }
-    }
-
-    async refreshToken() {
-        try {
-            const refreshToken = this.getRefreshToken()
-            if (!refreshToken) {
-                throw new Error('無可用的更新令牌')
-            }
-
-            const response = await api.post('/auth/refresh-token', { refreshToken })
-            if (response.data) {
-                const { token, refreshToken: newRefreshToken } = response.data
-                this.setAuthData(token, newRefreshToken, this.getCurrentUser())
-                return token
-            }
-        } catch (error) {
-            this.handleError(error)
-            this.clearAuthData()
-            throw new Error('更新令牌失敗')
-        }
-    }
-
-    async checkToken() {
-        try {
-            const response = await api.get('/auth/check')
-            return response.data
-        } catch (error) {
-            this.handleError(error)
-            throw new Error('令牌驗證失敗')
         }
     }
 

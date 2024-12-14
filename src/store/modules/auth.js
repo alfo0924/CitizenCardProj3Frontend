@@ -2,7 +2,6 @@ import api from '@/services/api.config'
 
 const state = {
     token: localStorage.getItem('token') || null,
-    refreshToken: localStorage.getItem('refreshToken') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
     isLoading: false,
     error: null,
@@ -18,7 +17,7 @@ const getters = {
     userPhone: state => state.user?.phone || '',
     userBirthday: state => state.user?.birthday || '',
     userGender: state => state.user?.gender || '',
-    userRole: state => state.user?.role || '',
+    userRole: state => state.user?.role || 'ROLE_USER',
     userAddress: state => state.user?.address || '',
     userAvatar: state => state.user?.avatar || '',
     isActive: state => state.user?.active || false,
@@ -40,20 +39,25 @@ const actions = {
                 password: credentials.password
             })
 
-            const { token, refreshToken, user, wallet } = response.data
-            if (!token || !user) {
-                throw new Error('無效的響應數據')
+            if (!response.data || !response.data.token) {
+                throw new Error('伺服器回應格式錯誤')
             }
+
+            const { token, user } = response.data
 
             localStorage.setItem('token', token)
-            localStorage.setItem('refreshToken', refreshToken)
             localStorage.setItem('user', JSON.stringify(user))
 
-            if (wallet) {
-                localStorage.setItem('wallet', JSON.stringify(wallet))
+            if (response.data.wallet) {
+                localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
             }
 
-            commit('SET_AUTH_DATA', { token, refreshToken, user, wallet })
+            commit('SET_AUTH_DATA', {
+                token,
+                user,
+                wallet: response.data.wallet || null
+            })
+
             return response.data
         } catch (error) {
             const errorMessage = error.response?.data?.message || '登入失敗，請稍後再試'
@@ -72,10 +76,16 @@ const actions = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone?.trim(),
-                birthday: userData.birthday,
-                gender: userData.gender,
-                address: userData.address?.trim()
+                phone: userData.phone?.trim() || null,
+                birthday: userData.birthday || null,
+                gender: userData.gender || null,
+                address: userData.address?.trim() || null,
+                role: 'ROLE_USER',
+                active: true,
+                email_verified: false,
+                created_at: new Date(),
+                updated_at: new Date(),
+                version: 0
             }
 
             const response = await api.post('/auth/register', registerData)
@@ -96,7 +106,6 @@ const actions = {
             console.error('Logout error:', error)
         } finally {
             localStorage.removeItem('token')
-            localStorage.removeItem('refreshToken')
             localStorage.removeItem('user')
             localStorage.removeItem('wallet')
             commit('CLEAR_AUTH_DATA')
@@ -109,6 +118,11 @@ const actions = {
         try {
             const response = await api.get('/auth/profile')
             const userData = response.data
+
+            if (!userData) {
+                throw new Error('無法獲取用戶資料')
+            }
+
             commit('SET_USER', userData)
             localStorage.setItem('user', JSON.stringify(userData))
 
@@ -119,7 +133,8 @@ const actions = {
 
             return userData
         } catch (error) {
-            commit('SET_ERROR', '獲取資料失敗')
+            const errorMessage = error.response?.data?.message || '獲取資料失敗'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -128,9 +143,8 @@ const actions = {
 }
 
 const mutations = {
-    SET_AUTH_DATA(state, { token, refreshToken, user, wallet }) {
+    SET_AUTH_DATA(state, { token, user, wallet }) {
         state.token = token
-        state.refreshToken = refreshToken
         state.user = user
         state.wallet = wallet
     },
@@ -142,7 +156,6 @@ const mutations = {
     },
     CLEAR_AUTH_DATA(state) {
         state.token = null
-        state.refreshToken = null
         state.user = null
         state.wallet = null
         state.error = null
