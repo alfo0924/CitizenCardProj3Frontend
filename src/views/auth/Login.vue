@@ -6,6 +6,9 @@
 
         <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
           {{ error }}
+          <div v-if="redirectCountdown > 0">
+            {{ redirectCountdown }} 秒後自動跳轉到註冊頁面
+          </div>
           <button type="button" class="btn-close" @click="clearError" aria-label="Close"></button>
         </div>
 
@@ -96,6 +99,7 @@ export default {
     const store = useStore()
     const router = useRouter()
     const redirectTimer = ref(null)
+    const redirectCountdown = ref(0)
 
     const formData = reactive({
       email: '',
@@ -140,10 +144,26 @@ export default {
 
     const clearError = () => {
       error.value = ''
+      redirectCountdown.value = 0
       if (redirectTimer.value) {
         clearTimeout(redirectTimer.value)
         redirectTimer.value = null
       }
+    }
+
+    const startRedirectCountdown = () => {
+      redirectCountdown.value = 5
+      const countdownInterval = setInterval(() => {
+        redirectCountdown.value--
+        if (redirectCountdown.value <= 0) {
+          clearInterval(countdownInterval)
+        }
+      }, 1000)
+
+      redirectTimer.value = setTimeout(() => {
+        clearInterval(countdownInterval)
+        router.push('/register')
+      }, 5000)
     }
 
     const handleSubmit = async () => {
@@ -164,11 +184,8 @@ export default {
         if (err.response?.data?.message) {
           error.value = err.response.data.message
 
-          // 如果是帳號不存在的錯誤，設置5秒後自動跳轉到註冊頁面
           if (err.response.status === 404) {
-            redirectTimer.value = setTimeout(() => {
-              router.push('/register')
-            }, 5000)
+            startRedirectCountdown()
           }
         } else {
           error.value = '登入失敗，請稍後再試'
@@ -196,6 +213,7 @@ export default {
       error,
       showPassword,
       isFormValid,
+      redirectCountdown,
       handleSubmit,
       togglePasswordVisibility,
       clearError,
@@ -205,7 +223,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .login-page {
   min-height: 100vh;
