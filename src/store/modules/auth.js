@@ -11,7 +11,6 @@ const getters = {
     isLoggedIn: state => !!state.token && !!state.user,
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
-    // 嚴格對應資料庫欄位
     userId: state => state.user?.id || null,
     userName: state => state.user?.name || '',
     userEmail: state => state.user?.email || '',
@@ -58,13 +57,11 @@ const actions = {
             commit('SET_AUTH_DATA', { token, user })
             return response
         } catch (error) {
-            let errorMessage
+            let errorMessage = '登入失敗，請稍後再試'
             if (error.response?.status === 404) {
                 errorMessage = '此帳號不存在，請先註冊'
             } else if (error.response?.status === 401) {
                 errorMessage = '帳號密碼錯誤'
-            } else {
-                errorMessage = '登入失敗，請稍後再試'
             }
             commit('SET_ERROR', errorMessage)
             throw error
@@ -118,13 +115,36 @@ const actions = {
         }
     },
 
+    async fetchProfile({ commit }) {
+        commit('SET_LOADING', true)
+        commit('CLEAR_ERROR')
+        try {
+            const response = await api.get('/auth/profile')
+            const userData = response.data
+            commit('SET_USER', userData)
+            localStorage.setItem('user', JSON.stringify(userData))
+            return { success: true, data: userData }
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || '獲取用戶資料失敗'
+            commit('SET_ERROR', errorMessage)
+            return { success: false, message: errorMessage }
+        } finally {
+            commit('SET_LOADING', false)
+        }
+    },
+
     async updateProfile({ commit }, userData) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
             const now = new Date().toISOString()
             const updateData = {
-                ...userData,
+                name: userData.name,
+                phone: userData.phone,
+                birthday: userData.birthday,
+                gender: userData.gender,
+                address: userData.address,
+                avatar: userData.avatar,
                 updated_at: now,
                 version: (userData.version || 0) + 1
             }
@@ -134,11 +154,11 @@ const actions = {
 
             localStorage.setItem('user', JSON.stringify(updatedUser))
             commit('SET_USER', updatedUser)
-            return updatedUser
+            return { success: true, data: updatedUser }
         } catch (error) {
             const errorMessage = error.response?.data?.message || '更新失敗'
             commit('SET_ERROR', errorMessage)
-            throw error
+            return { success: false, message: errorMessage }
         } finally {
             commit('SET_LOADING', false)
         }

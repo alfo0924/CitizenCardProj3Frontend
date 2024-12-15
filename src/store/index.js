@@ -4,14 +4,16 @@ import auth from './modules/auth'
 import movie from './modules/movie'
 import wallet from './modules/wallet'
 import discount from './modules/discount'
-import storeModule from './modules/store'  // 改名為 storeModule
+import storeModule from './modules/store'
+import user from './modules/user'
 import api from '@/services/api.config'
 
-const vuexStore = createStore({  // 改名為 vuexStore
+const vuexStore = createStore({
     state: {
         isLoading: false,
         error: null,
-        notification: null
+        notification: null,
+        layout: 'default'
     },
 
     mutations: {
@@ -29,6 +31,9 @@ const vuexStore = createStore({  // 改名為 vuexStore
         },
         CLEAR_NOTIFICATION(state) {
             state.notification = null
+        },
+        SET_LAYOUT(state, layout) {
+            state.layout = layout
         }
     },
 
@@ -36,34 +41,43 @@ const vuexStore = createStore({  // 改名為 vuexStore
         setLoading({ commit }, status) {
             commit('SET_LOADING', status)
         },
-
         setError({ commit }, error) {
             commit('SET_ERROR', error)
             setTimeout(() => {
                 commit('CLEAR_ERROR')
             }, 5000)
         },
-
         clearError({ commit }) {
             commit('CLEAR_ERROR')
         },
-
         setNotification({ commit }, notification) {
             commit('SET_NOTIFICATION', notification)
             setTimeout(() => {
                 commit('CLEAR_NOTIFICATION')
             }, 3000)
         },
-
         clearNotification({ commit }) {
             commit('CLEAR_NOTIFICATION')
+        },
+        setLayout({ commit }, layout) {
+            commit('SET_LAYOUT', layout)
+        },
+        async checkApiStatus() {
+            try {
+                const response = await api.get('/api/system/status')
+                return { success: true, data: response.data }
+            } catch (error) {
+                console.error('API status check failed:', error)
+                return { success: false, message: error.message }
+            }
         }
     },
 
     getters: {
         isLoading: state => state.isLoading,
         error: state => state.error,
-        notification: state => state.notification
+        notification: state => state.notification,
+        layout: state => state.layout
     },
 
     modules: {
@@ -71,7 +85,8 @@ const vuexStore = createStore({  // 改名為 vuexStore
         movie,
         wallet,
         discount,
-        store: storeModule  // 使用重命名的模塊
+        store: storeModule,
+        user
     },
 
     plugins: [
@@ -107,6 +122,7 @@ const initializeStore = async () => {
     if (token) {
         try {
             await vuexStore.dispatch('auth/checkToken')
+            await vuexStore.dispatch('user/fetchProfile')
         } catch (error) {
             console.error('認證狀態恢復失敗:', error)
             localStorage.removeItem('token')

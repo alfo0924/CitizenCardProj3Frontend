@@ -7,15 +7,6 @@ class AuthService {
         }
 
         try {
-            // 先檢查帳號是否存在
-            const checkUserResponse = await api.post('/auth/check-user', {
-                email: credentials.email.toLowerCase().trim()
-            })
-
-            if (!checkUserResponse.data.exists) {
-                throw new Error('此帳號不存在請註冊')
-            }
-
             const response = await api.post('/auth/login', {
                 email: credentials.email.toLowerCase().trim(),
                 password: credentials.password
@@ -31,17 +22,15 @@ class AuthService {
             }
 
             this.validateUserData(user)
+
+            // 更新登入資訊
+            const now = new Date().toISOString()
+            user.last_login_time = now
+            user.updated_at = now
+
             this.setAuthData(token, user)
             return { token, user }
-
         } catch (error) {
-            if (error.message === '此帳號不存在請註冊') {
-                throw {
-                    message: error.message,
-                    shouldRedirect: true
-                }
-            }
-
             if (error.response) {
                 const status = error.response.status
                 switch (status) {
@@ -60,9 +49,20 @@ class AuthService {
     }
 
     validateUserData(user) {
-        const requiredFields = ['id', 'name', 'email', 'role', 'active']
+        const requiredFields = [
+            'id',
+            'name',
+            'email',
+            'role',
+            'active',
+            'email_verified',
+            'created_at',
+            'updated_at',
+            'version'
+        ]
+
         for (const field of requiredFields) {
-            if (!user.hasOwnProperty(field)) {
+            if (!Object.prototype.hasOwnProperty.call(user, field)) {
                 throw new Error('用戶資料不完整')
             }
         }
@@ -76,18 +76,24 @@ class AuthService {
         try {
             this.validateRegisterData(userData)
 
+            const now = new Date().toISOString()
             const formattedData = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone?.trim(),
-                birthday: userData.birthday,
-                gender: userData.gender,
+                phone: userData.phone?.trim() || null,
+                birthday: userData.birthday || null,
+                gender: userData.gender || null,
                 role: 'ROLE_USER',
+                address: userData.address?.trim() || null,
+                avatar: userData.avatar || null,
                 active: true,
                 email_verified: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                last_login_time: null,
+                last_login_ip: null,
+                created_at: now,
+                updated_at: now,
+                version: 0
             }
 
             const response = await api.post('/auth/register', formattedData)
@@ -97,6 +103,50 @@ class AuthService {
                 throw new Error('此電子郵件已被註冊')
             }
             throw error
+        }
+    }
+
+    async fetchProfile() {
+        try {
+            const response = await api.get('/auth/profile')
+            const userData = response.data
+
+            // 更新本地存儲的用戶資料
+            if (userData) {
+                localStorage.setItem('user', JSON.stringify(userData))
+            }
+
+            return userData
+        } catch (error) {
+            throw new Error('獲取用戶資料失敗')
+        }
+    }
+
+    async updateProfile(profileData) {
+        try {
+            const now = new Date().toISOString()
+            const updateData = {
+                name: profileData.name,
+                phone: profileData.phone,
+                birthday: profileData.birthday,
+                gender: profileData.gender,
+                address: profileData.address,
+                avatar: profileData.avatar,
+                updated_at: now,
+                version: (profileData.version || 0) + 1
+            }
+
+            const response = await api.put('/auth/profile', updateData)
+            const updatedUser = response.data
+
+            // 更新本地存儲的用戶資料
+            if (updatedUser) {
+                localStorage.setItem('user', JSON.stringify(updatedUser))
+            }
+
+            return updatedUser
+        } catch (error) {
+            throw new Error('更新個人資料失敗')
         }
     }
 
