@@ -1,21 +1,15 @@
 <template>
-  <div
-      v-if="show"
-      class="alert-container"
-      :class="[`alert-${type}`, { 'alert-dismissible': dismissible }]"
-  >
-    <div class="alert-content">
-      <!-- 圖標 -->
-      <span class="alert-icon">
-        <i class="fas" :class="iconClass"></i>
-      </span>
+  <transition name="alert">
+    <div v-if="show" class="alert" :class="alertClasses" role="alert">
+      <!-- 警告圖標 -->
+      <div class="alert-icon">
+        <i :class="iconClass"></i>
+      </div>
 
-      <!-- 標題 -->
-      <h5 v-if="title" class="alert-title">{{ title }}</h5>
-
-      <!-- 訊息內容 -->
-      <div class="alert-message">
-        <slot>{{ message }}</slot>
+      <!-- 警告內容 -->
+      <div class="alert-content">
+        <strong v-if="title" class="alert-title">{{ title }}</strong>
+        <p class="alert-message">{{ message }}</p>
       </div>
 
       <!-- 關閉按鈕 -->
@@ -23,18 +17,20 @@
           v-if="dismissible"
           type="button"
           class="btn-close"
-          @click="dismiss"
+          @click="closeAlert"
           aria-label="Close"
-      ></button>
-    </div>
+      >
+        <i class="fas fa-times"></i>
+      </button>
 
-    <!-- 進度條 -->
-    <div
-        v-if="autoClose"
-        class="alert-progress"
-        :style="{ width: `${progress}%` }"
-    ></div>
-  </div>
+      <!-- 自動關閉進度條 -->
+      <div
+          v-if="autoClose"
+          class="alert-progress"
+          :style="{ width: `${progress}%` }"
+      ></div>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -44,33 +40,27 @@ export default {
   name: 'AlertMessage',
 
   props: {
-    // 提示類型
     type: {
       type: String,
       default: 'info',
-      validator: (value) => ['success', 'info', 'warning', 'error'].includes(value)
+      validator: value => ['success', 'warning', 'error', 'info'].includes(value)
     },
-    // 標題
     title: {
       type: String,
       default: ''
     },
-    // 訊息內容
     message: {
       type: String,
-      default: ''
+      required: true
     },
-    // 是否可關閉
     dismissible: {
       type: Boolean,
       default: true
     },
-    // 自動關閉時間(毫秒)，0表示不自動關閉
     duration: {
       type: Number,
-      default: 3000
+      default: 5000
     },
-    // 是否自動關閉
     autoClose: {
       type: Boolean,
       default: true
@@ -82,61 +72,53 @@ export default {
   setup(props, { emit }) {
     const show = ref(true)
     const progress = ref(100)
-    let timer = null
+    let closeTimer = null
     let progressTimer = null
 
-    // 計算圖標class
-    const iconClass = computed(() => {
-      switch (props.type) {
-        case 'success':
-          return 'fa-check-circle'
-        case 'info':
-          return 'fa-info-circle'
-        case 'warning':
-          return 'fa-exclamation-triangle'
-        case 'error':
-          return 'fa-times-circle'
-        default:
-          return 'fa-info-circle'
-      }
-    })
+    const alertClasses = computed(() => ({
+      [`alert-${props.type}`]: true,
+      'alert-dismissible': props.dismissible
+    }))
 
-    // 關閉提示
-    const dismiss = () => {
-      show.value = false
-      emit('close')
-      clearTimers()
+    const iconClass = computed(() => ({
+      'fas': true,
+      'fa-check-circle': props.type === 'success',
+      'fa-exclamation-circle': props.type === 'warning',
+      'fa-times-circle': props.type === 'error',
+      'fa-info-circle': props.type === 'info'
+    }))
+
+    const startTimers = () => {
+      if (props.autoClose && props.duration > 0) {
+        // 設置關閉計時器
+        closeTimer = setTimeout(() => {
+          closeAlert()
+        }, props.duration)
+
+        // 設置進度條更新
+        const updateInterval = 10
+        const step = (updateInterval / props.duration) * 100
+        progressTimer = setInterval(() => {
+          progress.value = Math.max(0, progress.value - step)
+        }, updateInterval)
+      }
     }
 
-    // 清除計時器
     const clearTimers = () => {
-      if (timer) clearTimeout(timer)
+      if (closeTimer) clearTimeout(closeTimer)
       if (progressTimer) clearInterval(progressTimer)
     }
 
-    // 設置自動關閉
-    const setupAutoClose = () => {
-      if (props.autoClose && props.duration > 0) {
-        // 設置關閉計時器
-        timer = setTimeout(() => {
-          dismiss()
-        }, props.duration)
-
-        // 設置進度條計時器
-        const interval = 10 // 每10毫秒更新一次進度
-        const step = (interval / props.duration) * 100
-        progressTimer = setInterval(() => {
-          progress.value = Math.max(0, progress.value - step)
-        }, interval)
-      }
+    const closeAlert = () => {
+      clearTimers()
+      show.value = false
+      emit('close')
     }
 
-    // 掛載時設置自動關閉
     onMounted(() => {
-      setupAutoClose()
+      startTimers()
     })
 
-    // 卸載前清除計時器
     onBeforeUnmount(() => {
       clearTimers()
     })
@@ -144,43 +126,62 @@ export default {
     return {
       show,
       progress,
+      alertClasses,
       iconClass,
-      dismiss
+      closeAlert
     }
   }
 }
 </script>
 
 <style scoped>
-.alert-container {
+.alert {
   position: relative;
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 3rem;
   margin-bottom: 1rem;
   border: 1px solid transparent;
-  border-radius: var(--border-radius-md);
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: flex-start;
   overflow: hidden;
 }
 
-.alert-content {
+.alert-icon {
+  position: absolute;
+  left: 1rem;
+  font-size: 1.25rem;
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
+  align-items: center;
 }
 
-.alert-icon {
-  font-size: 1.25rem;
-  line-height: 1;
+.alert-content {
+  flex: 1;
+  min-width: 0;
 }
 
 .alert-title {
-  margin: 0 0 0.25rem;
-  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.25rem;
   font-weight: 600;
 }
 
 .alert-message {
-  flex: 1;
+  margin: 0;
   font-size: 0.875rem;
+}
+
+.btn-close {
+  padding: 0.5rem;
+  margin: -0.5rem -0.5rem -0.5rem auto;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.btn-close:hover {
+  opacity: 1;
 }
 
 .alert-progress {
@@ -188,72 +189,56 @@ export default {
   bottom: 0;
   left: 0;
   height: 3px;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(255, 255, 255, 0.7);
   transition: width 10ms linear;
 }
 
-/* 類型樣式 */
+/* 警告類型樣式 */
 .alert-success {
-  background-color: var(--success-color);
-  color: white;
-}
-
-.alert-info {
-  background-color: var(--info-color);
-  color: white;
+  background-color: #d1e7dd;
+  border-color: #badbcc;
+  color: #0f5132;
 }
 
 .alert-warning {
-  background-color: var(--warning-color);
-  color: white;
+  background-color: #fff3cd;
+  border-color: #ffecb5;
+  color: #664d03;
 }
 
 .alert-error {
-  background-color: var(--danger-color);
-  color: white;
+  background-color: #f8d7da;
+  border-color: #f5c2c7;
+  color: #842029;
 }
 
-/* 可關閉樣式 */
-.alert-dismissible {
-  padding-right: 3rem;
+.alert-info {
+  background-color: #cff4fc;
+  border-color: #b6effb;
+  color: #055160;
 }
 
-.btn-close {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.5rem;
-  background: none;
-  border: none;
-  color: currentColor;
-  opacity: 0.75;
-  cursor: pointer;
+/* 過渡動畫 */
+.alert-enter-active,
+.alert-leave-active {
+  transition: all 0.3s ease;
 }
 
-.btn-close:hover {
-  opacity: 1;
+.alert-enter-from,
+.alert-leave-to {
+  transform: translateY(-30px);
+  opacity: 0;
 }
 
-/* 動畫效果 */
-.alert-container {
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* 響應式設計 */
 @media (max-width: 576px) {
-  .alert-container {
+  .alert {
     margin: 0.5rem;
+    padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+  }
+
+  .alert-icon {
+    left: 0.75rem;
+    font-size: 1rem;
   }
 }
 </style>

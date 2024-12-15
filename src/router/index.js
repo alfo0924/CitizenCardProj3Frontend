@@ -308,7 +308,6 @@ const router = createRouter({
 // 導航守衛
 // 導航守衛
 router.beforeEach(async (to, from, next) => {
-    // 設置頁面標題
     document.title = to.meta.title
         ? `${to.meta.title} - 市民卡系統`
         : '市民卡系統'
@@ -316,6 +315,15 @@ router.beforeEach(async (to, from, next) => {
     try {
         const isLoggedIn = store.getters['auth/isLoggedIn']
         const isAdmin = store.getters['auth/isAdmin']
+        const loginError = store.state.auth?.error
+
+        // 處理登入錯誤情況
+        if (from.name === 'login' && loginError) {
+            // 清除錯誤狀態
+            store.commit('auth/CLEAR_ERROR')
+            // 停留在登入頁面
+            return next(false)
+        }
 
         // 需要登入的頁面
         if (to.meta.requiresAuth && !isLoggedIn) {
@@ -323,11 +331,10 @@ router.beforeEach(async (to, from, next) => {
                 type: 'warning',
                 message: '請先登入後再訪問此頁面'
             })
-            next({
+            return next({
                 name: 'login',
                 query: { redirect: to.fullPath }
             })
-            return
         }
 
         // 需要管理員權限的頁面
@@ -336,14 +343,12 @@ router.beforeEach(async (to, from, next) => {
                 type: 'error',
                 message: '您沒有權限訪問此頁面'
             })
-            next({ name: 'forbidden' })
-            return
+            return next({ name: 'forbidden' })
         }
 
         // 已登入用戶不能訪問登入/註冊頁
         if (to.meta.requiresGuest && isLoggedIn) {
-            next({ name: 'profile' }) // 改為導向用戶首頁
-            return
+            return next({ name: 'profile' })
         }
 
         // 設置當前布局
@@ -354,6 +359,17 @@ router.beforeEach(async (to, from, next) => {
         next()
     } catch (error) {
         console.error('Navigation error:', error)
+
+        // 如果是登入相關錯誤，停留在當前頁面
+        if (to.name === 'login' || from.name === 'login') {
+            store.dispatch('setNotification', {
+                type: 'error',
+                message: '登入失敗，請檢查帳號密碼'
+            })
+            return next(false)
+        }
+
+        // 其他錯誤才導向錯誤頁面
         store.dispatch('setNotification', {
             type: 'error',
             message: '發生錯誤，請稍後再試'
@@ -370,16 +386,27 @@ router.afterEach(() => {
 // 錯誤處理
 router.onError((error) => {
     console.error('Router error:', error)
-    if (error.name === 'ChunkLoadError') {
-        // 處理代碼分割加載失敗
-        window.location.reload()
-    } else {
-        router.push({
-            name: 'server-error',
-            params: { error: error.message }
+
+    // 如果是在登入頁面發生錯誤，不進行跳轉
+    if (router.currentRoute.value.name === 'login') {
+        store.dispatch('setNotification', {
+            type: 'error',
+            message: '登入過程發生錯誤，請重試'
         })
+        return
     }
+
+    // 處理代碼分割加載失敗
+    if (error.name === 'ChunkLoadError') {
+        window.location.reload()
+        return
+    }
+
+    // 其他錯誤才導向錯誤頁面
+    router.push({
+        name: 'server-error',
+        params: { error: error.message }
+    })
 })
 
 export default router
-

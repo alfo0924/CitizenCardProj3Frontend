@@ -4,12 +4,11 @@
       <div class="login-form">
         <h2 class="text-center mb-4">會員登入</h2>
 
-        <AlertMessage
-            v-if="error"
-            type="error"
-            :message="error"
-            @close="clearError"
-        />
+        <!-- 錯誤訊息顯示區域 -->
+        <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+          {{ error }}
+          <button type="button" class="btn-close" @click="clearError" aria-label="Close"></button>
+        </div>
 
         <form @submit.prevent="handleSubmit" novalidate>
           <div class="form-group mb-3">
@@ -31,9 +30,9 @@
                   @input="validateEmail"
               >
             </div>
-            <div class="invalid-feedback" v-if="validationErrors.email">
+            <small class="text-danger" v-if="validationErrors.email">
               {{ validationErrors.email }}
-            </div>
+            </small>
           </div>
 
           <div class="form-group mb-3">
@@ -58,14 +57,13 @@
                   type="button"
                   class="btn btn-outline-secondary"
                   @click="togglePasswordVisibility"
-                  tabindex="-1"
               >
                 <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
               </button>
             </div>
-            <div class="invalid-feedback" v-if="validationErrors.password">
+            <small class="text-danger" v-if="validationErrors.password">
               {{ validationErrors.password }}
-            </div>
+            </small>
           </div>
 
           <button
@@ -73,7 +71,7 @@
               class="btn btn-danger w-100 mb-3"
               :disabled="isLoading || !isFormValid"
           >
-            <LoadingSpinner v-if="isLoading" size="sm" class="me-2"/>
+            <span v-if="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
             {{ isLoading ? '登入中...' : '登入' }}
           </button>
 
@@ -91,12 +89,9 @@
 import { ref, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
-import AlertMessage from '@/components/common/AlertMessage.vue'
-import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
-  name: 'Login',
-  components: { AlertMessage, LoadingSpinner },
+  name: 'LoginForm',
 
   setup() {
     const store = useStore()
@@ -136,6 +131,10 @@ export default {
         validationErrors.password = '請輸入密碼'
         return false
       }
+      if (formData.password.length < 6) {
+        validationErrors.password = '密碼長度不得小於6個字元'
+        return false
+      }
       return true
     }
 
@@ -151,7 +150,9 @@ export default {
     }
 
     const handleSubmit = async () => {
-      if (!validateEmail() || !validatePassword()) return
+      if (!validateEmail() || !validatePassword()) {
+        return
+      }
 
       try {
         isLoading.value = true
@@ -162,22 +163,13 @@ export default {
           password: formData.password
         })
 
-        const user = store.getters['auth/currentUser']
-        if (!user.active) {
-          throw new Error('帳戶已被停用')
-        }
-
         router.push('/')
       } catch (err) {
-        console.error('Login error:', err)
-        if (err.response?.status === 404) {
-          error.value = '無此帳號，請先註冊'
-          setTimeout(() => {
-            router.push('/register')
-          }, 3000)
+        if (err.response?.data?.message) {
+          error.value = err.response.data.message
         } else if (err.response?.status === 401) {
-          error.value = '密碼錯誤'
-        } else if (err.response?.status === 403 || err.message === '帳戶已被停用') {
+          error.value = '帳號或密碼錯誤'
+        } else if (err.response?.status === 403) {
           error.value = '帳戶已被停用'
         } else {
           error.value = '登入失敗，請稍後再試'
@@ -246,20 +238,18 @@ export default {
   box-shadow: none;
 }
 
-.btn-primary {
-  background-color: #b51d1d;
-  border-color: #ba0043;
-  transition: all 0.3s ease;
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
 }
 
-.btn-primary:hover:not(:disabled) {
-  background-color: #ba0043;
-  border-color: #b51d1d;
+.btn-danger:hover:not(:disabled) {
+  background-color: #bb2d3b;
+  border-color: #b02a37;
 }
 
-.invalid-feedback {
-  display: block;
-  font-size: 0.875rem;
+.alert {
+  margin-bottom: 1rem;
 }
 
 @media (max-width: 576px) {

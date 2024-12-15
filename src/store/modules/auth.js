@@ -4,14 +4,14 @@ const state = {
     token: localStorage.getItem('token') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
     isLoading: false,
-    error: null,
-    wallet: JSON.parse(localStorage.getItem('wallet')) || null
+    error: null
 }
 
 const getters = {
-    isLoggedIn: state => !!state.token,
+    isLoggedIn: state => !!state.token && !!state.user,
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
+    // 基本用戶資訊 getters
     userName: state => state.user?.name || '',
     userEmail: state => state.user?.email || '',
     userPhone: state => state.user?.phone || '',
@@ -20,11 +20,12 @@ const getters = {
     userRole: state => state.user?.role || 'ROLE_USER',
     userAddress: state => state.user?.address || '',
     userAvatar: state => state.user?.avatar || '',
-    isActive: state => state.user?.active || false,
-    isEmailVerified: state => state.user?.email_verified || false,
+    // 狀態相關 getters
+    isActive: state => state.user?.active ?? false,
+    isEmailVerified: state => state.user?.email_verified ?? false,
     lastLoginTime: state => state.user?.last_login_time || null,
     lastLoginIp: state => state.user?.last_login_ip || '',
-    walletBalance: state => state.wallet?.balance || 0,
+    // 錯誤和載入狀態
     authError: state => state.error,
     isLoading: state => state.isLoading
 }
@@ -39,30 +40,51 @@ const actions = {
                 password: credentials.password
             })
 
-            if (!response.data || !response.data.token) {
-                throw new Error('伺服器回應格式錯誤')
+            if (!response.data || !response.data.token || !response.data.user) {
+                throw new Error('無效的登入回應')
             }
 
             const { token, user } = response.data
 
+            // 驗證用戶資料完整性
+            if (!user.id || !user.email || !user.role) {
+                throw new Error('用戶資料不完整')
+            }
+
+            // 更新用戶登入時間和IP
+            user.last_login_time = new Date().toISOString()
+            user.updated_at = new Date().toISOString()
+
             localStorage.setItem('token', token)
             localStorage.setItem('user', JSON.stringify(user))
 
-            if (response.data.wallet) {
-                localStorage.setItem('wallet', JSON.stringify(response.data.wallet))
-            }
-
-            commit('SET_AUTH_DATA', {
-                token,
-                user,
-                wallet: response.data.wallet || null
-            })
-
-            return response.data
+            commit('SET_AUTH_DATA', { token, user })
+            return { token, user }
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '登入失敗，請稍後再試'
+            let errorMessage = '登入失敗'
+            if (error.response) {
+                switch (error.response.status) {
+                    case 400:
+                        errorMessage = '請求資料格式錯誤'
+                        break
+                    case 401:
+                        errorMessage = '帳號或密碼錯誤'
+                        break
+                    case 403:
+                        errorMessage = '帳戶已被停用'
+                        break
+                    case 404:
+                        errorMessage = '帳號不存在'
+                        break
+                    case 422:
+                        errorMessage = error.response.data?.message || '驗證失敗'
+                        break
+                    default:
+                        errorMessage = '登入失敗，請稍後再試'
+                }
+            }
             commit('SET_ERROR', errorMessage)
-            throw error
+            throw new Error(errorMessage)
         } finally {
             commit('SET_LOADING', false)
         }
@@ -72,6 +94,7 @@ const actions = {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
+            const now = new Date().toISOString()
             const registerData = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
@@ -79,12 +102,15 @@ const actions = {
                 phone: userData.phone?.trim() || null,
                 birthday: userData.birthday || null,
                 gender: userData.gender || null,
-                address: userData.address?.trim() || null,
                 role: 'ROLE_USER',
+                address: userData.address?.trim() || null,
+                avatar: null,
                 active: true,
                 email_verified: false,
-                created_at: new Date(),
-                updated_at: new Date(),
+                last_login_time: now,
+                last_login_ip: null,
+                created_at: now,
+                updated_at: now,
                 version: 0
             }
 
@@ -93,7 +119,7 @@ const actions = {
         } catch (error) {
             const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
             commit('SET_ERROR', errorMessage)
-            throw error
+            throw new Error(errorMessage)
         } finally {
             commit('SET_LOADING', false)
         }
@@ -103,11 +129,10 @@ const actions = {
         try {
             await api.post('/auth/logout')
         } catch (error) {
-            console.error('Logout error:', error)
+            console.error('登出錯誤:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            localStorage.removeItem('wallet')
             commit('CLEAR_AUTH_DATA')
         }
     },
@@ -119,23 +144,17 @@ const actions = {
             const response = await api.get('/auth/profile')
             const userData = response.data
 
-            if (!userData) {
-                throw new Error('無法獲取用戶資料')
+            if (!userData || !userData.id) {
+                throw new Error('無效的用戶資料')
             }
 
-            commit('SET_USER', userData)
             localStorage.setItem('user', JSON.stringify(userData))
-
-            if (userData.wallet) {
-                commit('SET_WALLET', userData.wallet)
-                localStorage.setItem('wallet', JSON.stringify(userData.wallet))
-            }
-
+            commit('SET_USER', userData)
             return userData
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '獲取資料失敗'
+            const errorMessage = error.response?.data?.message || '獲取用戶資料失敗'
             commit('SET_ERROR', errorMessage)
-            throw error
+            throw new Error(errorMessage)
         } finally {
             commit('SET_LOADING', false)
         }
@@ -143,21 +162,16 @@ const actions = {
 }
 
 const mutations = {
-    SET_AUTH_DATA(state, { token, user, wallet }) {
+    SET_AUTH_DATA(state, { token, user }) {
         state.token = token
         state.user = user
-        state.wallet = wallet
     },
     SET_USER(state, user) {
         state.user = user
     },
-    SET_WALLET(state, wallet) {
-        state.wallet = wallet
-    },
     CLEAR_AUTH_DATA(state) {
         state.token = null
         state.user = null
-        state.wallet = null
         state.error = null
     },
     SET_LOADING(state, status) {
