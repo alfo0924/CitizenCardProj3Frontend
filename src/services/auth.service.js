@@ -7,6 +7,15 @@ class AuthService {
         }
 
         try {
+            // 先檢查帳號是否存在
+            const checkUserResponse = await api.post('/auth/check-user', {
+                email: credentials.email.toLowerCase().trim()
+            })
+
+            if (!checkUserResponse.data.exists) {
+                throw new Error('此帳號不存在請註冊')
+            }
+
             const response = await api.post('/auth/login', {
                 email: credentials.email.toLowerCase().trim(),
                 password: credentials.password
@@ -18,70 +27,48 @@ class AuthService {
 
             const { token, user } = response.data
             if (!token || !user) {
-                throw new Error('無效的登入資訊')
+                throw new Error('帳號密碼錯誤')
             }
 
-            // 驗證用戶資料完整性
             this.validateUserData(user)
-
-            // 更新登入時間和IP
-            user.last_login_time = new Date().toISOString()
-
             this.setAuthData(token, user)
             return { token, user }
 
         } catch (error) {
-            console.error('Login error:', error)
+            if (error.message === '此帳號不存在請註冊') {
+                throw {
+                    message: error.message,
+                    shouldRedirect: true
+                }
+            }
+
             if (error.response) {
                 const status = error.response.status
-                const message = error.response.data?.message
-
-                if (message) {
-                    throw new Error(message)
-                }
-
                 switch (status) {
-                    case 400:
-                        throw new Error('請求格式錯誤')
                     case 401:
-                        throw new Error('帳號或密碼錯誤')
+                        throw new Error('帳號密碼錯誤')
                     case 403:
                         throw new Error('帳戶已被停用')
                     case 404:
-                        throw new Error('無此帳號')
-                    case 422:
-                        throw new Error('驗證失敗')
-                    case 429:
-                        throw new Error('登入嘗試次數過多，請稍後再試')
+                        throw new Error('此帳號不存在請註冊')
                     default:
                         throw new Error('登入失敗，請稍後再試')
                 }
             }
-
-            // 如果是自定義錯誤，直接拋出
-            if (error.message) {
-                throw error
-            }
-
-            throw new Error('登入失敗，請檢查網路連線')
+            throw error
         }
     }
 
     validateUserData(user) {
-        const requiredFields = [
-            'id',
-            'name',
-            'email',
-            'role',
-            'active',
-            'email_verified',
-            'created_at',
-            'updated_at'
-        ]
+        const requiredFields = ['id', 'name', 'email', 'role', 'active']
+        for (const field of requiredFields) {
+            if (!user.hasOwnProperty(field)) {
+                throw new Error('用戶資料不完整')
+            }
+        }
 
-        const missingFields = requiredFields.filter(field => !user.hasOwnProperty(field))
-        if (missingFields.length > 0) {
-            throw new Error('用戶資料不完整')
+        if (!user.active) {
+            throw new Error('此帳戶已被停用')
         }
     }
 
@@ -89,51 +76,42 @@ class AuthService {
         try {
             this.validateRegisterData(userData)
 
-            const now = new Date().toISOString()
             const formattedData = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone?.trim() || null,
-                birthday: userData.birthday || null,
-                gender: userData.gender || null,
+                phone: userData.phone?.trim(),
+                birthday: userData.birthday,
+                gender: userData.gender,
                 role: 'ROLE_USER',
-                address: null,
-                avatar: null,
                 active: true,
                 email_verified: false,
-                last_login_time: now,
-                last_login_ip: null,
-                created_at: now,
-                updated_at: now,
-                version: 0
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
             }
 
             const response = await api.post('/auth/register', formattedData)
             return response.data
         } catch (error) {
-            if (error.response?.data?.message) {
-                throw new Error(error.response.data.message)
+            if (error.response?.status === 409) {
+                throw new Error('此電子郵件已被註冊')
             }
             throw error
         }
     }
 
     validateRegisterData(userData) {
-        if (!userData.name || userData.name.trim().length > 50) {
-            throw new Error('姓名長度必須在1-50個字元之間')
+        if (!userData.name?.trim()) {
+            throw new Error('請輸入姓名')
         }
-        if (!userData.email || !this.isValidEmail(userData.email) || userData.email.length > 100) {
-            throw new Error('請輸入有效的電子郵件(最多100字元)')
+        if (!this.isValidEmail(userData.email)) {
+            throw new Error('請輸入有效的電子郵件')
         }
-        if (!userData.password || userData.password.length < 8 || userData.password.length > 255) {
-            throw new Error('密碼長度必須在8-255個字元之間')
+        if (!userData.password || userData.password.length < 8) {
+            throw new Error('密碼長度必須至少8個字元')
         }
-        if (userData.phone && (!this.isValidPhone(userData.phone) || userData.phone.length > 20)) {
-            throw new Error('請輸入有效的手機號碼(最多20字元)')
-        }
-        if (userData.gender && !['male', 'female', 'other'].includes(userData.gender)) {
-            throw new Error('性別欄位無效')
+        if (userData.phone && !this.isValidPhone(userData.phone)) {
+            throw new Error('請輸入有效的手機號碼')
         }
     }
 
@@ -157,7 +135,6 @@ class AuthService {
     }
 
     setAuthData(token, user) {
-        if (!token || !user) return
         localStorage.setItem('token', token)
         localStorage.setItem('user', JSON.stringify(user))
     }
@@ -184,16 +161,7 @@ class AuthService {
     isLoggedIn() {
         const token = this.getToken()
         const user = this.getCurrentUser()
-        return !!token && !!user && !this.isTokenExpired(token) && user.active
-    }
-
-    isTokenExpired(token) {
-        try {
-            const decoded = JSON.parse(atob(token.split('.')[1]))
-            return decoded.exp < Date.now() / 1000
-        } catch {
-            return true
-        }
+        return !!token && !!user && user.active
     }
 }
 

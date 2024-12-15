@@ -11,6 +11,8 @@ const getters = {
     isLoggedIn: state => !!state.token && !!state.user,
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
+    // 嚴格對應資料庫欄位
+    userId: state => state.user?.id || null,
     userName: state => state.user?.name || '',
     userEmail: state => state.user?.email || '',
     userPhone: state => state.user?.phone || '',
@@ -19,10 +21,13 @@ const getters = {
     userRole: state => state.user?.role || 'ROLE_USER',
     userAddress: state => state.user?.address || '',
     userAvatar: state => state.user?.avatar || '',
-    isActive: state => state.user?.active ?? false,
-    isEmailVerified: state => state.user?.email_verified ?? false,
-    lastLoginTime: state => state.user?.last_login_time || null,
-    lastLoginIp: state => state.user?.last_login_ip || '',
+    userActive: state => state.user?.active ?? true,
+    userEmailVerified: state => state.user?.email_verified ?? false,
+    userLastLoginTime: state => state.user?.last_login_time || null,
+    userLastLoginIp: state => state.user?.last_login_ip || '',
+    userCreatedAt: state => state.user?.created_at || null,
+    userUpdatedAt: state => state.user?.updated_at || null,
+    userVersion: state => state.user?.version || 0,
     authError: state => state.error,
     isLoading: state => state.isLoading
 }
@@ -37,49 +42,32 @@ const actions = {
                 password: credentials.password
             })
 
-            if (!response.data || !response.data.token || !response.data.user) {
-                throw new Error('無效的登入回應')
-            }
-
             const { token, user } = response.data
 
-            if (!user.id || !user.email || !user.role) {
-                throw new Error('用戶資料不完整')
+            if (!user.id || !user.email) {
+                throw new Error('無效的用戶資料')
             }
 
-            user.last_login_time = new Date().toISOString()
-            user.updated_at = new Date().toISOString()
+            const now = new Date().toISOString()
+            user.last_login_time = now
+            user.updated_at = now
 
             localStorage.setItem('token', token)
             localStorage.setItem('user', JSON.stringify(user))
 
             commit('SET_AUTH_DATA', { token, user })
-            return { token, user }
+            return response
         } catch (error) {
-            let errorMessage = '登入失敗'
-            if (error.response) {
-                switch (error.response.status) {
-                    case 400:
-                        errorMessage = '請求資料格式錯誤'
-                        break
-                    case 401:
-                        errorMessage = '帳號或密碼錯誤'
-                        break
-                    case 403:
-                        errorMessage = '帳戶已被停用'
-                        break
-                    case 404:
-                        errorMessage = '帳號不存在'
-                        break
-                    case 422:
-                        errorMessage = error.response.data?.message || '驗證失敗'
-                        break
-                    default:
-                        errorMessage = '登入失敗，請稍後再試'
-                }
+            let errorMessage
+            if (error.response?.status === 404) {
+                errorMessage = '此帳號不存在，請先註冊'
+            } else if (error.response?.status === 401) {
+                errorMessage = '帳號密碼錯誤'
+            } else {
+                errorMessage = '登入失敗，請稍後再試'
             }
             commit('SET_ERROR', errorMessage)
-            throw new Error(errorMessage)
+            throw error
         } finally {
             commit('SET_LOADING', false)
         }
@@ -94,16 +82,16 @@ const actions = {
                 name: userData.name.trim(),
                 email: userData.email.toLowerCase().trim(),
                 password: userData.password,
-                phone: userData.phone?.trim() || null,
-                birthday: userData.birthday || null,
-                gender: userData.gender || null,
+                phone: userData.phone?.trim(),
+                birthday: userData.birthday,
+                gender: userData.gender,
                 role: 'ROLE_USER',
-                address: userData.address?.trim() || null,
-                avatar: null,
+                address: userData.address?.trim(),
+                avatar: userData.avatar,
                 active: true,
                 email_verified: false,
                 last_login_time: now,
-                last_login_ip: null,
+                last_login_ip: '',
                 created_at: now,
                 updated_at: now,
                 version: 0
@@ -112,9 +100,9 @@ const actions = {
             const response = await api.post('/auth/register', registerData)
             return response.data
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '註冊失敗，請稍後再試'
+            const errorMessage = error.response?.data?.message || '註冊失敗'
             commit('SET_ERROR', errorMessage)
-            throw new Error(errorMessage)
+            throw error
         } finally {
             commit('SET_LOADING', false)
         }
@@ -123,8 +111,6 @@ const actions = {
     async logout({ commit }) {
         try {
             await api.post('/auth/logout')
-        } catch (error) {
-            console.error('登出錯誤:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
@@ -132,24 +118,27 @@ const actions = {
         }
     },
 
-    async getProfile({ commit }) {
+    async updateProfile({ commit }, userData) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
-            const response = await api.get('/auth/profile')
-            const userData = response.data
-
-            if (!userData || !userData.id) {
-                throw new Error('無效的用戶資料')
+            const now = new Date().toISOString()
+            const updateData = {
+                ...userData,
+                updated_at: now,
+                version: (userData.version || 0) + 1
             }
 
-            localStorage.setItem('user', JSON.stringify(userData))
-            commit('SET_USER', userData)
-            return userData
+            const response = await api.put('/auth/profile', updateData)
+            const updatedUser = response.data
+
+            localStorage.setItem('user', JSON.stringify(updatedUser))
+            commit('SET_USER', updatedUser)
+            return updatedUser
         } catch (error) {
-            const errorMessage = error.response?.data?.message || '獲取用戶資料失敗'
+            const errorMessage = error.response?.data?.message || '更新失敗'
             commit('SET_ERROR', errorMessage)
-            throw new Error(errorMessage)
+            throw error
         } finally {
             commit('SET_LOADING', false)
         }
@@ -160,6 +149,7 @@ const mutations = {
     SET_AUTH_DATA(state, { token, user }) {
         state.token = token
         state.user = user
+        state.error = null
     },
     SET_USER(state, user) {
         state.user = user
