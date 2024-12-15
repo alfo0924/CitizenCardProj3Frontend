@@ -1,143 +1,167 @@
-// services/auth.service.js
 import api from './api.config'
 
 class AuthService {
-    // 登入
     async login(credentials) {
+        if (!credentials.email || !credentials.password) {
+            throw new Error('請輸入電子郵件和密碼')
+        }
+
         try {
-            const response = await api.post('/auth/login', credentials)
-            if (response.token) {
-                localStorage.setItem('token', response.token)
-                localStorage.setItem('user', JSON.stringify(response.user))
+            // 先檢查帳號是否存在
+            const checkUserResponse = await api.post('/auth/check-user', {
+                email: credentials.email.toLowerCase().trim()
+            })
+
+            if (!checkUserResponse.data.exists) {
+                throw new Error('此帳號不存在請註冊')
             }
-            return response
+
+            const response = await api.post('/auth/login', {
+                email: credentials.email.toLowerCase().trim(),
+                password: credentials.password
+            })
+
+            if (!response.data) {
+                throw new Error('伺服器回應無效')
+            }
+
+            const { token, user } = response.data
+            if (!token || !user) {
+                throw new Error('帳號密碼錯誤')
+            }
+
+            this.validateUserData(user)
+            this.setAuthData(token, user)
+            return { token, user }
+
         } catch (error) {
+            if (error.message === '此帳號不存在請註冊') {
+                throw {
+                    message: error.message,
+                    shouldRedirect: true
+                }
+            }
+
+            if (error.response) {
+                const status = error.response.status
+                switch (status) {
+                    case 401:
+                        throw new Error('帳號密碼錯誤')
+                    case 403:
+                        throw new Error('帳戶已被停用')
+                    case 404:
+                        throw new Error('此帳號不存在請註冊')
+                    default:
+                        throw new Error('登入失敗，請稍後再試')
+                }
+            }
             throw error
         }
     }
 
-    // 註冊
+    validateUserData(user) {
+        const requiredFields = ['id', 'name', 'email', 'role', 'active']
+        for (const field of requiredFields) {
+            if (!user.hasOwnProperty(field)) {
+                throw new Error('用戶資料不完整')
+            }
+        }
+
+        if (!user.active) {
+            throw new Error('此帳戶已被停用')
+        }
+    }
+
     async register(userData) {
         try {
-            const response = await api.post('/auth/register', userData)
-            return response
+            this.validateRegisterData(userData)
+
+            const formattedData = {
+                name: userData.name.trim(),
+                email: userData.email.toLowerCase().trim(),
+                password: userData.password,
+                phone: userData.phone?.trim(),
+                birthday: userData.birthday,
+                gender: userData.gender,
+                role: 'ROLE_USER',
+                active: true,
+                email_verified: false,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }
+
+            const response = await api.post('/auth/register', formattedData)
+            return response.data
         } catch (error) {
+            if (error.response?.status === 409) {
+                throw new Error('此電子郵件已被註冊')
+            }
             throw error
         }
     }
 
-    // 登出
-    logout() {
+    validateRegisterData(userData) {
+        if (!userData.name?.trim()) {
+            throw new Error('請輸入姓名')
+        }
+        if (!this.isValidEmail(userData.email)) {
+            throw new Error('請輸入有效的電子郵件')
+        }
+        if (!userData.password || userData.password.length < 8) {
+            throw new Error('密碼長度必須至少8個字元')
+        }
+        if (userData.phone && !this.isValidPhone(userData.phone)) {
+            throw new Error('請輸入有效的手機號碼')
+        }
+    }
+
+    isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    }
+
+    isValidPhone(phone) {
+        return /^09\d{8}$/.test(phone)
+    }
+
+    async logout() {
+        try {
+            const token = this.getToken()
+            if (token) {
+                await api.post('/auth/logout')
+            }
+        } finally {
+            this.clearAuthData()
+        }
+    }
+
+    setAuthData(token, user) {
+        localStorage.setItem('token', token)
+        localStorage.setItem('user', JSON.stringify(user))
+    }
+
+    clearAuthData() {
         localStorage.removeItem('token')
         localStorage.removeItem('user')
     }
 
-    // 重設密碼請求
-    async requestPasswordReset(email) {
-        try {
-            const response = await api.post('/auth/password-reset-request', { email })
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 重設密碼
-    async resetPassword(token, newPassword) {
-        try {
-            const response = await api.post('/auth/reset-password', {
-                token,
-                newPassword
-            })
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 變更密碼
-    async changePassword(oldPassword, newPassword) {
-        try {
-            const response = await api.post('/auth/change-password', {
-                oldPassword,
-                newPassword
-            })
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 更新個人資料
-    async updateProfile(userData) {
-        try {
-            const response = await api.put('/auth/profile', userData)
-            if (response.user) {
-                localStorage.setItem('user', JSON.stringify(response.user))
-            }
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 驗證Email
-    async verifyEmail(token) {
-        try {
-            const response = await api.post('/auth/verify-email', { token })
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 重新發送驗證Email
-    async resendVerificationEmail() {
-        try {
-            const response = await api.post('/auth/resend-verification')
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 刷新Token
-    async refreshToken() {
-        try {
-            const response = await api.post('/auth/refresh-token')
-            if (response.token) {
-                localStorage.setItem('token', response.token)
-            }
-            return response
-        } catch (error) {
-            throw error
-        }
-    }
-
-    // 獲取當前用戶
     getCurrentUser() {
-        const userStr = localStorage.getItem('user')
-        return userStr ? JSON.parse(userStr) : null
+        try {
+            const userStr = localStorage.getItem('user')
+            return userStr ? JSON.parse(userStr) : null
+        } catch {
+            this.clearAuthData()
+            return null
+        }
     }
 
-    // 獲取Token
     getToken() {
         return localStorage.getItem('token')
     }
 
-    // 檢查是否已登入
     isLoggedIn() {
-        return !!this.getToken()
-    }
-
-    // 檢查Token是否過期
-    isTokenExpired(token) {
-        try {
-            const decoded = JSON.parse(atob(token.split('.')[1]))
-            return decoded.exp < Date.now() / 1000
-        } catch (error) {
-            return true
-        }
+        const token = this.getToken()
+        const user = this.getCurrentUser()
+        return !!token && !!user && user.active
     }
 }
 

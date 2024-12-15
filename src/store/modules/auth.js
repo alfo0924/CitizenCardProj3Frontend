@@ -1,40 +1,5 @@
-import axios from 'axios'
+import api from '@/services/api.config'
 
-// 模擬用戶數據
-const mockUsers = [
-    {
-        id: 1,
-        email: 'user@example.com',
-        password: 'user123456',
-        name: '一般會員',
-        role: 'ROLE_USER',
-        avatar: 'https://i.pravatar.cc/150?img=1',
-        phone: '0912345678',
-        birthday: '1990-01-01',
-        gender: 'MALE',
-        address: '台中市西屯區文華路100號',
-        wallet: {
-            balance: 1000
-        }
-    },
-    {
-        id: 2,
-        email: 'admin@example.com',
-        password: 'admin123456',
-        name: '系統管理員',
-        role: 'ROLE_ADMIN',
-        avatar: 'https://i.pravatar.cc/150?img=2',
-        phone: '0987654321',
-        birthday: '1985-12-31',
-        gender: 'FEMALE',
-        address: '台中市西屯區文華路200號',
-        wallet: {
-            balance: 5000
-        }
-    }
-]
-
-// 初始狀態
 const state = {
     token: localStorage.getItem('token') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
@@ -42,172 +7,137 @@ const state = {
     error: null
 }
 
-// getters
 const getters = {
-    isLoggedIn: state => !!state.token,
+    isLoggedIn: state => !!state.token && !!state.user,
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
+    // 嚴格對應資料庫欄位
+    userId: state => state.user?.id || null,
     userName: state => state.user?.name || '',
+    userEmail: state => state.user?.email || '',
+    userPhone: state => state.user?.phone || '',
+    userBirthday: state => state.user?.birthday || '',
+    userGender: state => state.user?.gender || '',
+    userRole: state => state.user?.role || 'ROLE_USER',
+    userAddress: state => state.user?.address || '',
     userAvatar: state => state.user?.avatar || '',
+    userActive: state => state.user?.active ?? true,
+    userEmailVerified: state => state.user?.email_verified ?? false,
+    userLastLoginTime: state => state.user?.last_login_time || null,
+    userLastLoginIp: state => state.user?.last_login_ip || '',
+    userCreatedAt: state => state.user?.created_at || null,
+    userUpdatedAt: state => state.user?.updated_at || null,
+    userVersion: state => state.user?.version || 0,
     authError: state => state.error,
     isLoading: state => state.isLoading
 }
 
-// actions
 const actions = {
-    // 登入
     async login({ commit }, credentials) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
-            // 模擬API請求延遲
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            const response = await api.post('/auth/login', {
+                email: credentials.email.toLowerCase().trim(),
+                password: credentials.password
+            })
 
-            // 查找用戶
-            const user = mockUsers.find(u =>
-              u.email === credentials.email &&
-              u.password === credentials.password
-            )
+            const { token, user } = response.data
 
-            if (user) {
-                // 生成模擬token
-                const token = `mock-token-${user.id}-${Date.now()}`
-
-                // 儲存認證信息
-                localStorage.setItem('token', token)
-                localStorage.setItem('user', JSON.stringify(user))
-
-                commit('SET_TOKEN', token)
-                commit('SET_USER', user)
-
-                // 設置axios header
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-                return {
-                    success: true,
-                    data: { token, user }
-                }
-            } else {
-                throw new Error('帳號或密碼錯誤')
+            if (!user.id || !user.email) {
+                throw new Error('無效的用戶資料')
             }
+
+            const now = new Date().toISOString()
+            user.last_login_time = now
+            user.updated_at = now
+
+            localStorage.setItem('token', token)
+            localStorage.setItem('user', JSON.stringify(user))
+
+            commit('SET_AUTH_DATA', { token, user })
+            return response
         } catch (error) {
-            commit('SET_ERROR', error.message)
+            let errorMessage
+            if (error.response?.status === 404) {
+                errorMessage = '此帳號不存在，請先註冊'
+            } else if (error.response?.status === 401) {
+                errorMessage = '帳號密碼錯誤'
+            } else {
+                errorMessage = '登入失敗，請稍後再試'
+            }
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
         }
     },
 
-    // 註冊
     async register({ commit }, userData) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
-            // 模擬API請求延遲
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            // 檢查Email是否已存在
-            if (mockUsers.some(u => u.email === userData.email)) {
-                throw new Error('此Email已被註冊')
+            const now = new Date().toISOString()
+            const registerData = {
+                name: userData.name.trim(),
+                email: userData.email.toLowerCase().trim(),
+                password: userData.password,
+                phone: userData.phone?.trim(),
+                birthday: userData.birthday,
+                gender: userData.gender,
+                role: 'ROLE_USER',
+                address: userData.address?.trim(),
+                avatar: userData.avatar,
+                active: true,
+                email_verified: false,
+                last_login_time: now,
+                last_login_ip: '',
+                created_at: now,
+                updated_at: now,
+                version: 0
             }
 
-            // 模擬註冊成功
-            return {
-                success: true,
-                message: '註冊成功，請登入'
-            }
+            const response = await api.post('/auth/register', registerData)
+            return response.data
         } catch (error) {
-            commit('SET_ERROR', error.message)
+            const errorMessage = error.response?.data?.message || '註冊失敗'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
         }
     },
 
-    // 登出
     async logout({ commit }) {
         try {
-            // 模擬API請求
-            await new Promise(resolve => setTimeout(resolve, 500))
-
-            // 清除認證信息
+            await api.post('/auth/logout')
+        } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            delete axios.defaults.headers.common['Authorization']
-
-            commit('CLEAR_USER')
-        } catch (error) {
-            console.error('Logout error:', error)
+            commit('CLEAR_AUTH_DATA')
         }
     },
 
-    // 重設密碼請求
-    async requestPasswordReset({ commit }, email) {
+    async updateProfile({ commit }, userData) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
-
         try {
-            // 模擬API請求
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            return {
-                success: true,
-                message: '重設密碼郵件已發送'
+            const now = new Date().toISOString()
+            const updateData = {
+                ...userData,
+                updated_at: now,
+                version: (userData.version || 0) + 1
             }
-        } catch (error) {
-            commit('SET_ERROR', '重設密碼請求失敗')
-            throw error
-        } finally {
-            commit('SET_LOADING', false)
-        }
-    },
 
-    // 更新用戶資料
-    async updateProfile({ commit, state }, userData) {
-        commit('SET_LOADING', true)
-        commit('CLEAR_ERROR')
-
-        try {
-            // 模擬API請求
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            const updatedUser = {
-                ...state.user,
-                ...userData
-            }
+            const response = await api.put('/auth/profile', updateData)
+            const updatedUser = response.data
 
             localStorage.setItem('user', JSON.stringify(updatedUser))
             commit('SET_USER', updatedUser)
-
-            return {
-                success: true,
-                data: updatedUser
-            }
+            return updatedUser
         } catch (error) {
-            commit('SET_ERROR', '更新資料失敗')
-            throw error
-        } finally {
-            commit('SET_LOADING', false)
-        }
-    },
-
-    // 變更密碼
-    async changePassword({ commit }, { oldPassword, newPassword }) {
-        commit('SET_LOADING', true)
-        commit('CLEAR_ERROR')
-
-        try {
-            // 模擬API請求
-            await new Promise(resolve => setTimeout(resolve, 1000))
-
-            return {
-                success: true,
-                message: '密碼已更新'
-            }
-        } catch (error) {
-            commit('SET_ERROR', '變更密碼失敗')
+            const errorMessage = error.response?.data?.message || '更新失敗'
+            commit('SET_ERROR', errorMessage)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -215,29 +145,26 @@ const actions = {
     }
 }
 
-// mutations
 const mutations = {
-    SET_TOKEN(state, token) {
+    SET_AUTH_DATA(state, { token, user }) {
         state.token = token
+        state.user = user
+        state.error = null
     },
-
     SET_USER(state, user) {
         state.user = user
     },
-
-    CLEAR_USER(state) {
+    CLEAR_AUTH_DATA(state) {
         state.token = null
         state.user = null
+        state.error = null
     },
-
     SET_LOADING(state, status) {
         state.isLoading = status
     },
-
     SET_ERROR(state, error) {
         state.error = error
     },
-
     CLEAR_ERROR(state) {
         state.error = null
     }

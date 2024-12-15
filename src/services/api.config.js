@@ -2,144 +2,164 @@ import axios from 'axios'
 import store from '@/store'
 import router from '@/router'
 
-// 創建axios實例
 const api = axios.create({
     baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080/api',
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
-        Accept: 'application/json'
+        'Accept': 'application/json'
     }
 })
 
-// 請求攔截器
 api.interceptors.request.use(
-  config => {
-      const token = localStorage.getItem('token')
-      if (token) {
-          config.headers.Authorization = `Bearer ${token}`
-      }
-      return config
-  },
-  error => {
-      return Promise.reject(error)
-  }
+    config => {
+        const token = localStorage.getItem('token')
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`
+        }
+        return config
+    },
+    error => {
+        console.error('Request error:', error)
+        return Promise.reject(error)
+    }
 )
 
-// 響應攔截器
 api.interceptors.response.use(
-  response => response.data,
-  error => {
-      const { response } = error
-
-      if (response) {
-          switch (response.status) {
-          case 401:
-              store.dispatch('auth/logout')
-              router.push({
-                  path: '/login',
-                  query: { redirect: router.currentRoute.value.fullPath }
-              })
-              break
-          case 403:
-              router.push('/403')
-              break
-          case 404:
-              router.push('/404')
-              break
-          case 500:
-              router.push('/500')
-              break
-          }
-      }
-
-      const errorMessage = response?.data?.message || '發生錯誤，請稍後再試'
-      store.dispatch('setError', errorMessage)
-      return Promise.reject(error)
-  }
+    response => {
+        if (response.data && response.data.token) {
+            localStorage.setItem('token', response.data.token)
+        }
+        return response
+    },
+    error => {
+        if (error.response) {
+            switch (error.response.status) {
+                case 400:
+                    store.commit('SET_ERROR', '請求格式錯誤')
+                    break
+                case 401:
+                    localStorage.removeItem('token')
+                    localStorage.removeItem('user')
+                    store.commit('auth/CLEAR_AUTH_DATA')
+                    router.push('/login')
+                    break
+                case 403:
+                    store.commit('SET_ERROR', '您沒有權限執行此操作')
+                    if (router.currentRoute.value.path !== '/login') {
+                        router.push('/403')
+                    }
+                    break
+                case 404:
+                    store.commit('SET_ERROR', '請求的資源不存在')
+                    break
+                case 422:
+                    store.commit('SET_ERROR', '資料驗證失敗')
+                    break
+                case 429:
+                    store.commit('SET_ERROR', '請求次數過多，請稍後再試')
+                    break
+                case 500:
+                    store.commit('SET_ERROR', '伺服器錯誤，請稍後再試')
+                    router.push('/500')
+                    break
+                default:
+                    store.commit('SET_ERROR', '發生未知錯誤，請稍後再試')
+            }
+        } else if (error.request) {
+            store.commit('SET_ERROR', '無法連接到伺服器，請檢查網路連線')
+        } else {
+            store.commit('SET_ERROR', '發生錯誤，請稍後再試')
+        }
+        return Promise.reject(error)
+    }
 )
 
-// API端點
 export const endpoints = {
     auth: {
-        register: '/auth/register',
         login: '/auth/login',
+        register: '/auth/register',
         logout: '/auth/logout',
-        refreshToken: '/auth/refresh-token',
-        resetPassword: '/auth/reset-password',
-        changePassword: '/auth/change-password'
+        profile: '/auth/profile'
     },
-
-    user: {
-        profile: '/user/profile',
-        updateProfile: '/user/profile',
-        uploadAvatar: '/user/avatar'
+    users: {
+        profile: '/users/profile',
+        update: '/users/profile'
     },
-
-    movie: {
+    movies: {
         list: '/movies',
         detail: id => `/movies/${id}`,
-        schedules: id => `/movies/${id}/schedules`,
-        reviews: id => `/movies/${id}/reviews`,
-        categories: '/movies/categories'
+        schedules: id => `/movies/${id}/schedules`
     },
-
-    booking: {
-        create: '/bookings',
-        list: '/bookings',
-        detail: id => `/bookings/${id}`,
-        cancel: id => `/bookings/${id}/cancel`
+    schedules: {
+        list: '/schedules',
+        detail: id => `/schedules/${id}`
     },
-
+    tickets: {
+        list: '/movie-tickets',
+        create: '/movie-tickets',
+        detail: id => `/movie-tickets/${id}`,
+        qrcode: id => `/movie-tickets/${id}/qrcode`
+    },
+    discounts: {
+        list: '/discount-coupons',
+        detail: id => `/discount-coupons/${id}`,
+        qrcode: id => `/discount-coupons/${id}/qrcode`
+    },
     wallet: {
         info: '/wallet',
-        topUp: '/wallet/top-up',
-        transfer: '/wallet/transfer',
-        transactions: '/wallet/transactions'
+        balance: '/wallet/balance'
     },
-
-    discount: {
-        list: '/discounts',
-        detail: id => `/discounts/${id}`,
-        use: id => `/discounts/${id}/use`,
-        available: '/discounts/available'
+    stores: {
+        list: '/stores',
+        detail: id => `/stores/${id}`
     }
 }
 
-// API方法
-export const apiService = {
-    get: async (url, params = {}) => {
-        const response = await api.get(url, { params })
-        return response
+const apiService = {
+    async get(url, config = {}) {
+        try {
+            const response = await api.get(url, config)
+            return response.data
+        } catch (error) {
+            this.handleError(error)
+            throw error
+        }
     },
 
-    post: async (url, data = {}) => {
-        const response = await api.post(url, data)
-        return response
+    async post(url, data = {}, config = {}) {
+        try {
+            const response = await api.post(url, data, config)
+            return response.data
+        } catch (error) {
+            this.handleError(error)
+            throw error
+        }
     },
 
-    put: async (url, data = {}) => {
-        const response = await api.put(url, data)
-        return response
+    async put(url, data = {}, config = {}) {
+        try {
+            const response = await api.put(url, data, config)
+            return response.data
+        } catch (error) {
+            this.handleError(error)
+            throw error
+        }
     },
 
-    delete: async url => {
-        const response = await api.delete(url)
-        return response
+    async delete(url, config = {}) {
+        try {
+            const response = await api.delete(url, config)
+            return response.data
+        } catch (error) {
+            this.handleError(error)
+            throw error
+        }
     },
 
-    upload: async (url, file, onUploadProgress) => {
-        const formData = new FormData()
-        formData.append('file', file)
-
-        const response = await api.post(url, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            },
-            onUploadProgress
-        })
-        return response
+    handleError(error) {
+        console.error('API Error:', error)
     }
 }
 
-export default api
+export { api as default, apiService }

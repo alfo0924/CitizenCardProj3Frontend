@@ -4,43 +4,31 @@ import auth from './modules/auth'
 import movie from './modules/movie'
 import wallet from './modules/wallet'
 import discount from './modules/discount'
-import discountStore from './modules/discountStore'
+import storeModule from './modules/store'  // 改名為 storeModule
+import api from '@/services/api.config'
 
-const store = createStore({
+const vuexStore = createStore({  // 改名為 vuexStore
     state: {
         isLoading: false,
         error: null,
-        notification: null,
-        systemStats: {
-            visitorCount: 0,
-            userCount: 0,
-            movieCount: 0
-        }
+        notification: null
     },
 
     mutations: {
         SET_LOADING(state, status) {
             state.isLoading = status
         },
-
         SET_ERROR(state, error) {
             state.error = error
         },
-
         CLEAR_ERROR(state) {
             state.error = null
         },
-
         SET_NOTIFICATION(state, notification) {
             state.notification = notification
         },
-
         CLEAR_NOTIFICATION(state) {
             state.notification = null
-        },
-
-        SET_SYSTEM_STATS(state, stats) {
-            state.systemStats = stats
         }
     },
 
@@ -69,30 +57,13 @@ const store = createStore({
 
         clearNotification({ commit }) {
             commit('CLEAR_NOTIFICATION')
-        },
-
-        // 系統統計數據
-        async fetchSystemStats({ commit }) {
-            try {
-                const response = await fetch('/api/system/stats')
-                const data = await response.json()
-                commit('SET_SYSTEM_STATS', data)
-            } catch (error) {
-                console.error('Error fetching system stats:', error)
-                commit('SET_SYSTEM_STATS', {
-                    visitorCount: 0,
-                    userCount: 0,
-                    movieCount: 0
-                })
-            }
         }
     },
 
     getters: {
         isLoading: state => state.isLoading,
         error: state => state.error,
-        notification: state => state.notification,
-        systemStats: state => state.systemStats
+        notification: state => state.notification
     },
 
     modules: {
@@ -100,7 +71,7 @@ const store = createStore({
         movie,
         wallet,
         discount,
-        discountStore,
+        store: storeModule  // 使用重命名的模塊
     },
 
     plugins: [
@@ -113,44 +84,37 @@ const store = createStore({
     strict: process.env.NODE_ENV !== 'production'
 })
 
-// 全局請求攔截器
-store.subscribeAction({
+vuexStore.subscribeAction({
     before: (action) => {
         if (!action.type.includes('setLoading')) {
-            store.dispatch('setLoading', true)
+            vuexStore.dispatch('setLoading', true)
         }
     },
     after: (action) => {
         if (!action.type.includes('setLoading')) {
-            store.dispatch('setLoading', false)
+            vuexStore.dispatch('setLoading', false)
         }
     },
     error: (action, error) => {
-        console.error('Action error:', {
-            action: action.type,
-            error
-        })
-        store.dispatch('setLoading', false)
-        store.dispatch('setError', error.message || '發生錯誤，請稍後再試')
+        console.error('Action error:', error)
+        vuexStore.dispatch('setLoading', false)
+        vuexStore.dispatch('setError', error.message || '系統發生錯誤')
     }
 })
 
-// 初始化時從 localStorage 恢復認證狀態
 const initializeStore = async () => {
     const token = localStorage.getItem('token')
     if (token) {
         try {
-            await store.dispatch('auth/restoreToken', token)
+            await vuexStore.dispatch('auth/checkToken')
         } catch (error) {
-            console.error('Failed to restore auth state:', error)
+            console.error('認證狀態恢復失敗:', error)
             localStorage.removeItem('token')
+            localStorage.removeItem('user')
         }
     }
-
-    // 獲取系統統計數據
-    store.dispatch('fetchSystemStats')
 }
 
 initializeStore()
 
-export default store
+export default vuexStore
