@@ -170,12 +170,15 @@ export default {
         router.push('/')
       } catch (err) {
         console.error('Login error:', err)
-        if (err.response?.status === 401) {
-          error.value = '帳號或密碼錯誤'
-        } else if (err.response?.status === 403) {
+        if (err.response?.status === 404) {
+          error.value = '無此帳號，請先註冊'
+          setTimeout(() => {
+            router.push('/register')
+          }, 3000)
+        } else if (err.response?.status === 401) {
+          error.value = '密碼錯誤'
+        } else if (err.response?.status === 403 || err.message === '帳戶已被停用') {
           error.value = '帳戶已被停用'
-        } else if (err.message === '帳戶已被停用') {
-          error.value = err.message
         } else {
           error.value = '登入失敗，請稍後再試'
         }

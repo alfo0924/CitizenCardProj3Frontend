@@ -7,11 +7,10 @@
           v-if="error"
           type="error"
           :message="error"
-          @close="error = ''"
+          @close="clearError"
       />
 
-      <form @submit.prevent="handleSubmit">
-        <!-- Email輸入 -->
+      <form @submit.prevent="handleSubmit" novalidate>
         <div class="form-group mb-3">
           <label for="email" class="form-label">電子郵件</label>
           <div class="input-group">
@@ -22,10 +21,13 @@
                 type="email"
                 class="form-control"
                 id="email"
-                v-model="formData.email"
+                v-model.trim="formData.email"
                 :class="{ 'is-invalid': validationErrors.email }"
                 required
                 placeholder="請輸入電子郵件"
+                maxlength="100"
+                autocomplete="email"
+                @input="validateEmail"
             >
           </div>
           <div class="invalid-feedback" v-if="validationErrors.email">
@@ -33,7 +35,6 @@
           </div>
         </div>
 
-        <!-- 密碼輸入 -->
         <div class="form-group mb-3">
           <label for="password" class="form-label">密碼</label>
           <div class="input-group">
@@ -48,11 +49,15 @@
                 :class="{ 'is-invalid': validationErrors.password }"
                 required
                 placeholder="請輸入密碼"
+                maxlength="255"
+                autocomplete="current-password"
+                @input="validatePassword"
             >
             <button
                 type="button"
                 class="btn btn-outline-secondary"
                 @click="togglePasswordVisibility"
+                tabindex="-1"
             >
               <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
             </button>
@@ -62,29 +67,16 @@
           </div>
         </div>
 
-        <!-- 記住我 -->
-        <div class="form-check mb-3">
-          <input
-              type="checkbox"
-              class="form-check-input"
-              id="rememberMe"
-              v-model="formData.rememberMe"
-          >
-          <label class="form-check-label" for="rememberMe">記住我</label>
-        </div>
-
-        <!-- 登入按鈕 -->
         <button
             type="submit"
-            class="btn btn-primary w-100 mb-3"
-            :disabled="isLoading"
+            class="btn btn-danger w-100 mb-3"
+            :disabled="isLoading || !isFormValid"
         >
           <LoadingSpinner v-if="isLoading" size="sm" class="me-2"/>
           {{ isLoading ? '登入中...' : '登入' }}
         </button>
 
-        <!-- 註冊連結 -->
-        <div class="text-center mt-3">
+        <div class="text-center">
           <span class="text-muted">還沒有帳號？</span>
           <router-link to="/register" class="text-primary ms-1">立即註冊</router-link>
         </div>
@@ -94,7 +86,7 @@
 </template>
 
 <script>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/common/AlertMessage.vue'
@@ -102,11 +94,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
   name: 'LoginForm',
-
-  components: {
-    AlertMessage,
-    LoadingSpinner
-  },
+  components: { AlertMessage, LoadingSpinner },
 
   setup() {
     const store = useStore()
@@ -114,55 +102,84 @@ export default {
 
     const formData = reactive({
       email: '',
-      password: '',
-      rememberMe: false
+      password: ''
     })
 
-    const isLoading = ref(false)
-    const error = ref('')
-    const showPassword = ref(false)
     const validationErrors = reactive({
       email: '',
       password: ''
     })
 
-    const validateForm = () => {
-      let isValid = true
-      validationErrors.email = ''
-      validationErrors.password = ''
+    const isLoading = ref(false)
+    const error = ref('')
+    const showPassword = ref(false)
 
+    const validateEmail = () => {
+      validationErrors.email = ''
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
-        isValid = false
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-        validationErrors.email = '請輸入有效的電子郵件格式'
-        isValid = false
+        return false
       }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(formData.email)) {
+        validationErrors.email = '請輸入有效的電子郵件格式'
+        return false
+      }
+      return true
+    }
 
+    const validatePassword = () => {
+      validationErrors.password = ''
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
-        isValid = false
+        return false
       }
+      return true
+    }
 
-      return isValid
+    const isFormValid = computed(() => {
+      return formData.email &&
+          formData.password &&
+          !validationErrors.email &&
+          !validationErrors.password
+    })
+
+    const clearError = () => {
+      error.value = ''
     }
 
     const handleSubmit = async () => {
-      if (!validateForm()) return
+      if (!validateEmail() || !validatePassword()) return
 
       try {
         isLoading.value = true
         error.value = ''
 
-        await store.dispatch('auth/login', {
-          email: formData.email,
+        const response = await store.dispatch('auth/login', {
+          email: formData.email.toLowerCase(),
           password: formData.password
         })
 
+        if (response.status === 404) {
+          error.value = '無此帳號，請先註冊'
+          setTimeout(() => {
+            router.push('/register')
+          }, 2000)
+          return
+        }
+
         router.push('/')
       } catch (err) {
-        error.value = err.message || '登入失敗，請檢查帳號密碼是否正確'
-        console.error('Login error:', err)
+        if (err.response?.status === 404) {
+          error.value = '無此帳號，請先註冊'
+          setTimeout(() => {
+            router.push('/register')
+          }, 2000)
+        } else if (err.response?.status === 401) {
+          error.value = '密碼錯誤'
+        } else {
+          error.value = '登入失敗，請稍後再試'
+        }
       } finally {
         isLoading.value = false
       }
@@ -174,12 +191,16 @@ export default {
 
     return {
       formData,
+      validationErrors,
       isLoading,
       error,
       showPassword,
-      validationErrors,
+      isFormValid,
       handleSubmit,
-      togglePasswordVisibility
+      togglePasswordVisibility,
+      clearError,
+      validateEmail,
+      validatePassword
     }
   }
 }
@@ -188,28 +209,39 @@ export default {
 <style scoped>
 .login-container {
   min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 2rem 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fa;
-  padding: 1rem;
 }
 
 .login-form {
   background-color: white;
   padding: 2rem;
   border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 400px;
 }
 
-.form-group {
-  position: relative;
-}
-
 .input-group-text {
   background-color: transparent;
+  border-right: none;
+}
+
+.input-group .form-control {
+  border-left: none;
+}
+
+.input-group .form-control:focus {
+  border-color: #dee2e6;
+  box-shadow: none;
+}
+
+.invalid-feedback {
+  display: block;
+  font-size: 0.875rem;
 }
 
 @media (max-width: 576px) {
