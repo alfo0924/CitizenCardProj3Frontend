@@ -2,11 +2,11 @@ import api from './api.config'
 
 class AuthService {
     async login(credentials) {
-        try {
-            if (!credentials.email || !credentials.password) {
-                throw new Error('請輸入電子郵件和密碼')
-            }
+        if (!credentials.email || !credentials.password) {
+            throw new Error('請輸入電子郵件和密碼')
+        }
 
+        try {
             const response = await api.post('/auth/login', {
                 email: credentials.email.toLowerCase().trim(),
                 password: credentials.password
@@ -22,15 +22,48 @@ class AuthService {
             }
 
             // 驗證用戶資料完整性
-            if (!this.validateUserData(user)) {
-                throw new Error('用戶資料不完整')
-            }
+            this.validateUserData(user)
+
+            // 更新登入時間和IP
+            user.last_login_time = new Date().toISOString()
 
             this.setAuthData(token, user)
             return { token, user }
+
         } catch (error) {
-            const errorMessage = this.getErrorMessage(error)
-            throw new Error(errorMessage)
+            console.error('Login error:', error)
+            if (error.response) {
+                const status = error.response.status
+                const message = error.response.data?.message
+
+                if (message) {
+                    throw new Error(message)
+                }
+
+                switch (status) {
+                    case 400:
+                        throw new Error('請求格式錯誤')
+                    case 401:
+                        throw new Error('帳號或密碼錯誤')
+                    case 403:
+                        throw new Error('帳戶已被停用')
+                    case 404:
+                        throw new Error('無此帳號')
+                    case 422:
+                        throw new Error('驗證失敗')
+                    case 429:
+                        throw new Error('登入嘗試次數過多，請稍後再試')
+                    default:
+                        throw new Error('登入失敗，請稍後再試')
+                }
+            }
+
+            // 如果是自定義錯誤，直接拋出
+            if (error.message) {
+                throw error
+            }
+
+            throw new Error('登入失敗，請檢查網路連線')
         }
     }
 
@@ -45,31 +78,11 @@ class AuthService {
             'created_at',
             'updated_at'
         ]
-        return requiredFields.every(field => user.hasOwnProperty(field))
-    }
 
-    getErrorMessage(error) {
-        if (error.response) {
-            switch (error.response.status) {
-                case 400:
-                    return '請求資料格式錯誤'
-                case 401:
-                    return '帳號或密碼錯誤'
-                case 403:
-                    return '帳戶已被停用'
-                case 404:
-                    return '帳號不存在'
-                case 422:
-                    return error.response.data?.message || '驗證失敗'
-                case 429:
-                    return '登入嘗試次數過多，請稍後再試'
-                case 500:
-                    return '系統錯誤，請稍後再試'
-                default:
-                    return '登入失敗，請稍後再試'
-            }
+        const missingFields = requiredFields.filter(field => !user.hasOwnProperty(field))
+        if (missingFields.length > 0) {
+            throw new Error('用戶資料不完整')
         }
-        return error.message || '網路連線異常'
     }
 
     async register(userData) {
@@ -99,7 +112,10 @@ class AuthService {
             const response = await api.post('/auth/register', formattedData)
             return response.data
         } catch (error) {
-            throw new Error(this.getErrorMessage(error))
+            if (error.response?.data?.message) {
+                throw new Error(error.response.data.message)
+            }
+            throw error
         }
     }
 

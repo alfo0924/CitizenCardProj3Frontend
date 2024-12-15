@@ -158,21 +158,58 @@ export default {
         isLoading.value = true
         error.value = ''
 
-        await store.dispatch('auth/login', {
+        const loginData = {
           email: formData.email.toLowerCase(),
           password: formData.password
-        })
+        }
 
+        await store.dispatch('auth/login', loginData)
         router.push('/')
       } catch (err) {
-        if (err.response?.data?.message) {
-          error.value = err.response.data.message
-        } else if (err.response?.status === 401) {
-          error.value = '帳號或密碼錯誤'
-        } else if (err.response?.status === 403) {
-          error.value = '帳戶已被停用'
+        console.error('Login error:', err)
+
+        // 處理不同類型的錯誤
+        if (err.response) {
+          const { status, data } = err.response
+
+          // 優先使用後端返回的錯誤訊息
+          if (data && data.message) {
+            error.value = data.message
+            return
+          }
+
+          // 根據HTTP狀態碼設置錯誤訊息
+          switch (status) {
+            case 400:
+              error.value = '請求格式錯誤，請檢查輸入內容'
+              break
+            case 401:
+              error.value = '帳號或密碼錯誤'
+              break
+            case 403:
+              error.value = '帳戶已被停用'
+              break
+            case 404:
+              error.value = '無此帳號，請先註冊'
+              break
+            case 422:
+              error.value = '驗證失敗，請檢查輸入資料'
+              break
+            case 429:
+              error.value = '登入嘗試次數過多，請稍後再試'
+              break
+            case 500:
+              error.value = '系統發生錯誤，請稍後再試'
+              break
+            default:
+              error.value = '登入失敗，請稍後再試'
+          }
+        } else if (err.request) {
+          // 請求已發送但沒有收到回應
+          error.value = '無法連接到伺服器，請檢查網路連線'
         } else {
-          error.value = '登入失敗，請稍後再試'
+          // 其他錯誤
+          error.value = err.message || '登入過程發生錯誤'
         }
       } finally {
         isLoading.value = false

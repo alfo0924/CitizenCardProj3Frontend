@@ -35,22 +35,41 @@ api.interceptors.response.use(
     error => {
         if (error.response) {
             switch (error.response.status) {
+                case 400:
+                    store.commit('SET_ERROR', '請求格式錯誤')
+                    break
                 case 401:
                     localStorage.removeItem('token')
                     localStorage.removeItem('user')
-                    localStorage.removeItem('wallet')
                     store.commit('auth/CLEAR_AUTH_DATA')
                     router.push('/login')
                     break
                 case 403:
+                    store.commit('SET_ERROR', '您沒有權限執行此操作')
                     if (router.currentRoute.value.path !== '/login') {
                         router.push('/403')
                     }
                     break
+                case 404:
+                    store.commit('SET_ERROR', '請求的資源不存在')
+                    break
+                case 422:
+                    store.commit('SET_ERROR', '資料驗證失敗')
+                    break
+                case 429:
+                    store.commit('SET_ERROR', '請求次數過多，請稍後再試')
+                    break
                 case 500:
+                    store.commit('SET_ERROR', '伺服器錯誤，請稍後再試')
                     router.push('/500')
                     break
+                default:
+                    store.commit('SET_ERROR', '發生未知錯誤，請稍後再試')
             }
+        } else if (error.request) {
+            store.commit('SET_ERROR', '無法連接到伺服器，請檢查網路連線')
+        } else {
+            store.commit('SET_ERROR', '發生錯誤，請稍後再試')
         }
         return Promise.reject(error)
     }
@@ -139,8 +158,6 @@ const apiService = {
     },
 
     handleError(error) {
-        const errorMessage = error.response?.data?.message || '操作失敗，請稍後再試'
-        store.commit('SET_ERROR', errorMessage)
         console.error('API Error:', error)
     }
 }

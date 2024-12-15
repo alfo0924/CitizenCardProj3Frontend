@@ -11,7 +11,6 @@ const getters = {
     isLoggedIn: state => !!state.token && !!state.user,
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
-    // 基本用戶資訊 getters
     userName: state => state.user?.name || '',
     userEmail: state => state.user?.email || '',
     userPhone: state => state.user?.phone || '',
@@ -20,12 +19,10 @@ const getters = {
     userRole: state => state.user?.role || 'ROLE_USER',
     userAddress: state => state.user?.address || '',
     userAvatar: state => state.user?.avatar || '',
-    // 狀態相關 getters
     isActive: state => state.user?.active ?? false,
     isEmailVerified: state => state.user?.email_verified ?? false,
     lastLoginTime: state => state.user?.last_login_time || null,
     lastLoginIp: state => state.user?.last_login_ip || '',
-    // 錯誤和載入狀態
     authError: state => state.error,
     isLoading: state => state.isLoading
 }
@@ -46,12 +43,10 @@ const actions = {
 
             const { token, user } = response.data
 
-            // 驗證用戶資料完整性
             if (!user.id || !user.email || !user.role) {
                 throw new Error('用戶資料不完整')
             }
 
-            // 更新用戶登入時間和IP
             user.last_login_time = new Date().toISOString()
             user.updated_at = new Date().toISOString()
 
