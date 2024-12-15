@@ -157,15 +157,17 @@ export default {
         redirectCountdown.value--
         if (redirectCountdown.value <= 0) {
           clearInterval(countdownInterval)
+          router.push('/register')
         }
       }, 1000)
 
       redirectTimer.value = setTimeout(() => {
         clearInterval(countdownInterval)
-        router.push('/register')
+        if (redirectCountdown.value <= 0) {
+          router.push('/register')
+        }
       }, 5000)
     }
-
     const handleSubmit = async () => {
       if (!validateEmail() || !validatePassword()) return
 
