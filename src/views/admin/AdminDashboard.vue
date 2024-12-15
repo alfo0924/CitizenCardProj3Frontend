@@ -1,21 +1,17 @@
 <template>
   <div class="admin-dashboard">
     <div class="container">
-      <!-- 載入中狀態 -->
       <LoadingSpinner v-if="isLoading" />
 
-      <!-- 錯誤提示 -->
       <AlertMessage
           v-if="error"
           type="error"
           :message="error"
       />
 
-      <!-- 儀表板內容 -->
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title m-4">管理員儀表板</h1>
 
-        <!-- 管理功能快速入口 -->
         <div class="management-shortcuts mt-4">
           <h3>後台管理</h3>
           <div class="row g-4 justify-content-center mt-2 mb-5">
@@ -57,7 +53,6 @@
           </div>
         </div>
 
-        <!-- 統計卡片 -->
         <div class="row g-4 mb-4">
           <div class="col-md-4">
             <div class="stat-card">
@@ -108,9 +103,7 @@
           </div>
         </div>
 
-        <!-- 圖表區域 -->
         <div class="row g-4">
-          <!-- 會員分析圖表 -->
           <div class="col-md-6">
             <div class="chart-card">
               <h3>會員分析</h3>
@@ -118,7 +111,6 @@
             </div>
           </div>
 
-          <!-- 商店類型分析圖表 -->
           <div class="col-md-6">
             <div class="chart-card">
               <h3>商店類型分析</h3>
@@ -130,6 +122,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useStore } from 'vuex'
@@ -137,29 +130,8 @@ import Chart from 'chart.js/auto'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
-// 模擬數據
-const mockData = {
-  stats: {
-    totalUsers: 1250,
-    newUsers: 48,
-    totalStores: 156,
-    newStores: 12,
-    activeMovies: 25,
-    newMovies: 5
-  },
-  userData: {
-    labels: ['新會員', '一般會員', '進階會員', 'VIP會員'],
-    data: [250, 650, 280, 70]
-  },
-  storeData: {
-    labels: ['餐飲', '娛樂', '購物', '生活', '其他'],
-    data: [45, 30, 35, 25, 21]
-  }
-}
-
 export default {
   name: 'AdminDashboard',
-
   components: {
     LoadingSpinner,
     AlertMessage
@@ -173,9 +145,7 @@ export default {
     let storeChart = null
     const isLoading = ref(false)
     const error = ref(null)
-    const useMockData = ref(true) // 控制是否使用假資料
 
-    // 統計數據
     const stats = ref({
       totalUsers: 0,
       newUsers: 0,
@@ -185,55 +155,43 @@ export default {
       newMovies: 0
     })
 
-    // 初始化圖表
     const initCharts = (userData, storeData) => {
       try {
-        // 清除舊的圖表實例
-        if (userChart) {
-          userChart.destroy()
-        }
-        if (storeChart) {
-          storeChart.destroy()
-        }
+        if (userChart) userChart.destroy()
+        if (storeChart) storeChart.destroy()
 
-        // 創建會員分析圖
         if (userChartRef.value) {
           const userCtx = userChartRef.value.getContext('2d')
           userChart = new Chart(userCtx, {
             type: 'doughnut',
             data: {
-              labels: userData.labels,
+              labels: ['一般會員', 'VIP會員'],
               datasets: [{
-                data: userData.data,
-                backgroundColor: [
-                  '#4CAF50',
-                  '#2196F3',
-                  '#FFC107',
-                  '#9C27B0'
-                ]
+                data: [
+                  userData.normalUsers || 0,
+                  userData.vipUsers || 0
+                ],
+                backgroundColor: ['#4CAF50', '#9C27B0']
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
               plugins: {
-                legend: {
-                  position: 'bottom'
-                }
+                legend: { position: 'bottom' }
               }
             }
           })
         }
 
-        // 創建商店類型分析圖
         if (storeChartRef.value) {
           const storeCtx = storeChartRef.value.getContext('2d')
           storeChart = new Chart(storeCtx, {
             type: 'pie',
             data: {
-              labels: storeData.labels,
+              labels: storeData.categories || [],
               datasets: [{
-                data: storeData.data,
+                data: storeData.counts || [],
                 backgroundColor: [
                   '#FF6384',
                   '#36A2EB',
@@ -247,9 +205,7 @@ export default {
               responsive: true,
               maintainAspectRatio: false,
               plugins: {
-                legend: {
-                  position: 'bottom'
-                }
+                legend: { position: 'bottom' }
               }
             }
           })
@@ -260,49 +216,35 @@ export default {
       }
     }
 
-    // 檢查 API 可用性
-    const checkApiAvailability = async () => {
-      try {
-        const response = await store.dispatch('admin/checkApiStatus')
-        useMockData.value = !response.success
-      } catch (err) {
-        console.error('API check failed:', err)
-        useMockData.value = true
-      }
-    }
-
-    // 獲取儀表板數據
     const fetchDashboardData = async () => {
       try {
         isLoading.value = true
         error.value = null
 
-        if (useMockData.value) {
-          // 使用模擬數據
-          setTimeout(() => {
-            stats.value = mockData.stats
-            initCharts(mockData.userData, mockData.storeData)
-            isLoading.value = false
-          }, 1000)
-        } else {
-          // 使用真實 API
-          const response = await store.dispatch('admin/fetchDashboardData')
-          if (response.success) {
-            stats.value = response.stats
-            initCharts(response.userData, response.storeData)
-          } else {
-            throw new Error(response.message || '獲取數據失敗')
+        const response = await store.dispatch('admin/fetchDashboardData')
+
+        if (response.success) {
+          stats.value = {
+            totalUsers: response.data.totalUsers,
+            newUsers: response.data.newUsers,
+            totalStores: response.data.totalStores,
+            newStores: response.data.newStores,
+            activeMovies: response.data.activeMovies,
+            newMovies: response.data.newMovies
           }
-          isLoading.value = false
+
+          initCharts(response.data.userAnalytics, response.data.storeAnalytics)
+        } else {
+          throw new Error(response.message || '獲取數據失敗')
         }
       } catch (err) {
         error.value = '載入儀表板數據失敗，請稍後再試'
         console.error('Dashboard error:', err)
+      } finally {
         isLoading.value = false
       }
     }
 
-    // 清理圖表
     const cleanupCharts = () => {
       if (userChart) {
         userChart.destroy()
@@ -315,7 +257,6 @@ export default {
     }
 
     onMounted(async () => {
-      await checkApiAvailability()
       await fetchDashboardData()
     })
 
