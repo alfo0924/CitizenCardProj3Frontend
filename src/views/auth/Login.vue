@@ -4,7 +4,6 @@
       <div class="login-form">
         <h2 class="text-center mb-4">會員登入</h2>
 
-        <!-- 錯誤訊息顯示區域 -->
         <div v-if="error" class="alert alert-danger alert-dismissible fade show" role="alert">
           {{ error }}
           <button type="button" class="btn-close" @click="clearError" aria-label="Close"></button>
@@ -96,6 +95,7 @@ export default {
   setup() {
     const store = useStore()
     const router = useRouter()
+    const redirectTimer = ref(null)
 
     const formData = reactive({
       email: '',
@@ -131,11 +131,51 @@ export default {
         validationErrors.password = '請輸入密碼'
         return false
       }
-      if (formData.password.length < 6) {
-        validationErrors.password = '密碼長度不得小於6個字元'
+      if (formData.password.length < 8) {
+        validationErrors.password = '密碼長度不得小於8個字元'
         return false
       }
       return true
+    }
+
+    const clearError = () => {
+      error.value = ''
+      if (redirectTimer.value) {
+        clearTimeout(redirectTimer.value)
+        redirectTimer.value = null
+      }
+    }
+
+    const handleSubmit = async () => {
+      if (!validateEmail() || !validatePassword()) return
+
+      try {
+        isLoading.value = true
+        error.value = ''
+
+        await store.dispatch('auth/login', {
+          email: formData.email.toLowerCase(),
+          password: formData.password,
+          ipAddress: window.clientInformation?.userAgent || 'unknown'
+        })
+
+        router.push('/')
+      } catch (err) {
+        if (err.response?.data?.message) {
+          error.value = err.response.data.message
+
+          // 如果是帳號不存在的錯誤，設置5秒後自動跳轉到註冊頁面
+          if (err.response.status === 404) {
+            redirectTimer.value = setTimeout(() => {
+              router.push('/register')
+            }, 5000)
+          }
+        } else {
+          error.value = '登入失敗，請稍後再試'
+        }
+      } finally {
+        isLoading.value = false
+      }
     }
 
     const isFormValid = computed(() => {
@@ -144,77 +184,6 @@ export default {
           !validationErrors.email &&
           !validationErrors.password
     })
-
-    const clearError = () => {
-      error.value = ''
-    }
-
-    const handleSubmit = async () => {
-      if (!validateEmail() || !validatePassword()) {
-        return
-      }
-
-      try {
-        isLoading.value = true
-        error.value = ''
-
-        const loginData = {
-          email: formData.email.toLowerCase(),
-          password: formData.password
-        }
-
-        await store.dispatch('auth/login', loginData)
-        router.push('/')
-      } catch (err) {
-        console.error('Login error:', err)
-
-        // 處理不同類型的錯誤
-        if (err.response) {
-          const { status, data } = err.response
-
-          // 優先使用後端返回的錯誤訊息
-          if (data && data.message) {
-            error.value = data.message
-            return
-          }
-
-          // 根據HTTP狀態碼設置錯誤訊息
-          switch (status) {
-            case 400:
-              error.value = '請求格式錯誤，請檢查輸入內容'
-              break
-            case 401:
-              error.value = '帳號或密碼錯誤'
-              break
-            case 403:
-              error.value = '帳戶已被停用'
-              break
-            case 404:
-              error.value = '無此帳號，請先註冊'
-              break
-            case 422:
-              error.value = '驗證失敗，請檢查輸入資料'
-              break
-            case 429:
-              error.value = '登入嘗試次數過多，請稍後再試'
-              break
-            case 500:
-              error.value = '系統發生錯誤，請稍後再試'
-              break
-            default:
-              error.value = '登入失敗，請稍後再試'
-          }
-        } else if (err.request) {
-          // 請求已發送但沒有收到回應
-          error.value = '無法連接到伺服器，請檢查網路連線'
-        } else {
-          // 其他錯誤
-          error.value = err.message || '登入過程發生錯誤'
-        }
-      } finally {
-        isLoading.value = false
-      }
-    }
 
     const togglePasswordVisibility = () => {
       showPassword.value = !showPassword.value
@@ -273,20 +242,6 @@ export default {
 .input-group .form-control:focus {
   border-color: #dee2e6;
   box-shadow: none;
-}
-
-.btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background-color: #bb2d3b;
-  border-color: #b02a37;
-}
-
-.alert {
-  margin-bottom: 1rem;
 }
 
 @media (max-width: 576px) {
