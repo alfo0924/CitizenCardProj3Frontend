@@ -27,13 +27,26 @@ const state = {
 
 const mutations = {
     SET_DASHBOARD_STATS(state, stats) {
-        state.dashboardStats = stats
+        state.dashboardStats = {
+            totalUsers: stats?.totalUsers || 0,
+            newUsers: stats?.newUsers || 0,
+            totalStores: stats?.totalStores || 0,
+            newStores: stats?.newStores || 0,
+            activeMovies: stats?.activeMovies || 0,
+            newMovies: stats?.newMovies || 0
+        }
     },
     SET_USER_DATA(state, data) {
-        state.userData = data
+        state.userData = {
+            labels: data?.labels || [],
+            data: data?.data || []
+        }
     },
     SET_STORE_DATA(state, data) {
-        state.storeData = data
+        state.storeData = {
+            labels: data?.labels || [],
+            data: data?.data || []
+        }
     },
     SET_LOADING(state, status) {
         state.isLoading = status
@@ -49,6 +62,18 @@ const mutations = {
     },
     SET_TOKEN(state, token) {
         state.token = token
+    },
+    CLEAR_DASHBOARD_DATA(state) {
+        state.dashboardStats = {
+            totalUsers: 0,
+            newUsers: 0,
+            totalStores: 0,
+            newStores: 0,
+            activeMovies: 0,
+            newMovies: 0
+        }
+        state.userData = { labels: [], data: [] }
+        state.storeData = { labels: [], data: [] }
     }
 }
 
@@ -62,7 +87,7 @@ const actions = {
             const token = localStorage.getItem('token')
             if (!token) {
                 commit('SET_AUTH_STATUS', false)
-                return { success: false, error: 'No token found' }
+                throw new Error('找不到登入令牌')
             }
 
             const response = await authService.validateToken(token)
@@ -70,65 +95,74 @@ const actions = {
                 commit('SET_AUTH_STATUS', true)
                 commit('SET_TOKEN', token)
                 return { success: true }
-            } else {
-                commit('SET_AUTH_STATUS', false)
-                localStorage.removeItem('token')
-                return { success: false, error: 'Invalid token' }
             }
+            throw new Error(response.error || '無效的登入令牌')
         } catch (error) {
             commit('SET_AUTH_STATUS', false)
             localStorage.removeItem('token')
-            return { success: false, error: error.message }
-        }
-    },
-
-    async checkApiStatus({ commit }) {
-        try {
-            const response = await adminService.checkApiStatus()
-            return { success: true, data: response }
-        } catch (error) {
-            console.error('API Status Check Error:', error)
-            return { success: false, error: error.message }
+            return {
+                success: false,
+                error: error.message || '驗證失敗'
+            }
         }
     },
 
     async fetchDashboardData({ commit }) {
-        try {
-            commit('SET_LOADING', true)
-            commit('SET_ERROR', null)
+        commit('SET_LOADING', true)
+        commit('SET_ERROR', null)
+        commit('CLEAR_DASHBOARD_DATA')
 
+        try {
             const response = await adminService.getDashboardData()
 
-            commit('SET_DASHBOARD_STATS', {
-                totalUsers: response.stats.totalUsers,
-                newUsers: response.stats.newUsers,
-                totalStores: response.stats.totalStores,
-                newStores: response.stats.newStores,
-                activeMovies: response.stats.activeMovies,
-                newMovies: response.stats.newMovies
-            })
+            if (!response) {
+                throw new Error('無法連接到伺服器')
+            }
 
-            commit('SET_USER_DATA', {
-                labels: response.userData.labels,
-                data: response.userData.data
-            })
+            if (!response.success) {
+                throw new Error(response.error || '獲取數據失敗')
+            }
 
-            commit('SET_STORE_DATA', {
-                labels: response.storeData.labels,
-                data: response.storeData.data
-            })
+            if (!response.data || typeof response.data !== 'object') {
+                throw new Error('無效的響應數據格式')
+            }
+
+            const { stats, userRoleDistribution, storeCategoryDistribution } = response.data
+
+            // Validate and set dashboard stats
+            if (stats && typeof stats === 'object') {
+                commit('SET_DASHBOARD_STATS', stats)
+            } else {
+                throw new Error('無效的統計數據')
+            }
+
+            // Validate and set user role distribution
+            if (userRoleDistribution && typeof userRoleDistribution === 'object') {
+                commit('SET_USER_DATA', {
+                    labels: Object.keys(userRoleDistribution),
+                    data: Object.values(userRoleDistribution)
+                })
+            }
+
+            // Validate and set store category distribution
+            if (storeCategoryDistribution && typeof storeCategoryDistribution === 'object') {
+                commit('SET_STORE_DATA', {
+                    labels: Object.keys(storeCategoryDistribution),
+                    data: Object.values(storeCategoryDistribution)
+                })
+            }
 
             return {
                 success: true,
-                stats: response.stats,
-                userData: response.userData,
-                storeData: response.storeData
+                data: response.data
             }
         } catch (error) {
-            commit('SET_ERROR', error.message)
+            const errorMessage = error.message || '載入儀表板數據失敗'
+            commit('SET_ERROR', errorMessage)
+            console.error('Dashboard data fetch error:', error)
             return {
                 success: false,
-                error: error.message
+                error: errorMessage
             }
         } finally {
             commit('SET_LOADING', false)
@@ -138,30 +172,48 @@ const actions = {
     async getUserStats({ commit }) {
         try {
             const response = await adminService.getUserStats()
-            return { success: true, data: response }
+            if (!response || !response.success) {
+                throw new Error(response?.error || '獲取用戶統計失敗')
+            }
+            return { success: true, data: response.data }
         } catch (error) {
-            console.error('User Stats Error:', error)
-            return { success: false, error: error.message }
+            console.error('獲取用戶統計失敗:', error)
+            return {
+                success: false,
+                error: error.message || '獲取用戶統計失敗'
+            }
         }
     },
 
     async getStoreStats({ commit }) {
         try {
             const response = await adminService.getStoreStats()
-            return { success: true, data: response }
+            if (!response || !response.success) {
+                throw new Error(response?.error || '獲取商店統計失敗')
+            }
+            return { success: true, data: response.data }
         } catch (error) {
-            console.error('Store Stats Error:', error)
-            return { success: false, error: error.message }
+            console.error('獲取商店統計失敗:', error)
+            return {
+                success: false,
+                error: error.message || '獲取商店統計失敗'
+            }
         }
     },
 
     async getMovieStats({ commit }) {
         try {
             const response = await adminService.getMovieStats()
-            return { success: true, data: response }
+            if (!response || !response.success) {
+                throw new Error(response?.error || '獲取電影統計失敗')
+            }
+            return { success: true, data: response.data }
         } catch (error) {
-            console.error('Movie Stats Error:', error)
-            return { success: false, error: error.message }
+            console.error('獲取電影統計失敗:', error)
+            return {
+                success: false,
+                error: error.message || '獲取電影統計失敗'
+            }
         }
     }
 }

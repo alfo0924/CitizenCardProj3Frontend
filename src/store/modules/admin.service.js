@@ -2,127 +2,180 @@ import axios from 'axios'
 import { API_URL } from './api.config'
 
 class AdminService {
-    // 檢查API狀態
+    constructor() {
+        this.api = axios.create({
+            baseURL: API_URL,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+
+        // Add response interceptor for consistent error handling
+        this.api.interceptors.response.use(
+            response => response.data,
+            error => {
+                const errorMessage = error.response?.data?.message || error.message || '系統發生錯誤'
+                // eslint-disable-next-line prefer-promise-reject-errors
+                return Promise.reject({
+                    success: false,
+                    error: errorMessage,
+                    status: error.response?.status
+                })
+            }
+        )
+    }
+
     async checkApiStatus() {
         try {
-            const response = await axios.get(`${API_URL}/admin/status`)
-            return response.data
+            const response = await this.api.get('/system/status')
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
             console.error('API status check failed:', error)
-            return { success: false }
+            return {
+                success: false,
+                error: error.message || '無法連接到伺服器'
+            }
         }
     }
 
-    // 獲取儀表板統計數據
     async getDashboardStats() {
         try {
-            const response = await axios.get(`${API_URL}/admin/dashboard/stats`)
-            return response.data
+            const response = await this.api.get('/system/dashboard')
+            if (!response || typeof response !== 'object') {
+                throw new Error('無效的響應數據格式')
+            }
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
-            throw new Error('Failed to fetch dashboard stats')
+            console.error('Dashboard stats fetch failed:', error)
+            return {
+                success: false,
+                error: error.message || '獲取儀表板數據失敗'
+            }
         }
     }
 
-    // 獲取會員分析數據
     async getUserAnalytics() {
         try {
-            const response = await axios.get(`${API_URL}/admin/analytics/users`)
-            return response.data
+            const response = await this.api.get('/system/analytics/users')
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
-            throw new Error('Failed to fetch user analytics')
+            return {
+                success: false,
+                error: error.message || '獲取用戶分析數據失敗'
+            }
         }
     }
 
-    // 獲取商店分析數據
     async getStoreAnalytics() {
         try {
-            const response = await axios.get(`${API_URL}/admin/analytics/stores`)
-            return response.data
+            const response = await this.api.get('/system/analytics/stores')
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
-            throw new Error('Failed to fetch store analytics')
+            return {
+                success: false,
+                error: error.message || '獲取商店分析數據失敗'
+            }
         }
     }
 
-    // 獲取電影分析數據
     async getMovieAnalytics() {
         try {
-            const response = await axios.get(`${API_URL}/admin/analytics/movies`)
-            return response.data
+            const response = await this.api.get('/system/analytics/movies')
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
-            throw new Error('Failed to fetch movie analytics')
+            return {
+                success: false,
+                error: error.message || '獲取電影分析數據失敗'
+            }
         }
     }
 
-    // 獲取最近活動數據
     async getRecentActivity() {
         try {
-            const response = await axios.get(`${API_URL}/admin/activity/recent`)
-            return response.data
+            const response = await this.api.get('/system/activity/recent')
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
-            throw new Error('Failed to fetch recent activity')
+            return {
+                success: false,
+                error: error.message || '獲取最近活動數據失敗'
+            }
         }
     }
 
-    // 獲取系統性能指標
-    async getSystemMetrics() {
-        try {
-            const response = await axios.get(`${API_URL}/admin/system/metrics`)
-            return response.data
-        } catch (error) {
-            throw new Error('Failed to fetch system metrics')
-        }
-    }
-
-    // 獲取完整儀表板數據
     async fetchDashboardData() {
         try {
-            const [stats, userAnalytics, storeAnalytics] = await Promise.all([
-                this.getDashboardStats(),
-                this.getUserAnalytics(),
-                this.getStoreAnalytics()
-            ])
+            const dashboardStats = await this.getDashboardStats()
+            if (!dashboardStats.success) {
+                throw new Error(dashboardStats.error)
+            }
+
+            const data = dashboardStats.data
+            if (!data || !data.stats) {
+                throw new Error('無效的儀表板數據結構')
+            }
 
             return {
                 success: true,
-                stats: {
-                    totalUsers: stats.totalUsers,
-                    newUsers: stats.newUsers,
-                    totalStores: stats.totalStores,
-                    newStores: stats.newStores,
-                    activeMovies: stats.activeMovies,
-                    newMovies: stats.newMovies
-                },
-                userData: {
-                    labels: userAnalytics.labels,
-                    data: userAnalytics.data
-                },
-                storeData: {
-                    labels: storeAnalytics.labels,
-                    data: storeAnalytics.data
+                data: {
+                    stats: {
+                        totalUsers: data.stats.totalUsers || 0,
+                        newUsers: data.stats.newUsers || 0,
+                        totalStores: data.stats.totalStores || 0,
+                        newStores: data.stats.newStores || 0,
+                        activeMovies: data.stats.activeMovies || 0,
+                        newMovies: data.stats.newMovies || 0
+                    },
+                    userRoleDistribution: data.userRoleDistribution || {},
+                    storeCategoryDistribution: data.storeCategoryDistribution || {},
+                    movieGenreDistribution: data.movieGenreDistribution || {},
+                    recentActivities: data.recentActivities || []
                 }
             }
         } catch (error) {
             console.error('Dashboard data fetch failed:', error)
             return {
                 success: false,
-                message: error.message
+                error: error.message || '獲取儀表板數據失敗'
             }
         }
     }
 
-    // 導出報表
     async exportReport(reportType, dateRange) {
         try {
-            const response = await axios.post(`${API_URL}/admin/reports/export`, {
+            const response = await this.api.post('/system/reports/export', {
                 type: reportType,
                 startDate: dateRange.start,
                 endDate: dateRange.end
             }, {
                 responseType: 'blob'
             })
-            return response.data
+            return {
+                success: true,
+                data: response
+            }
         } catch (error) {
-            throw new Error('Failed to export report')
+            return {
+                success: false,
+                error: error.message || '匯出報表失敗'
+            }
         }
     }
 }

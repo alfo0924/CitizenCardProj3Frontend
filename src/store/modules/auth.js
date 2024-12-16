@@ -32,6 +32,35 @@ const getters = {
 }
 
 const actions = {
+    async checkToken({ commit, dispatch }) {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+                commit('CLEAR_AUTH_DATA')
+                return { success: false, message: '找不到登入令牌' }
+            }
+
+            const response = await api.get('/auth/verify-token')
+            if (response.data.valid) {
+                const profileResponse = await dispatch('fetchProfile')
+                if (profileResponse.success) {
+                    commit('SET_TOKEN', token)
+                    return { success: true }
+                }
+            }
+
+            commit('CLEAR_AUTH_DATA')
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            return { success: false, message: '登入令牌已過期' }
+        } catch (error) {
+            commit('CLEAR_AUTH_DATA')
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            return { success: false, message: error.response?.data?.message || '驗證失敗' }
+        }
+    },
+
     async login({ commit }, credentials) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
@@ -170,6 +199,9 @@ const mutations = {
         state.token = token
         state.user = user
         state.error = null
+    },
+    SET_TOKEN(state, token) {
+        state.token = token
     },
     SET_USER(state, user) {
         state.user = user

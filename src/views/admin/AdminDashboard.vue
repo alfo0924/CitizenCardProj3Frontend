@@ -11,41 +11,17 @@
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title m-4">管理員儀表板</h1>
 
-        <!-- 管理功能快速入口 -->
+        <!-- Management shortcuts section -->
         <div class="management-shortcuts mt-4">
           <h3>後台管理</h3>
           <div class="row g-4 justify-content-center mt-2 mb-5">
-            <div class="col-md-4">
-              <router-link to="/admin/movies" class="management-card">
+            <div class="col-md-4" v-for="(item, index) in managementItems" :key="index">
+              <router-link :to="item.route" class="management-card">
                 <div class="card">
                   <div class="card-body">
-                    <i class="fas fa-film"></i>
-                    <h4>電影管理</h4>
-                    <p>管理電影資訊與場次</p>
-                  </div>
-                </div>
-              </router-link>
-            </div>
-
-            <div class="col-md-4">
-              <router-link to="/admin/users" class="management-card">
-                <div class="card">
-                  <div class="card-body">
-                    <i class="fas fa-users"></i>
-                    <h4>會員管理</h4>
-                    <p>管理會員資料與權限</p>
-                  </div>
-                </div>
-              </router-link>
-            </div>
-
-            <div class="col-md-4">
-              <router-link to="/admin/stores" class="management-card">
-                <div class="card">
-                  <div class="card-body">
-                    <i class="fas fa-store"></i>
-                    <h4>商店管理</h4>
-                    <p>管理特約商店</p>
+                    <i :class="item.icon"></i>
+                    <h4>{{ item.title }}</h4>
+                    <p>{{ item.description }}</p>
                   </div>
                 </div>
               </router-link>
@@ -53,70 +29,31 @@
           </div>
         </div>
 
-        <!-- 統計卡片 -->
+        <!-- Statistics cards section -->
         <div class="row g-4 mb-4">
-          <div class="col-md-4">
+          <div class="col-md-4" v-for="(stat, index) in statsCards" :key="index">
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-users"></i>
+                <i :class="stat.icon"></i>
               </div>
               <div class="stat-info">
-                <h3>總會員數</h3>
-                <div class="stat-value">{{ stats.totalUsers }}</div>
+                <h3>{{ stat.title }}</h3>
+                <div class="stat-value">{{ stat.value }}</div>
                 <div class="stat-change">
                   <i class="fas fa-arrow-up"></i>
-                  {{ stats.newUsers }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-store"></i>
-              </div>
-              <div class="stat-info">
-                <h3>特約商店數</h3>
-                <div class="stat-value">{{ stats.totalStores }}</div>
-                <div class="stat-change">
-                  <i class="fas fa-arrow-up"></i>
-                  {{ stats.newStores }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-film"></i>
-              </div>
-              <div class="stat-info">
-                <h3>上映電影數</h3>
-                <div class="stat-value">{{ stats.activeMovies }}</div>
-                <div class="stat-change">
-                  <i class="fas fa-arrow-up"></i>
-                  {{ stats.newMovies }} 新增
+                  {{ stat.change }} 新增
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 圖表區域 -->
+        <!-- Charts section -->
         <div class="row g-4">
-          <div class="col-md-6">
+          <div class="col-md-6" v-for="(chart, index) in chartData" :key="index">
             <div class="chart-card">
-              <h3>會員分析</h3>
-              <canvas ref="userChartRef"></canvas>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="chart-card">
-              <h3>商店類型分析</h3>
-              <canvas ref="storeChartRef"></canvas>
+              <h3>{{ chart.title }}</h3>
+              <canvas :ref="chart.ref"></canvas>
             </div>
           </div>
         </div>
@@ -158,6 +95,23 @@ export default {
       newMovies: 0
     })
 
+    const managementItems = [
+      { route: '/admin/movies', icon: 'fas fa-film', title: '電影管理', description: '管理電影資訊與場次' },
+      { route: '/admin/users', icon: 'fas fa-users', title: '會員管理', description: '管理會員資料與權限' },
+      { route: '/admin/stores', icon: 'fas fa-store', title: '商店管理', description: '管理特約商店' }
+    ]
+
+    const statsCards = [
+      { icon: 'fas fa-users', title: '總會員數', value: stats.value.totalUsers, change: stats.value.newUsers },
+      { icon: 'fas fa-store', title: '特約商店數', value: stats.value.totalStores, change: stats.value.newStores },
+      { icon: 'fas fa-film', title: '上映電影數', value: stats.value.activeMovies, change: stats.value.newMovies }
+    ]
+
+    const chartData = [
+      { title: '會員分析', ref: 'userChartRef' },
+      { title: '商店類型分析', ref: 'storeChartRef' }
+    ]
+
     const initCharts = (userRoleData, storeCategoryData) => {
       try {
         if (userChart) userChart.destroy()
@@ -190,10 +144,7 @@ export default {
               labels: Object.keys(storeCategoryData),
               datasets: [{
                 data: Object.values(storeCategoryData),
-                backgroundColor: [
-                  '#FF6384', '#36A2EB', '#FFCE56',
-                  '#4BC0C0', '#9966FF'
-                ]
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
               }]
             },
             options: {
@@ -209,6 +160,32 @@ export default {
       }
     }
 
+    const validateDashboardData = (data) => {
+      if (!data || typeof data !== 'object') {
+        throw new Error('無效的響應數據格式')
+      }
+
+      const requiredFields = ['totalUsers', 'newUsers', 'totalStores', 'newStores', 'activeMovies', 'newMovies']
+      for (const field of requiredFields) {
+        if (typeof data[field] !== 'number') {
+          console.warn(`Missing or invalid field: ${field}`)
+          data[field] = 0
+        }
+      }
+
+      if (!data.userRoleDistribution || typeof data.userRoleDistribution !== 'object') {
+        console.warn('Invalid user role distribution data')
+        data.userRoleDistribution = {}
+      }
+
+      if (!data.storeCategoryDistribution || typeof data.storeCategoryDistribution !== 'object') {
+        console.warn('Invalid store category distribution data')
+        data.storeCategoryDistribution = {}
+      }
+
+      return data
+    }
+
     const fetchDashboardData = async () => {
       try {
         isLoading.value = true
@@ -217,40 +194,27 @@ export default {
 
         const response = await store.dispatch('admin/fetchDashboardData')
 
-        if (!response || typeof response !== 'object') {
-          throw new Error('無效的響應數據')
+        if (!response || !response.success) {
+          throw new Error(response.error || '獲取儀表板數據失敗')
         }
 
-        if (response.error) {
-          throw new Error(response.error)
-        }
-
-        if (!response.data) {
-          throw new Error('數據格式錯誤')
-        }
+        const validatedData = validateDashboardData(response.data)
 
         stats.value = {
-          totalUsers: response.data.totalUsers || 0,
-          newUsers: response.data.newUsers || 0,
-          totalStores: response.data.totalStores || 0,
-          newStores: response.data.newStores || 0,
-          activeMovies: response.data.activeMovies || 0,
-          newMovies: response.data.newMovies || 0
+          totalUsers: validatedData.totalUsers,
+          newUsers: validatedData.newUsers,
+          totalStores: validatedData.totalStores,
+          newStores: validatedData.newStores,
+          activeMovies: validatedData.activeMovies,
+          newMovies: validatedData.newMovies
         }
 
-        if (response.data.userRoleDistribution && response.data.storeCategoryDistribution) {
-          initCharts(
-              response.data.userRoleDistribution,
-              response.data.storeCategoryDistribution
-          )
-        } else {
-          console.warn('缺少圖表數據')
-        }
+        initCharts(validatedData.userRoleDistribution, validatedData.storeCategoryDistribution)
 
         isDataLoaded.value = true
       } catch (err) {
         console.error('Dashboard error:', err)
-        error.value = '載入儀表板數據失敗: ' + err.message
+        error.value = '載入儀表板數據失敗: ' + (err.message || '未知錯誤')
         isDataLoaded.value = false
       } finally {
         isLoading.value = false
@@ -282,12 +246,14 @@ export default {
       stats,
       userChartRef,
       storeChartRef,
-      isDataLoaded
+      isDataLoaded,
+      managementItems,
+      statsCards,
+      chartData
     }
   }
 }
 </script>
-
 <style scoped>
 .admin-dashboard {
   padding: 2rem 0;
