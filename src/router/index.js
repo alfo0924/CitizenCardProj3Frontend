@@ -14,7 +14,6 @@ import store from '@/store'
 import PartnerStore from '@/views/other/PartnerStore.vue'
 import CityMovie from '@/views/other/CityMovie.vue'
 
-// 使用動態引入優化載入效能
 // 特惠商店相關頁面
 const AuthorizedStores = () => import('@/views/store/AuthorizedStores.vue')
 const StoreSearch = () => import('@/views/store/StoreSearch.vue')
@@ -23,32 +22,27 @@ const StoreDetail = () => import('@/views/store/StoreDetail.vue')
 // 優惠活動相關頁面
 const Promotions = () => import('@/views/promotion/Promotions.vue')
 const PromotionDetail = () => import('@/views/promotion/PromotionDetail.vue')
-
 // 特店優惠相關頁面
 const DiscountStore = () => import('@/views/discountStore/DiscountStore.vue')
 const StoreOverview = () => import('@/views/discountStore/StoreOverview.vue')
 const DiscountStoreDetail = () => import('@/views/discountStore/DiscountStoreDetail.vue')
 
-// 定義路由配置
 const routes = [
-    // 首頁路由
     {
         path: '/',
         name: 'home',
         component: Home,
         meta: {
             title: '首頁',
-            layout: 'default',
-            keepAlive: true // 啟用組件緩存
+            layout: 'default'
         }
     },
-    // 身份驗證相關路由
     {
         path: '/login',
         name: 'login',
         component: Login,
         meta: {
-            requiresGuest: true, // 僅允許未登入用戶訪問
+            requiresGuest: true,
             title: '登入',
             layout: 'auth'
         }
@@ -63,27 +57,23 @@ const routes = [
             layout: 'auth'
         }
     },
-    // 用戶相關路由
     {
         path: '/profile',
         name: 'profile',
         component: Profile,
         meta: {
-            requiresAuth: true, // 需要登入才能訪問
+            requiresAuth: true,
             title: '個人資料',
-            layout: 'user',
-            keepAlive: true
+            layout: 'user'
         }
     },
-    // 電影相關路由
     {
         path: '/movies',
         name: 'movies',
         component: MovieList,
         meta: {
             title: '電影列表',
-            layout: 'default',
-            keepAlive: true
+            layout: 'default'
         }
     },
     {
@@ -107,7 +97,6 @@ const routes = [
         },
         props: true
     },
-    // 電子錢包相關路由
     {
         path: '/wallet',
         name: 'wallet',
@@ -115,8 +104,7 @@ const routes = [
         meta: {
             requiresAuth: true,
             title: '電子票夾',
-            layout: 'user',
-            keepAlive: true
+            layout: 'user'
         },
         children: [
             {
@@ -138,16 +126,81 @@ const routes = [
                 }
             }
         ]
+    }, {
+        path: '/discounts',
+        name: 'discounts',
+        component: Discounts,
+        meta: {
+            title: '優惠券',
+            layout: 'default'
+        }
     },
-// 優惠活動路由組
+    {
+        path: '/faq',
+        name: 'faq',
+        component: FAQ,
+        meta: {
+            title: '常見問題',
+            layout: 'default'
+        }
+    },
+    {
+        path: '/partner-store',
+        name: 'partner-store',
+        component: PartnerStore,
+        meta: {
+            title: '特約商店',
+            layout: 'default'
+        }
+    },
+    {
+        path: '/city-movie',
+        name: 'city-movie',
+        component: CityMovie,
+        meta: {
+            title: 'CityMovie',
+            layout: 'default'
+        }
+    },
+
+    // 特店優惠路由組
+    {
+        path: '/discountstore',
+        name: 'discountstore',
+        component: DiscountStore,
+        meta: {
+            title: '特店優惠',
+            layout: 'default' // 保持與其他路由一致的布局設置
+        }
+    },
+    {
+        path: '/discountstore/overview',
+        name: 'storeoverview',
+        component: StoreOverview,
+        meta: {
+            title: '特店優惠總覽',
+            layout: 'default' // 保持與其他路由一致的布局設置
+        }
+    },
+    {
+        path: '/store/:id',
+        name: 'StoreDetail',
+        component: DiscountStoreDetail,
+        props: true,
+        meta: {
+            title: '特店優惠詳細資訊',
+            layout: 'default' // 保持與其他路由一致的布局設置
+        }
+    },
+
+    // 優惠活動路由組
     {
         path: '/promotions',
         name: 'promotions',
         component: Promotions,
         meta: {
             title: '優惠活動',
-            layout: 'default',
-            keepAlive: true
+            layout: 'default'
         }
     },
     {
@@ -161,17 +214,16 @@ const routes = [
         }
     },
 
-// 管理員路由組
+    // 管理員路由組
     {
         path: '/admin',
         name: 'admin',
         component: () => import('@/views/admin/AdminDashboard.vue'),
         meta: {
-            requiresAuth: true, // 需要登入
-            requiresAdmin: true, // 需要管理員權限
+            requiresAuth: true,
+            requiresAdmin: true,
             title: '管理後台',
-            layout: 'admin',
-            keepAlive: true
+            layout: 'admin'
         }
     },
     {
@@ -182,8 +234,7 @@ const routes = [
             requiresAuth: true,
             requiresAdmin: true,
             title: '電影管理',
-            layout: 'admin',
-            keepAlive: true
+            layout: 'admin'
         }
     },
     {
@@ -194,8 +245,7 @@ const routes = [
             requiresAuth: true,
             requiresAdmin: true,
             title: '會員管理',
-            layout: 'admin',
-            keepAlive: true
+            layout: 'admin'
         }
     },
     {
@@ -206,12 +256,11 @@ const routes = [
             requiresAuth: true,
             requiresAdmin: true,
             title: '商店管理',
-            layout: 'admin',
-            keepAlive: true
+            layout: 'admin'
         }
     },
 
-// 錯誤頁面路由組
+    // 錯誤頁面
     {
         path: '/403',
         name: 'forbidden',
@@ -243,9 +292,7 @@ const routes = [
         path: '/:pathMatch(.*)*',
         redirect: { name: 'not-found' }
     }
-]
-
-// 創建路由實例
+]// 創建路由實例
 const router = createRouter({
     history: createWebHistory(process.env.BASE_URL),
     routes,
@@ -259,24 +306,26 @@ const router = createRouter({
 })
 
 // 導航守衛
+// 導航守衛
 router.beforeEach(async (to, from, next) => {
-    // 設置頁面標題
     document.title = to.meta.title
         ? `${to.meta.title} - 市民卡系統`
         : '市民卡系統'
 
     try {
-        // 檢查用戶狀態
         const isLoggedIn = store.getters['auth/isLoggedIn']
         const isAdmin = store.getters['auth/isAdmin']
         const loginError = store.state.auth?.error
 
-        // 清除之前的錯誤狀態
-        if (loginError) {
+        // 處理登入錯誤情況
+        if (from.name === 'login' && loginError) {
+            // 清除錯誤狀態
             store.commit('auth/CLEAR_ERROR')
+            // 停留在登入頁面
+            return next(false)
         }
 
-        // 檢查權限
+        // 需要登入的頁面
         if (to.meta.requiresAuth && !isLoggedIn) {
             store.dispatch('setNotification', {
                 type: 'warning',
@@ -288,6 +337,7 @@ router.beforeEach(async (to, from, next) => {
             })
         }
 
+        // 需要管理員權限的頁面
         if (to.meta.requiresAdmin && !isAdmin) {
             store.dispatch('setNotification', {
                 type: 'error',
@@ -301,7 +351,7 @@ router.beforeEach(async (to, from, next) => {
             return next({ name: 'profile' })
         }
 
-        // 設置布局
+        // 設置當前布局
         if (to.meta.layout) {
             store.commit('setLayout', to.meta.layout)
         }
@@ -309,12 +359,54 @@ router.beforeEach(async (to, from, next) => {
         next()
     } catch (error) {
         console.error('Navigation error:', error)
+
+        // 如果是登入相關錯誤，停留在當前頁面
+        if (to.name === 'login' || from.name === 'login') {
+            store.dispatch('setNotification', {
+                type: 'error',
+                message: '登入失敗，請檢查帳號密碼'
+            })
+            return next(false)
+        }
+
+        // 其他錯誤才導向錯誤頁面
         store.dispatch('setNotification', {
             type: 'error',
             message: '發生錯誤，請稍後再試'
         })
         next({ name: 'server-error' })
     }
+})
+// 全局後置守衛
+router.afterEach(() => {
+    // 關閉loading狀態
+    store.dispatch('setLoading', false)
+})
+
+// 錯誤處理
+router.onError((error) => {
+    console.error('Router error:', error)
+
+    // 如果是在登入頁面發生錯誤，不進行跳轉
+    if (router.currentRoute.value.name === 'login') {
+        store.dispatch('setNotification', {
+            type: 'error',
+            message: '登入過程發生錯誤，請重試'
+        })
+        return
+    }
+
+    // 處理代碼分割加載失敗
+    if (error.name === 'ChunkLoadError') {
+        window.location.reload()
+        return
+    }
+
+    // 其他錯誤才導向錯誤頁面
+    router.push({
+        name: 'server-error',
+        params: { error: error.message }
+    })
 })
 
 export default router
