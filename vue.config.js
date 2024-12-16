@@ -2,7 +2,7 @@ const { defineConfig } = require('@vue/cli-service')
 const path = require('path')
 
 module.exports = defineConfig({
-  publicPath: '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/' : '/',
   outputDir: 'dist',
   assetsDir: 'static',
   lintOnSave: false,
@@ -13,33 +13,55 @@ module.exports = defineConfig({
     host: 'localhost',
     open: true,
     proxy: {
-      '/': {
+      '^/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        ws: false
+        ws: false,
+        secure: false,
+        pathRewrite: {
+          '^/api': '/api'
+        },
+        onProxyReq: function(proxyReq) {
+          if (proxyReq.getHeader('origin')) {
+            proxyReq.setHeader('origin', 'http://localhost:8080')
+          }
+        }
       }
     },
     client: {
       overlay: {
         warnings: false,
         errors: true
-      }
+      },
+      progress: true
     },
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-      'Access-Control-Allow-Credentials': 'true'
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+      'Access-Control-Allow-Credentials': 'true',
+      'Access-Control-Max-Age': '3600'
     },
     hot: true,
-    historyApiFallback: true
+    historyApiFallback: {
+      rewrites: [
+        { from: /^\/admin/, to: '/index.html' },
+        { from: /^\/user/, to: '/index.html' },
+        { from: /./, to: '/index.html' }
+      ]
+    }
   },
 
   configureWebpack: {
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, 'src')
-      }
+        '@': path.resolve(__dirname, 'src'),
+        '@assets': path.resolve(__dirname, 'src/assets'),
+        '@components': path.resolve(__dirname, 'src/components'),
+        '@views': path.resolve(__dirname, 'src/views'),
+        '@store': path.resolve(__dirname, 'src/store')
+      },
+      extensions: ['.js', '.vue', '.json', '.css', '.scss']
     },
     performance: {
       hints: false,
@@ -54,6 +76,9 @@ module.exports = defineConfig({
     loaderOptions: {
       css: {
         esModule: false
+      },
+      scss: {
+        additionalData: `@import "@/assets/css/variables.css";`
       }
     }
   },
@@ -101,7 +126,8 @@ module.exports = defineConfig({
           fallback: {
             loader: 'file-loader',
             options: {
-              name: 'img/[name].[hash:8].[ext]',
+              name: 'static/img/[name].[hash:8].[ext]',
+              publicPath: '/',
               esModule: false
             }
           },
@@ -118,7 +144,8 @@ module.exports = defineConfig({
           fallback: {
             loader: 'file-loader',
             options: {
-              name: 'fonts/[name].[hash:8].[ext]',
+              name: 'static/fonts/[name].[hash:8].[ext]',
+              publicPath: '/',
               esModule: false
             }
           },
@@ -131,7 +158,8 @@ module.exports = defineConfig({
         .use('file-loader')
         .loader('file-loader')
         .options({
-          name: 'img/[name].[hash:8].[ext]',
+          name: 'static/img/[name].[hash:8].[ext]',
+          publicPath: '/',
           esModule: false
         })
   }

@@ -1,4 +1,5 @@
 import adminService from '@/services/admin.service'
+import authService from '@/services/auth.service'
 
 const state = {
     dashboardStats: {
@@ -17,8 +18,11 @@ const state = {
         labels: [],
         data: []
     },
+    layout: 'default',
     isLoading: false,
-    error: null
+    error: null,
+    isAuthenticated: false,
+    token: null
 }
 
 const mutations = {
@@ -36,10 +40,48 @@ const mutations = {
     },
     SET_ERROR(state, error) {
         state.error = error
+    },
+    SET_LAYOUT(state, layout) {
+        state.layout = layout
+    },
+    SET_AUTH_STATUS(state, status) {
+        state.isAuthenticated = status
+    },
+    SET_TOKEN(state, token) {
+        state.token = token
     }
 }
 
 const actions = {
+    setLayout({ commit }, layout) {
+        commit('SET_LAYOUT', layout)
+    },
+
+    async checkToken({ commit, dispatch }) {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) {
+                commit('SET_AUTH_STATUS', false)
+                return { success: false, error: 'No token found' }
+            }
+
+            const response = await authService.validateToken(token)
+            if (response.success) {
+                commit('SET_AUTH_STATUS', true)
+                commit('SET_TOKEN', token)
+                return { success: true }
+            } else {
+                commit('SET_AUTH_STATUS', false)
+                localStorage.removeItem('token')
+                return { success: false, error: 'Invalid token' }
+            }
+        } catch (error) {
+            commit('SET_AUTH_STATUS', false)
+            localStorage.removeItem('token')
+            return { success: false, error: error.message }
+        }
+    },
+
     async checkApiStatus({ commit }) {
         try {
             const response = await adminService.checkApiStatus()
@@ -129,7 +171,10 @@ const getters = {
     userData: state => state.userData,
     storeData: state => state.storeData,
     isLoading: state => state.isLoading,
-    error: state => state.error
+    error: state => state.error,
+    currentLayout: state => state.layout,
+    isAuthenticated: state => state.isAuthenticated,
+    token: state => state.token
 }
 
 export default {

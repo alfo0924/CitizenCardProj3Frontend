@@ -2,16 +2,16 @@
   <div class="admin-dashboard">
     <div class="container">
       <LoadingSpinner v-if="isLoading" />
+      <AlertMessage v-if="error" type="error" :message="error" />
 
-      <AlertMessage
-          v-if="error"
-          type="error"
-          :message="error"
-      />
+      <div v-else-if="!isDataLoaded" class="text-center">
+        <p>無法載入數據</p>
+      </div>
 
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title m-4">管理員儀表板</h1>
 
+        <!-- 管理功能快速入口 -->
         <div class="management-shortcuts mt-4">
           <h3>後台管理</h3>
           <div class="row g-4 justify-content-center mt-2 mb-5">
@@ -53,6 +53,7 @@
           </div>
         </div>
 
+        <!-- 統計卡片 -->
         <div class="row g-4 mb-4">
           <div class="col-md-4">
             <div class="stat-card">
@@ -103,6 +104,7 @@
           </div>
         </div>
 
+        <!-- 圖表區域 -->
         <div class="row g-4">
           <div class="col-md-6">
             <div class="chart-card">
@@ -145,6 +147,7 @@ export default {
     let storeChart = null
     const isLoading = ref(false)
     const error = ref(null)
+    const isDataLoaded = ref(false)
 
     const stats = ref({
       totalUsers: 0,
@@ -155,64 +158,54 @@ export default {
       newMovies: 0
     })
 
-    const initCharts = (userData, storeData) => {
+    const initCharts = (userRoleData, storeCategoryData) => {
       try {
         if (userChart) userChart.destroy()
         if (storeChart) storeChart.destroy()
 
-        if (userChartRef.value) {
+        if (userChartRef.value && userRoleData) {
           const userCtx = userChartRef.value.getContext('2d')
           userChart = new Chart(userCtx, {
             type: 'doughnut',
             data: {
-              labels: ['一般會員', 'VIP會員'],
+              labels: Object.keys(userRoleData),
               datasets: [{
-                data: [
-                  userData.normalUsers || 0,
-                  userData.vipUsers || 0
-                ],
-                backgroundColor: ['#4CAF50', '#9C27B0']
+                data: Object.values(userRoleData),
+                backgroundColor: ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0']
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'bottom' }
-              }
+              plugins: { legend: { position: 'bottom' } }
             }
           })
         }
 
-        if (storeChartRef.value) {
+        if (storeChartRef.value && storeCategoryData) {
           const storeCtx = storeChartRef.value.getContext('2d')
           storeChart = new Chart(storeCtx, {
             type: 'pie',
             data: {
-              labels: storeData.categories || [],
+              labels: Object.keys(storeCategoryData),
               datasets: [{
-                data: storeData.counts || [],
+                data: Object.values(storeCategoryData),
                 backgroundColor: [
-                  '#FF6384',
-                  '#36A2EB',
-                  '#FFCE56',
-                  '#4BC0C0',
-                  '#9966FF'
+                  '#FF6384', '#36A2EB', '#FFCE56',
+                  '#4BC0C0', '#9966FF'
                 ]
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: {
-                legend: { position: 'bottom' }
-              }
+              plugins: { legend: { position: 'bottom' } }
             }
           })
         }
       } catch (err) {
         console.error('Chart initialization error:', err)
-        error.value = '圖表初始化失敗'
+        error.value = '圖表初始化失敗: ' + err.message
       }
     }
 
@@ -220,26 +213,45 @@ export default {
       try {
         isLoading.value = true
         error.value = null
+        isDataLoaded.value = false
 
         const response = await store.dispatch('admin/fetchDashboardData')
 
-        if (response.success) {
-          stats.value = {
-            totalUsers: response.data.totalUsers,
-            newUsers: response.data.newUsers,
-            totalStores: response.data.totalStores,
-            newStores: response.data.newStores,
-            activeMovies: response.data.activeMovies,
-            newMovies: response.data.newMovies
-          }
-
-          initCharts(response.data.userAnalytics, response.data.storeAnalytics)
-        } else {
-          throw new Error(response.message || '獲取數據失敗')
+        if (!response || typeof response !== 'object') {
+          throw new Error('無效的響應數據')
         }
+
+        if (response.error) {
+          throw new Error(response.error)
+        }
+
+        if (!response.data) {
+          throw new Error('數據格式錯誤')
+        }
+
+        stats.value = {
+          totalUsers: response.data.totalUsers || 0,
+          newUsers: response.data.newUsers || 0,
+          totalStores: response.data.totalStores || 0,
+          newStores: response.data.newStores || 0,
+          activeMovies: response.data.activeMovies || 0,
+          newMovies: response.data.newMovies || 0
+        }
+
+        if (response.data.userRoleDistribution && response.data.storeCategoryDistribution) {
+          initCharts(
+              response.data.userRoleDistribution,
+              response.data.storeCategoryDistribution
+          )
+        } else {
+          console.warn('缺少圖表數據')
+        }
+
+        isDataLoaded.value = true
       } catch (err) {
-        error.value = '載入儀表板數據失敗，請稍後再試'
         console.error('Dashboard error:', err)
+        error.value = '載入儀表板數據失敗: ' + err.message
+        isDataLoaded.value = false
       } finally {
         isLoading.value = false
       }
@@ -269,11 +281,13 @@ export default {
       error,
       stats,
       userChartRef,
-      storeChartRef
+      storeChartRef,
+      isDataLoaded
     }
   }
 }
 </script>
+
 <style scoped>
 .admin-dashboard {
   padding: 2rem 0;
