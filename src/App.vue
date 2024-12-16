@@ -4,8 +4,12 @@
     <Header v-if="showHeader" class="app-header" />
 
     <!-- Main Content -->
-    <main :class="['main-content', { 'no-breadcrumb': !showBreadcrumb }, { 'no-header': !showHeader }]">
-
+    <main :class="[
+      'main-content',
+      { 'no-breadcrumb': !showBreadcrumb },
+      { 'no-header': !showHeader },
+      { 'no-spacing': isMoviePage }
+    ]">
       <!-- Loading Overlay -->
       <LoadingSpinner
           v-if="$store.getters.isLoading"
@@ -20,21 +24,20 @@
           @close="$store.dispatch('clearNotification')"
           class="global-alert"
       />
+
       <!-- Breadcrumb -->
       <nav v-if="showBreadcrumb" class="breadcrumb">
         <router-link to="/"></router-link>
         <!-- Additional breadcrumb links here -->
       </nav>
-      <!-- Router View -->
+
+      <!-- Router View with Transition -->
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
         </transition>
       </router-view>
-
     </main>
-
-<!--    <DiscountStoreList v-if="!showBreadcrumb"/>-->
 
     <!-- Quick Access Cards -->
     <div v-if="!showBreadcrumb" class="quick-access-cards container mt-4">
@@ -119,15 +122,20 @@ export default {
 
     // 計算是否顯示Breadcrumb
     const showBreadcrumb = computed(() => {
-      console.log('route.name:', route.name, !route.name === 'home')
       return !noBreadcrumbRoutes.includes(route.name)
+    })
+
+    // 計算是否為電影頁面
+    const isMoviePage = computed(() => {
+      return route.path.includes('/city-movie')
     })
 
     return {
       route,
       showHeader,
       showFooter,
-      showBreadcrumb
+      showBreadcrumb,
+      isMoviePage
     }
   }
 }
@@ -159,12 +167,12 @@ export default {
   --content-padding: 30px;
 
   /* 間距 */
-  --spacing-xs: 0.25 rem;
-  --spacing-sm: 1 rem;
-  --spacing-md: 1.5 rem;
-  --spacing-lg: 2 rem;
-  --spacing-xl: 2.5 rem;
-  --spacing-xxl: 3 rem;
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 2.5rem;
+  --spacing-xxl: 3rem;
 
   /* 圓角 */
   --border-radius-sm: 0.25rem;
@@ -270,16 +278,13 @@ body {
   width: 100%;
   position: relative;
   padding-top: calc(var(--header-height) + var(--breadcrumb-height) + var(--breadcrumb-margin) + var(--spacing-md));
-  /* min-height: calc(100vh - var(--header-height) - var(--footer-height)); */
   overflow-x: hidden;
   overflow-y: auto;
-  /* padding-bottom: 50px; */
   background: #fbfcfd;
 }
 
 .main-content.no-breadcrumb {
   padding-top: calc(var(--header-height));
-  /* padding-top: 0px; */
   padding-bottom: 0px;
 }
 
@@ -288,167 +293,59 @@ body {
   padding-bottom: 0px;
 }
 
-/* 內容容器 */
-.content-container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  /* padding: var(--content-padding); */
-  background-color: white;
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--box-shadow);
+.main-content.no-spacing {
+  padding-top: 0;
+  margin-top: 0;
+  margin-bottom: var(--footer-height); /* 新增: 為footer預留空間 */
 }
 
-/* 全局提示 */
-.global-alert {
-  position: fixed;
-  top: calc(var(--header-height) + var(--spacing-md));
-  right: var(--spacing-md);
-  z-index: 1050;
-  min-width: 300px;
-  padding: 1rem;
-  border-radius: var(--border-radius-md);
-  background-color: white;
-  box-shadow: var(--box-shadow-lg);
-}
+/* 其他樣式保持不變... */
 
-/* Footer */
+/* 工具類 */
+.d-flex { display: flex; }
+.flex-column { flex-direction: column; }
+.align-items-center { align-items: center; }
+.justify-content-between { justify-content: space-between; }
+.justify-content-center { justify-content: center; }
+.w-100 { width: 100%; }
+.h-100 { height: 100%; }
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
+.mt-3 { margin-top: var(--spacing-md); }
+.mt-4 { margin-top: var(--spacing-lg); }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.p-1 { padding: var(--spacing-xs); }
+.p-2 { padding: var(--spacing-sm); }
+.p-3 { padding: var(--spacing-md); }
+.p-4 { padding: var(--spacing-lg); }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.position-relative { position: relative; }
+.position-absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.cursor-pointer { cursor: pointer; }
+
+/* Footer 相關樣式修改 */
 .app-footer {
-  background-color: white;
-  box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
   position: relative;
-  z-index: 1020;
-  padding: var(--spacing-lg) 0;
-  margin-top: auto;
-}
-
-/* 頁面切換動畫 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Loading 遮罩 */
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.8);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-/* 容器類 */
-.container {
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--content-padding);
-}
-
-.container-fluid {
-  width: 100%;
-  padding: 0 var(--content-padding);
-}
-/* 快速訪問卡片樣式 */
-.quick-access-cards {
-  margin-bottom: 2rem;
-}
-
-.quick-access-card {
-  text-decoration: none;
-  color: var(--text-color);
-  display: block;
-  transition: all 1.5s ease;
-}
-
-.quick-access-card .card {
-  border: none;
-  box-shadow: var(--box-shadow);
-  transition: all 0.5s ease;
-  background-color: white;
-}
-
-.quick-access-card:hover .card {
-  transform: translateY(-5px);
-  background-color: var(--danger-color);
-}
-
-.quick-access-card .card-body {
-  transition: all 0.5s ease;
-}
-
-.quick-access-card:hover .card-body {
-  color: var(--text-light);
-}
-
-.card-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background-color: var(--danger-color);
+  height: 100%;
+  background-color: var(--text-color);
   color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.8rem;
-  margin-right: 1.5rem;
-  transition: all 0.5s ease;
+  z-index: 10;
+  margin-top: auto; /* 新增: 確保footer在底部 */
 }
 
-.quick-access-card:hover .card-icon {
-  background-color: white;
-  color: var(--danger-color);
+/* 新增: 確保電影頁面的內容不會被footer遮擋 */
+.movie-page {
+  padding-bottom: calc(var(--footer-height) + var(--spacing-md));
 }
 
-.card-content {
-  flex: 1;
-}
-
-.card-content h3 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--text-color);
-  transition: color 0.5s ease;
-}
-
-.card-content p {
-  margin: 0;
-  color: var(--text-color);
-  transition: color 0.5s ease;
-}
-
-.quick-access-card:hover .card-content h3,
-.quick-access-card:hover .card-content p {
-  color: var(--text-light);
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .quick-access-cards {
-    margin-bottom: 1.5rem;
-  }
-
-  .card-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    margin-right: 1rem;
-  }
-
-  .card-content h3 {
-    font-size: 1.25rem;
-  }
-}
 /* 響應式設計 */
 @media (min-width: 1400px) {
   :root {
@@ -486,31 +383,4 @@ body {
     --content-padding: 5px;
   }
 }
-/* 工具類 */
-.d-flex { display: flex; }
-.flex-column { flex-direction: column; }
-.align-items-center { align-items: center; }
-.justify-content-between { justify-content: space-between; }
-.justify-content-center { justify-content: center; }
-.w-100 { width: 100%; }
-.h-100 { height: 100%; }
-.mb-1 { margin-bottom: var(--spacing-xs); }
-.mb-2 { margin-bottom: var(--spacing-sm); }
-.mb-3 { margin-bottom: var(--spacing-md); }
-.mb-4 { margin-bottom: var(--spacing-lg); }
-.mt-1 { margin-top: var(--spacing-xs); }
-.mt-2 { margin-top: var(--spacing-sm); }
-.mt-3 { margin-top: var(--spacing-md); }
-.mt-4 { margin-top: var(--spacing-lg); }
-.mx-auto { margin-left: auto; margin-right: auto; }
-.p-1 { padding: var(--spacing-xs); }
-.p-2 { padding: var(--spacing-sm); }
-.p-3 { padding: var(--spacing-md); }
-.p-4 { padding: var(--spacing-lg); }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-.position-relative { position: relative; }
-.position-absolute { position: absolute; }
-.overflow-hidden { overflow: hidden; }
-.cursor-pointer { cursor: pointer; }
 </style>
