@@ -63,7 +63,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import Chart from 'chart.js/auto'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -101,11 +101,11 @@ export default {
       { route: '/admin/stores', icon: 'fas fa-store', title: '商店管理', description: '管理特約商店' }
     ]
 
-    const statsCards = [
+    const statsCards = computed(() => [
       { icon: 'fas fa-users', title: '總會員數', value: stats.value.totalUsers, change: stats.value.newUsers },
       { icon: 'fas fa-store', title: '特約商店數', value: stats.value.totalStores, change: stats.value.newStores },
       { icon: 'fas fa-film', title: '上映電影數', value: stats.value.activeMovies, change: stats.value.newMovies }
-    ]
+    ])
 
     const chartData = [
       { title: '會員分析', ref: 'userChartRef' },
@@ -117,7 +117,7 @@ export default {
         if (userChart) userChart.destroy()
         if (storeChart) storeChart.destroy()
 
-        if (userChartRef.value && userRoleData) {
+        if (userChartRef.value && userRoleData && Object.keys(userRoleData).length > 0) {
           const userCtx = userChartRef.value.getContext('2d')
           userChart = new Chart(userCtx, {
             type: 'doughnut',
@@ -136,7 +136,7 @@ export default {
           })
         }
 
-        if (storeChartRef.value && storeCategoryData) {
+        if (storeChartRef.value && storeCategoryData && Object.keys(storeCategoryData).length > 0) {
           const storeCtx = storeChartRef.value.getContext('2d')
           storeChart = new Chart(storeCtx, {
             type: 'pie',
@@ -254,6 +254,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 .admin-dashboard {
   padding: 2rem 0;

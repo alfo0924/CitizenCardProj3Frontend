@@ -10,7 +10,6 @@ class AdminService {
             }
         })
 
-        // Add response interceptor for consistent error handling
         this.api.interceptors.response.use(
             response => response.data,
             error => {
@@ -41,18 +40,15 @@ class AdminService {
         }
     }
 
-    async getDashboardStats() {
+    async getDashboardData() {
         try {
-            const response = await this.api.get('/system/dashboard')
+            const response = await this.api.get('/api/system/dashboard')
             if (!response || typeof response !== 'object') {
                 throw new Error('無效的響應數據格式')
             }
-            return {
-                success: true,
-                data: response
-            }
+            return this.formatDashboardData(response)
         } catch (error) {
-            console.error('Dashboard stats fetch failed:', error)
+            console.error('Dashboard data fetch failed:', error)
             return {
                 success: false,
                 error: error.message || '獲取儀表板數據失敗'
@@ -60,9 +56,30 @@ class AdminService {
         }
     }
 
+    formatDashboardData(data) {
+        const formattedData = {
+            stats: {
+                totalUsers: data.totalUsers || 0,
+                newUsers: data.newUsers || 0,
+                totalStores: data.totalStores || 0,
+                newStores: data.newStores || 0,
+                activeMovies: data.activeMovies || 0,
+                newMovies: data.newMovies || 0
+            },
+            userRoleDistribution: data.userRoleDistribution || {},
+            storeCategoryDistribution: data.storeCategoryDistribution || {},
+            movieGenreDistribution: data.movieGenreDistribution || {},
+            recentActivities: data.recentActivities || []
+        }
+        return {
+            success: true,
+            data: formattedData
+        }
+    }
+
     async getUserAnalytics() {
         try {
-            const response = await this.api.get('/system/analytics/users')
+            const response = await this.api.get('/api/system/analytics/users')
             return {
                 success: true,
                 data: response
@@ -77,7 +94,7 @@ class AdminService {
 
     async getStoreAnalytics() {
         try {
-            const response = await this.api.get('/system/analytics/stores')
+            const response = await this.api.get('/api/system/analytics/stores')
             return {
                 success: true,
                 data: response
@@ -92,7 +109,7 @@ class AdminService {
 
     async getMovieAnalytics() {
         try {
-            const response = await this.api.get('/system/analytics/movies')
+            const response = await this.api.get('/api/system/analytics/movies')
             return {
                 success: true,
                 data: response
@@ -107,7 +124,7 @@ class AdminService {
 
     async getRecentActivity() {
         try {
-            const response = await this.api.get('/system/activity/recent')
+            const response = await this.api.get('/api/system/activity/recent')
             return {
                 success: true,
                 data: response
@@ -122,33 +139,11 @@ class AdminService {
 
     async fetchDashboardData() {
         try {
-            const dashboardStats = await this.getDashboardStats()
-            if (!dashboardStats.success) {
-                throw new Error(dashboardStats.error)
+            const dashboardData = await this.getDashboardData()
+            if (!dashboardData.success) {
+                throw new Error(dashboardData.error)
             }
-
-            const data = dashboardStats.data
-            if (!data || !data.stats) {
-                throw new Error('無效的儀表板數據結構')
-            }
-
-            return {
-                success: true,
-                data: {
-                    stats: {
-                        totalUsers: data.stats.totalUsers || 0,
-                        newUsers: data.stats.newUsers || 0,
-                        totalStores: data.stats.totalStores || 0,
-                        newStores: data.stats.newStores || 0,
-                        activeMovies: data.stats.activeMovies || 0,
-                        newMovies: data.stats.newMovies || 0
-                    },
-                    userRoleDistribution: data.userRoleDistribution || {},
-                    storeCategoryDistribution: data.storeCategoryDistribution || {},
-                    movieGenreDistribution: data.movieGenreDistribution || {},
-                    recentActivities: data.recentActivities || []
-                }
-            }
+            return dashboardData
         } catch (error) {
             console.error('Dashboard data fetch failed:', error)
             return {
@@ -160,7 +155,7 @@ class AdminService {
 
     async exportReport(reportType, dateRange) {
         try {
-            const response = await this.api.post('/system/reports/export', {
+            const response = await this.api.post('/api/system/reports/export', {
                 type: reportType,
                 startDate: dateRange.start,
                 endDate: dateRange.end
