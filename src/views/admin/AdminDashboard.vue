@@ -1,55 +1,27 @@
 <template>
   <div class="admin-dashboard">
     <div class="container">
-      <!-- 載入中狀態 -->
       <LoadingSpinner v-if="isLoading" />
+      <AlertMessage v-if="error" type="error" :message="error" />
 
-      <!-- 錯誤提示 -->
-      <AlertMessage
-          v-if="error"
-          type="error"
-          :message="error"
-      />
+      <div v-else-if="!isDataLoaded" class="text-center">
+        <p>無法載入數據</p>
+      </div>
 
-      <!-- 儀表板內容 -->
       <div v-else class="dashboard-content">
         <h1 class="dashboard-title m-4">管理員儀表板</h1>
 
-        <!-- 管理功能快速入口 -->
+        <!-- Management shortcuts section -->
         <div class="management-shortcuts mt-4">
           <h3>後台管理</h3>
           <div class="row g-4 justify-content-center mt-2 mb-5">
-            <div class="col-md-4">
-              <router-link to="/admin/movies" class="management-card">
+            <div class="col-md-4" v-for="(item, index) in managementItems" :key="index">
+              <router-link :to="item.route" class="management-card">
                 <div class="card">
                   <div class="card-body">
-                    <i class="fas fa-film"></i>
-                    <h4>電影管理</h4>
-                    <p>管理電影資訊與場次</p>
-                  </div>
-                </div>
-              </router-link>
-            </div>
-
-            <div class="col-md-4">
-              <router-link to="/admin/users" class="management-card">
-                <div class="card">
-                  <div class="card-body">
-                    <i class="fas fa-users"></i>
-                    <h4>會員管理</h4>
-                    <p>管理會員資料與權限</p>
-                  </div>
-                </div>
-              </router-link>
-            </div>
-
-            <div class="col-md-4">
-              <router-link to="/admin/stores" class="management-card">
-                <div class="card">
-                  <div class="card-body">
-                    <i class="fas fa-store"></i>
-                    <h4>商店管理</h4>
-                    <p>管理特約商店</p>
+                    <i :class="item.icon"></i>
+                    <h4>{{ item.title }}</h4>
+                    <p>{{ item.description }}</p>
                   </div>
                 </div>
               </router-link>
@@ -57,72 +29,31 @@
           </div>
         </div>
 
-        <!-- 統計卡片 -->
+        <!-- Statistics cards section -->
         <div class="row g-4 mb-4">
-          <div class="col-md-4">
+          <div class="col-md-4" v-for="(stat, index) in statsCards" :key="index">
             <div class="stat-card">
               <div class="stat-icon">
-                <i class="fas fa-users"></i>
+                <i :class="stat.icon"></i>
               </div>
               <div class="stat-info">
-                <h3>總會員數</h3>
-                <div class="stat-value">{{ stats.totalUsers }}</div>
+                <h3>{{ stat.title }}</h3>
+                <div class="stat-value">{{ stat.value }}</div>
                 <div class="stat-change">
                   <i class="fas fa-arrow-up"></i>
-                  {{ stats.newUsers }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-store"></i>
-              </div>
-              <div class="stat-info">
-                <h3>特約商店數</h3>
-                <div class="stat-value">{{ stats.totalStores }}</div>
-                <div class="stat-change">
-                  <i class="fas fa-arrow-up"></i>
-                  {{ stats.newStores }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-film"></i>
-              </div>
-              <div class="stat-info">
-                <h3>上映電影數</h3>
-                <div class="stat-value">{{ stats.activeMovies }}</div>
-                <div class="stat-change">
-                  <i class="fas fa-arrow-up"></i>
-                  {{ stats.newMovies }} 新增
+                  {{ stat.change }} 新增
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 圖表區域 -->
+        <!-- Charts section -->
         <div class="row g-4">
-          <!-- 會員分析圖表 -->
-          <div class="col-md-6">
+          <div class="col-md-6" v-for="(chart, index) in chartData" :key="index">
             <div class="chart-card">
-              <h3>會員分析</h3>
-              <canvas ref="userChartRef"></canvas>
-            </div>
-          </div>
-
-          <!-- 商店類型分析圖表 -->
-          <div class="col-md-6">
-            <div class="chart-card">
-              <h3>商店類型分析</h3>
-              <canvas ref="storeChartRef"></canvas>
+              <h3>{{ chart.title }}</h3>
+              <canvas :ref="chart.ref"></canvas>
             </div>
           </div>
         </div>
@@ -130,36 +61,16 @@
     </div>
   </div>
 </template>
+
 <script>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
 import Chart from 'chart.js/auto'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 
-// 模擬數據
-const mockData = {
-  stats: {
-    totalUsers: 1250,
-    newUsers: 48,
-    totalStores: 156,
-    newStores: 12,
-    activeMovies: 25,
-    newMovies: 5
-  },
-  userData: {
-    labels: ['新會員', '一般會員', '進階會員', 'VIP會員'],
-    data: [250, 650, 280, 70]
-  },
-  storeData: {
-    labels: ['餐飲', '娛樂', '購物', '生活', '其他'],
-    data: [45, 30, 35, 25, 21]
-  }
-}
-
 export default {
   name: 'AdminDashboard',
-
   components: {
     LoadingSpinner,
     AlertMessage
@@ -173,9 +84,8 @@ export default {
     let storeChart = null
     const isLoading = ref(false)
     const error = ref(null)
-    const useMockData = ref(true) // 控制是否使用假資料
+    const isDataLoaded = ref(false)
 
-    // 統計數據
     const stats = ref({
       totalUsers: 0,
       newUsers: 0,
@@ -185,124 +95,132 @@ export default {
       newMovies: 0
     })
 
-    // 初始化圖表
-    const initCharts = (userData, storeData) => {
-      try {
-        // 清除舊的圖表實例
-        if (userChart) {
-          userChart.destroy()
-        }
-        if (storeChart) {
-          storeChart.destroy()
-        }
+    const managementItems = [
+      { route: '/admin/movies', icon: 'fas fa-film', title: '電影管理', description: '管理電影資訊與場次' },
+      { route: '/admin/users', icon: 'fas fa-users', title: '會員管理', description: '管理會員資料與權限' },
+      { route: '/admin/stores', icon: 'fas fa-store', title: '商店管理', description: '管理特約商店' }
+    ]
 
-        // 創建會員分析圖
-        if (userChartRef.value) {
+    const statsCards = computed(() => [
+      { icon: 'fas fa-users', title: '總會員數', value: stats.value.totalUsers, change: stats.value.newUsers },
+      { icon: 'fas fa-store', title: '特約商店數', value: stats.value.totalStores, change: stats.value.newStores },
+      { icon: 'fas fa-film', title: '上映電影數', value: stats.value.activeMovies, change: stats.value.newMovies }
+    ])
+
+    const chartData = [
+      { title: '會員分析', ref: 'userChartRef' },
+      { title: '商店類型分析', ref: 'storeChartRef' }
+    ]
+
+    const initCharts = (userRoleData, storeCategoryData) => {
+      try {
+        if (userChart) userChart.destroy()
+        if (storeChart) storeChart.destroy()
+
+        if (userChartRef.value && userRoleData && Object.keys(userRoleData).length > 0) {
           const userCtx = userChartRef.value.getContext('2d')
           userChart = new Chart(userCtx, {
             type: 'doughnut',
             data: {
-              labels: userData.labels,
+              labels: Object.keys(userRoleData),
               datasets: [{
-                data: userData.data,
-                backgroundColor: [
-                  '#4CAF50',
-                  '#2196F3',
-                  '#FFC107',
-                  '#9C27B0'
-                ]
+                data: Object.values(userRoleData),
+                backgroundColor: ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0']
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                }
-              }
+              plugins: { legend: { position: 'bottom' } }
             }
           })
         }
 
-        // 創建商店類型分析圖
-        if (storeChartRef.value) {
+        if (storeChartRef.value && storeCategoryData && Object.keys(storeCategoryData).length > 0) {
           const storeCtx = storeChartRef.value.getContext('2d')
           storeChart = new Chart(storeCtx, {
             type: 'pie',
             data: {
-              labels: storeData.labels,
+              labels: Object.keys(storeCategoryData),
               datasets: [{
-                data: storeData.data,
-                backgroundColor: [
-                  '#FF6384',
-                  '#36A2EB',
-                  '#FFCE56',
-                  '#4BC0C0',
-                  '#9966FF'
-                ]
+                data: Object.values(storeCategoryData),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
               }]
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                }
-              }
+              plugins: { legend: { position: 'bottom' } }
             }
           })
         }
       } catch (err) {
         console.error('Chart initialization error:', err)
-        error.value = '圖表初始化失敗'
+        error.value = '圖表初始化失敗: ' + err.message
       }
     }
 
-    // 檢查 API 可用性
-    const checkApiAvailability = async () => {
-      try {
-        const response = await store.dispatch('admin/checkApiStatus')
-        useMockData.value = !response.success
-      } catch (err) {
-        console.error('API check failed:', err)
-        useMockData.value = true
+    const validateDashboardData = (data) => {
+      if (!data || typeof data !== 'object') {
+        throw new Error('無效的響應數據格式')
       }
+
+      const requiredFields = ['totalUsers', 'newUsers', 'totalStores', 'newStores', 'activeMovies', 'newMovies']
+      for (const field of requiredFields) {
+        if (typeof data[field] !== 'number') {
+          console.warn(`Missing or invalid field: ${field}`)
+          data[field] = 0
+        }
+      }
+
+      if (!data.userRoleDistribution || typeof data.userRoleDistribution !== 'object') {
+        console.warn('Invalid user role distribution data')
+        data.userRoleDistribution = {}
+      }
+
+      if (!data.storeCategoryDistribution || typeof data.storeCategoryDistribution !== 'object') {
+        console.warn('Invalid store category distribution data')
+        data.storeCategoryDistribution = {}
+      }
+
+      return data
     }
 
-    // 獲取儀表板數據
     const fetchDashboardData = async () => {
       try {
         isLoading.value = true
         error.value = null
+        isDataLoaded.value = false
 
-        if (useMockData.value) {
-          // 使用模擬數據
-          setTimeout(() => {
-            stats.value = mockData.stats
-            initCharts(mockData.userData, mockData.storeData)
-            isLoading.value = false
-          }, 1000)
-        } else {
-          // 使用真實 API
-          const response = await store.dispatch('admin/fetchDashboardData')
-          if (response.success) {
-            stats.value = response.stats
-            initCharts(response.userData, response.storeData)
-          } else {
-            throw new Error(response.message || '獲取數據失敗')
-          }
-          isLoading.value = false
+        const response = await store.dispatch('admin/fetchDashboardData')
+
+        if (!response || !response.success) {
+          throw new Error(response.error || '獲取儀表板數據失敗')
         }
+
+        const validatedData = validateDashboardData(response.data)
+
+        stats.value = {
+          totalUsers: validatedData.totalUsers,
+          newUsers: validatedData.newUsers,
+          totalStores: validatedData.totalStores,
+          newStores: validatedData.newStores,
+          activeMovies: validatedData.activeMovies,
+          newMovies: validatedData.newMovies
+        }
+
+        initCharts(validatedData.userRoleDistribution, validatedData.storeCategoryDistribution)
+
+        isDataLoaded.value = true
       } catch (err) {
-        error.value = '載入儀表板數據失敗，請稍後再試'
         console.error('Dashboard error:', err)
+        error.value = '載入儀表板數據失敗: ' + (err.message || '未知錯誤')
+        isDataLoaded.value = false
+      } finally {
         isLoading.value = false
       }
     }
 
-    // 清理圖表
     const cleanupCharts = () => {
       if (userChart) {
         userChart.destroy()
@@ -315,7 +233,6 @@ export default {
     }
 
     onMounted(async () => {
-      await checkApiAvailability()
       await fetchDashboardData()
     })
 
@@ -328,11 +245,16 @@ export default {
       error,
       stats,
       userChartRef,
-      storeChartRef
+      storeChartRef,
+      isDataLoaded,
+      managementItems,
+      statsCards,
+      chartData
     }
   }
 }
 </script>
+
 <style scoped>
 .admin-dashboard {
   padding: 2rem 0;
