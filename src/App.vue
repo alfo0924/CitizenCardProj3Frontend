@@ -299,8 +299,78 @@ body {
   margin-bottom: var(--footer-height); /* 新增: 為footer預留空間 */
 }
 
-/* 其他樣式保持不變... */
+/* 快速訪問卡片樣式 */
+.quick-access-cards {
+  margin-bottom: 2rem;
+}
 
+.quick-access-card {
+  text-decoration: none;
+  color: var(--text-color);
+  display: block;
+  transition: all 1.5s ease;
+}
+
+.quick-access-card .card {
+  border: none;
+  box-shadow: var(--box-shadow);
+  transition: all 0.5s ease;
+  background-color: white;
+}
+
+.quick-access-card:hover .card {
+  transform: translateY(-5px);
+  background-color: var(--danger-color);
+}
+
+.quick-access-card .card-body {
+  transition: all 0.5s ease;
+}
+
+.quick-access-card:hover .card-body {
+  color: var(--text-light);
+}
+
+.card-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--danger-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  margin-right: 1.5rem;
+  transition: all 0.5s ease;
+}
+
+.quick-access-card:hover .card-icon {
+  background-color: white;
+  color: var(--danger-color);
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-content h3 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+  transition: color 0.5s ease;
+}
+
+.card-content p {
+  margin: 0;
+  color: var(--text-color);
+  transition: color 0.5s ease;
+}
+
+.quick-access-card:hover .card-content h3,
+.quick-access-card:hover .card-content p {
+  color: var(--text-light);
+}
 /* 工具類 */
 .d-flex { display: flex; }
 .flex-column { flex-direction: column; }
