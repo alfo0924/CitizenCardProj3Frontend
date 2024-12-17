@@ -9,6 +9,10 @@
           :message="error"
           @close="error = ''"
       />
+      <div v-if="registrationSuccess" class="alert alert-success alert-dismissible fade show" role="alert">
+        註冊成功！{{ countdown }}秒後將自動跳轉到登入頁面...
+        <button type="button" class="btn-close" @click="registrationSuccess = false"></button>
+      </div>
 
       <form @submit.prevent="handleSubmit" class="needs-validation" novalidate>
         <!-- 姓名輸入 -->
@@ -51,7 +55,7 @@
                 maxlength="100"
                 placeholder="請輸入電子郵件"
             >
-          </div>
+          </div><small class="form-text text-muted">請輸入有效的電子郵件地址</small>
           <div class="invalid-feedback" v-if="validationErrors.email">
             {{ validationErrors.email }}
           </div>
@@ -81,7 +85,7 @@
             >
               <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
             </button>
-          </div>
+          </div> <small class="form-text text-muted">密碼長度必須至少為8個字符</small>
           <div class="invalid-feedback" v-if="validationErrors.password">
             {{ validationErrors.password }}
           </div>
@@ -104,7 +108,7 @@
                 maxlength="255"
                 placeholder="請再次輸入密碼"
             >
-          </div>
+          </div> <small class="form-text text-muted">密碼長度必須至少為8個字符</small>
           <div class="invalid-feedback" v-if="validationErrors.confirmPassword">
             {{ validationErrors.confirmPassword }}
           </div>
@@ -204,8 +208,7 @@
   </div>
 </template>
 
-<script>
-import { ref, reactive } from 'vue'
+<script>import { ref, reactive } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import AlertMessage from '@/components/common/AlertMessage.vue'
@@ -222,6 +225,8 @@ export default {
   setup() {
     const store = useStore()
     const router = useRouter()
+    const registrationSuccess = ref(false)
+    const countdown = ref(5)
 
     const formData = reactive({
       name: '',
@@ -246,6 +251,22 @@ export default {
       gender: ''
     })
 
+    const startCountdown = () => {
+      const timer = setInterval(() => {
+        countdown.value--
+        if (countdown.value <= 0) {
+          clearInterval(timer)
+          router.push({
+            path: '/login',
+            query: {
+              registered: 'success',
+              email: formData.email
+            }
+          })
+        }
+      }, 1000)
+    }
+
     const validateForm = () => {
       let isValid = true
       Object.keys(validationErrors).forEach(key => {
@@ -260,7 +281,7 @@ export default {
       if (!formData.email) {
         validationErrors.email = '請輸入電子郵件'
         isValid = false
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email) || formData.email.length > 100) {
+      } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(formData.email)) {
         validationErrors.email = '請輸入有效的電子郵件格式'
         isValid = false
       }
@@ -268,8 +289,11 @@ export default {
       if (!formData.password) {
         validationErrors.password = '請輸入密碼'
         isValid = false
-      } else if (formData.password.length < 8 || formData.password.length > 255) {
-        validationErrors.password = '密碼長度必須在8-255個字元之間'
+      } else if (formData.password.length < 8) {
+        validationErrors.password = '密碼長度必須至少為8個字符'
+        isValid = false
+      } else if (formData.password.length > 255) {
+        validationErrors.password = '密碼長度不能超過255個字符'
         isValid = false
       }
 
@@ -281,8 +305,8 @@ export default {
         isValid = false
       }
 
-      if (formData.phone && (!/^09\d{8}$/.test(formData.phone) || formData.phone.length > 20)) {
-        validationErrors.phone = '請輸入有效的手機號碼格式'
+      if (formData.phone && !/^09\d{8}$/.test(formData.phone)) {
+        validationErrors.phone = '請輸入有效的手機號碼格式（09開頭的10位數字）'
         isValid = false
       }
 
@@ -316,13 +340,8 @@ export default {
         }
 
         await store.dispatch('auth/register', registerData)
-        router.push({
-          path: '/login',
-          query: {
-            registered: 'success',
-            email: formData.email
-          }
-        })
+        registrationSuccess.value = true
+        startCountdown()
       } catch (err) {
         error.value = err.response?.data?.message || '註冊失敗，請稍後再試'
         console.error('Registration error:', err)
@@ -342,10 +361,13 @@ export default {
       showPassword,
       validationErrors,
       handleSubmit,
-      togglePasswordVisibility
+      togglePasswordVisibility,
+      registrationSuccess,
+      countdown
     }
   }
 }
+
 </script>
 <style scoped>
 .register-container {
@@ -417,5 +439,19 @@ export default {
   .register-form {
     padding: 1.5rem;
   }
+}.alert {
+   margin-bottom: 1.5rem;
+   position: relative;
+ }
+
+.alert-success {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+  color: #155724;
 }
+.form-text {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
 </style>

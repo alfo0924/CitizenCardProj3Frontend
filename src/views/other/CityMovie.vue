@@ -7,9 +7,9 @@
 
   <div class="page-wrapper">
     <!-- 固定標題 -->
-    <header class="fixed-header">
-      <h1 class="title">CityMovie 電影資訊</h1>
-    </header>
+<!--    <header class="fixed-header">-->
+<!--      <h1 class="title">CityMovie 電影資訊</h1>-->
+<!--    </header>-->
 
     <div class="content-wrapper">
       <!-- 固定左側選單 -->
@@ -30,6 +30,7 @@
         <div class="scroll-container">
           <div class="sticky-section">
             <div class="movie-details">
+              <h1 class="title">CityMovie 電影資訊</h1>
               <img :src="selectedMovie.poster" :alt="selectedMovie.title" class="main-poster"/>
               <h2 class="movie-title">{{ selectedMovie.title }}</h2>
               <p class="movie-description">{{ selectedMovie.description }}</p>
@@ -135,11 +136,11 @@ const movies = reactive([
     poster: "/images/movienight.jpg",
     showtimes: [
       {
-        date: "2024 年 12 月 21 日 星期四",
+        date: "2024 年 12 月 21 日 星期六",
         times: ["14:00", "17:00", "20:00"]
       },
       {
-        date: "2024 年 12 月 22 日 星期五",
+        date: "2024 年 12 月 22 日 星期日",
         times: ["13:00", "16:00", "19:00"]
       }
     ]
@@ -154,11 +155,11 @@ const movies = reactive([
     poster: "/images/moviefood.jpeg",
     showtimes: [
       {
-        date: "2024 年 12 月 21 日 星期四",
+        date: "2024 年 12 月 21 日 星期六",
         times: ["14:00", "17:00", "20:00"]
       },
       {
-        date: "2024 年 12 月 22 日 星期五",
+        date: "2024 年 12 月 22 日 星期日",
         times: ["13:00", "16:00", "19:00"]
       }
     ]
@@ -173,11 +174,11 @@ const movies = reactive([
     poster: "/images/moviesea.jpg",
     showtimes: [
       {
-        date: "2024 年 12 月 21 日 星期四",
+        date: "2024 年 12 月 21 日 星期六",
         times: ["14:00", "17:00", "20:00"]
       },
       {
-        date: "2024 年 12 月 22 日 星期五",
+        date: "2024 年 12 月 22 日 星期日",
         times: ["13:00", "16:00", "19:00"]
       }
     ]
@@ -279,19 +280,18 @@ const confirmBooking = () => {
 
 <style scoped>
 .movie-page {
-  padding-top: 0px; /* 為頂部導航欄預留空間 */
-  //min-height: 100vh;
-  background: #f5f5f5;
+  padding-top: 0;
+  background-color: white;
 }
 
 .page-wrapper {
   min-height: auto;
-  background: #f5f5f5;
+  background: #ffffff;
 }
 
 .fixed-header {
-  //position: fixed;
-  top: 160px; /* 更新這個值，讓它在導航欄下方 */
+  position: fixed;
+  top: 80px;
   left: 0;
   right: 0;
   height: 80px;
@@ -307,7 +307,7 @@ const confirmBooking = () => {
   font-size: 2rem;
   color: #BA0043;
   text-align: center;
-  margin: 0;
+  margin: 0 0 30px 0; /* 使用正常邊距 */
 }
 
 .content-wrapper {
@@ -318,10 +318,10 @@ const confirmBooking = () => {
 
 .fixed-sidebar {
   position: fixed;
-  top: 240px; /* 160px (導航欄) + 80px (header) */
+  top: 160px;
   left: 0;
   width: 240px;
-  height: calc(100vh - 240px);
+  height: calc(100vh - 160px);
   overflow-y: auto;
   background: #ffffff;
   padding: 20px;
@@ -351,21 +351,21 @@ const confirmBooking = () => {
 
 .main-content {
   flex: 1;
-  margin-left: 240px;
+  margin: 150px 0 0 240px;
   position: relative;
-  padding: 0;  /* 移除所有padding */
-  margin-top: -1rem; /* 確保上方沒有額外間距 */
-  background-color:#f8f9fa;
+  padding: 0;
+  background-color: #ffffff;
 }
 
 .scroll-container {
   padding: 0;
   min-height: auto;
+  background-color: #ffffff;
 }
 
 .sticky-section {
   position: sticky;
-  top: 240px; /* 與 fixed-sidebar 相同 */
+  top: 160px;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -373,7 +373,7 @@ const confirmBooking = () => {
 }
 
 .movie-details {
-  padding: 24px;
+  padding: 12px 24px 24px;
 }
 
 .main-poster {
@@ -461,11 +461,11 @@ const confirmBooking = () => {
   transform: translateY(-2px);
 }
 
-/* 座位選擇區域樣式 */
 .booking-section {
   padding: 20px;
   margin-top: -20px;
   background-color: white;
+  margin-bottom: var(--footer-height);
 }
 
 .booking-content {
@@ -645,7 +645,6 @@ const confirmBooking = () => {
   transform: translateY(-2px);
 }
 
-/* 響應式設計 */
 @media (max-width: 1024px) {
   .fixed-sidebar {
     width: 200px;
@@ -672,6 +671,7 @@ const confirmBooking = () => {
     margin-top: 0;
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
+    z-index: 999;
   }
 
   .main-content {
