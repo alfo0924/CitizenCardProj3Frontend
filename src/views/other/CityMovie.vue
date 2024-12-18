@@ -1,209 +1,208 @@
 <!-- MoviePage.vue -->
-<!-- MoviePage.vue template section -->
 <template>
   <div class="movie-page">
-    <!-- 用於防止內容被頂部導覽列遮擋的間隔 -->
     <div class="nav-spacer"></div>
-
-  <div class="page-wrapper">
-    <!-- 固定標題 -->
-<!--    <header class="fixed-header">-->
-<!--      <h1 class="title">CityMovie 電影資訊</h1>-->
-<!--    </header>-->
-
-    <div class="content-wrapper">
-      <!-- 固定左側選單 -->
-      <aside class="fixed-sidebar">
-        <div class="movie-list">
-          <div v-for="movie in movies"
-               :key="movie.id"
-               :class="['movie-item', { active: selectedMovie.id === movie.id }]"
-               @click="selectMovie(movie)">
-            {{ movie.title }}
+    <div class="page-wrapper">
+      <div class="content-wrapper">
+        <!-- 固定左側選單 -->
+        <aside class="fixed-sidebar">
+          <div class="movie-list">
+            <div v-for="movie in movies"
+                 :key="movie.id"
+                 :class="['movie-item', { active: selectedMovie.id === movie.id }]"
+                 @click="selectMovie(movie)">
+              {{ movie.title }}
+            </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      <!-- 右側內容區域 -->
-      <main class="main-content">
-        <!-- 滾動固定區域 -->
-        <div class="scroll-container">
-          <div class="sticky-section">
-            <div class="movie-details">
-              <h1 class="title">CityMovie 電影資訊</h1>
-              <img :src="selectedMovie.poster" :alt="selectedMovie.title" class="main-poster"/>
-              <h2 class="movie-title">{{ selectedMovie.title }}</h2>
-              <p class="movie-description">{{ selectedMovie.description }}</p>
+        <!-- 右側內容區域 -->
+        <main class="main-content">
+          <!-- 滾動固定區域 -->
+          <div class="scroll-container">
+            <div class="sticky-section">
+              <div class="movie-details">
+                <h1 class="title">CityMovie 電影資訊</h1>
+                <img :src="selectedMovie.poster_url" :alt="selectedMovie.title" class="main-poster"/>
+                <h2 class="movie-title">{{ selectedMovie.title }}</h2>
 
-              <div class="showtimes">
-                <div v-for="schedule in selectedMovie.showtimes" :key="schedule.date">
-                  <div class="date-header">{{ schedule.date }}</div>
-                  <div class="time-slots">
-                    <button v-for="time in schedule.times"
-                            :key="`${schedule.date}-${time}`"
-                            :class="['time-slot', {
-                              active: selectedShowtime.date === schedule.date &&
-                                     selectedShowtime.time === time
-                            }]"
-                            @click="selectShowtime(schedule.date, time)">
-                      {{ time }}
-                      <span class="seat-icon">🪑</span>
-                    </button>
+                <!-- 電影資訊區塊 -->
+                <div class="movie-info">
+                  <p><strong>導演：</strong>{{ selectedMovie.director }}</p>
+                  <p><strong>演員：</strong>{{ selectedMovie.cast }}</p>
+                  <p><strong>片長：</strong>{{ selectedMovie.duration }} 分鐘</p>
+                  <p><strong>類型：</strong>{{ selectedMovie.genre }}</p>
+                </div>
+
+                <p class="movie-description">{{ selectedMovie.description }}</p>
+
+                <div class="showtimes">
+                  <div v-for="schedule in selectedMovie.showtimes" :key="schedule.date">
+                    <div class="date-header">{{ schedule.date }}</div>
+                    <div class="time-slots">
+                      <button v-for="time in schedule.times"
+                              :key="`${schedule.date}-${time}`"
+                              :class="['time-slot', {
+                                active: selectedShowtime.date === schedule.date &&
+                                       selectedShowtime.time === time
+                              }]"
+                              @click="selectShowtime(schedule.date, time)">
+                        {{ time }}
+                        <span class="seat-icon">🪑</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <button @click="showBooking(selectedMovie)" class="movie-button">立即訂票</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 座位選擇區域 -->
+          <div v-if="showBookingSection" class="booking-section">
+            <div class="booking-content">
+              <h2 class="booking-title">{{ selectedMovie.title }} - 座位選擇</h2>
+              <div class="showtime-info">
+                選擇場次：{{ selectedShowtime.date }} {{ selectedShowtime.time }}
+              </div>
+
+              <div class="screen">
+                <div class="screen-label">螢幕位置</div>
+              </div>
+
+              <div class="seat-legend">
+                <div class="legend-item">
+                  <div class="legend-box available"></div>
+                  <span>可選擇</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-box selected"></div>
+                  <span>已選擇</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-box occupied"></div>
+                  <span>已訂位</span>
+                </div>
+              </div>
+
+              <div class="seats-container">
+                <div v-for="row in rows" :key="row" class="seat-row">
+                  <div v-for="num in 20"
+                       :key="`${row}${num}`"
+                       @click="toggleSeat(selectedMovie.id, row, num)"
+                       :class="[
+                         'seat',
+                         getSeatStatus(selectedMovie.id, row, num)
+                       ]">
+                    {{ row }}{{ num }}
                   </div>
                 </div>
               </div>
 
-              <button @click="showBooking(selectedMovie)" class="movie-button">立即訂票</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 座位選擇區域 -->
-        <div v-if="showBookingSection" class="booking-section">
-          <div class="booking-content">
-            <h2 class="booking-title">{{ selectedMovie.title }} - 座位選擇</h2>
-            <div class="showtime-info">
-              選擇場次：{{ selectedShowtime.date }} {{ selectedShowtime.time }}
-            </div>
-
-            <div class="screen">
-              <div class="screen-label">螢幕位置</div>
-            </div>
-
-            <div class="seat-legend">
-              <div class="legend-item">
-                <div class="legend-box available"></div>
-                <span>可選擇</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-box selected"></div>
-                <span>已選擇</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-box occupied"></div>
-                <span>已訂位</span>
-              </div>
-            </div>
-
-            <div class="seats-container">
-              <div v-for="row in rows" :key="row" class="seat-row">
-                <div v-for="num in 20"
-                     :key="`${row}${num}`"
-                     @click="toggleSeat(selectedMovie.id, row, num)"
-                     :class="[
-                       'seat',
-                       getSeatStatus(selectedMovie.id, row, num)
-                     ]">
-                  {{ row }}{{ num }}
+              <div class="selected-seats">
+                <h3>已選擇的座位：</h3>
+                <div class="selected-seats-list">
+                  <span v-for="seat in getSelectedSeatsForMovie(selectedMovie.id)"
+                        :key="seat.id"
+                        class="selected-seat-tag">
+                    {{ seat.seatNumber }}
+                  </span>
                 </div>
               </div>
-            </div>
 
-            <div class="selected-seats">
-              <h3>已選擇的座位：</h3>
-              <div class="selected-seats-list">
-                <span v-for="seat in getSelectedSeatsForMovie(selectedMovie.id)"
-                      :key="seat.id"
-                      class="selected-seat-tag">
-                  {{ seat.seatNumber }}
-                </span>
+              <div class="booking-actions">
+                <button @click="confirmBooking" class="confirm-button">確認訂位</button>
+                <button @click="cancelBooking" class="cancel-button">取消</button>
               </div>
             </div>
-
-            <div class="booking-actions">
-              <button @click="confirmBooking" class="confirm-button">確認訂位</button>
-              <button @click="cancelBooking" class="cancel-button">取消</button>
-            </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   </div>
-</div>
 </template>
-<!-- MoviePage.vue script section -->
+
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 
-const movies = reactive([
-  {
-    id: 1,
-    title: "電影 光影都市",
-    description: "《光影都市》是一部描繪未來城市生活的冒險電影。" +
-        "故事發生在一個高度發達、科技融入生活每一個角落的大都市中。" +
-        "主人公是一名年輕的工程師，他在城市的數位脈絡中穿梭，發現了一個隱藏的秘密網絡，這個網絡有著改變世界的潛力。" +
-        "在這個科技與人類情感交織的世界裡，主人公必須做出抉擇，是讓科技繼續主導一切，還是重新掌握人類的命運。",
-    poster: "/images/movienight.jpg",
-    showtimes: [
-      {
-        date: "2024 年 12 月 21 日 星期六",
-        times: ["14:00", "17:00", "20:00"]
-      },
-      {
-        date: "2024 年 12 月 22 日 星期日",
-        times: ["13:00", "16:00", "19:00"]
-      }
-    ]
-  },
-  {
-    id: 2,
-    title: "電影 美味人生",
-    description: "《美味人生》是一部溫馨的美食電影，講述了一名年輕廚師的成長故事。" +
-        "主人公來自一個有著悠久烹飪傳統的家庭，但他總是覺得自己的廚藝不夠好，無法得到父母的認可。" +
-        "當他決定開設自己的餐廳時，他遭遇了各種挑戰，但也在過程中發現了料理的真正意義——它不僅是滋養身體的食物，更是一種能夠傳遞情感和故事的藝術。" +
-        "隨著時間的推移，他的餐廳成為了大家族和社區的聚集點，無論是家庭聚餐還是朋友間的聚會，都離不開他精心準備的每一道菜。",
-    poster: "/images/moviefood.jpeg",
-    showtimes: [
-      {
-        date: "2024 年 12 月 21 日 星期六",
-        times: ["14:00", "17:00", "20:00"]
-      },
-      {
-        date: "2024 年 12 月 22 日 星期日",
-        times: ["13:00", "16:00", "19:00"]
-      }
-    ]
-  },
-  {
-    id: 3,
-    title: "電影 海洋的守護者",
-    description: "《海洋的守護者》是一部關於海洋保護和生態平衡的感人電影。" +
-        "故事圍繞一名年輕的環保活動家，她決心拯救濒臨破壞的珊瑚礁和海洋生物。" +
-        "電影中，她與一群志同道合的科學家、志願者及當地居民合作，努力抵抗非法捕魚、污染和氣候變遷對海洋造成的威脅。" +
-        "隨著他們的努力，社區漸漸意識到保護海洋生態的重要性，並開始採取可持續發展的方式來利用海洋資源。",
-    poster: "/images/moviesea.jpg",
-    showtimes: [
-      {
-        date: "2024 年 12 月 21 日 星期六",
-        times: ["14:00", "17:00", "20:00"]
-      },
-      {
-        date: "2024 年 12 月 22 日 星期日",
-        times: ["13:00", "16:00", "19:00"]
-      }
-    ]
-  }
-])
-
-const rows = Array.from({ length: 10 }, (_, i) => String.fromCharCode(65 + i))
-const movieSeats = reactive({})
+const movies = ref([])
 const showBookingSection = ref(false)
-const selectedMovie = ref(movies[0])
+const selectedMovie = ref(null)
 const selectedShowtime = ref({
   date: '',
   time: ''
 })
 
+// 座位相關
+const rows = Array.from({ length: 10 }, (_, i) => String.fromCharCode(65 + i))
+const movieSeats = reactive({})
+
+// 獲取電影資料
+const fetchMovies = async () => {
+  try {
+    const response = await fetch('http://localhost:8080/api/movies/now-showing')
+    const data = await response.json()
+
+    const processedMovies = data.content
+        .sort((a, b) => a.id - b.id)
+        .map(movie => ({
+          ...movie,
+          showtimes: [
+            {
+              date: "2024 年 12 月 21 日 星期六",
+              times: ["14:00", "17:00", "20:00"]
+            },
+            {
+              date: "2024 年 12 月 22 日 星期日",
+              times: ["13:00", "16:00", "19:00"]
+            }
+          ]
+        }))
+
+    movies.value = processedMovies
+    selectedMovie.value = processedMovies[0]
+  } catch (error) {
+    console.error('Error fetching movies:', error)
+  }
+}
+
+// 元件掛載時獲取資料
+onMounted(() => {
+  fetchMovies()
+})
+
+// 選擇電影
 const selectMovie = (movie) => {
   selectedMovie.value = movie
   selectedShowtime.value = { date: '', time: '' }
   showBookingSection.value = false
+
+  // 找到標題元素
+  const titleElement = document.querySelector('.movie-details .title')
+
+  if (titleElement) {
+    setTimeout(() => {
+      titleElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+
+      // 補償固定導航欄的高度
+      window.scrollBy({
+        top: -500, // 根據實際導航欄高度調整
+        behavior: 'smooth'
+      })
+    }, 100)
+  }
 }
 
+// 選擇場次
 const selectShowtime = (date, time) => {
   selectedShowtime.value = { date, time }
 }
 
+// 顯示訂票區域
 const showBooking = (movie) => {
   if (!selectedShowtime.value.time) {
     alert('請選擇觀影場次')
@@ -212,13 +211,16 @@ const showBooking = (movie) => {
   selectedMovie.value = movie
   showBookingSection.value = true
 
-  // 滾動到訂票區域
   setTimeout(() => {
     const bookingSection = document.querySelector('.booking-section')
-    bookingSection?.scrollIntoView({ behavior: 'smooth' })
+    bookingSection?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
   }, 100)
 }
 
+// 座位相關函數
 const toggleSeat = (movieId, row, num) => {
   const seatNumber = `${row}${num}`
   const seatInfo = {
@@ -252,11 +254,30 @@ const getSeatStatus = (movieId, row, num) => {
   return movieSeats[movieId].some(s => s.seatNumber === seatNumber) ? 'selected' : 'available'
 }
 
+// 取消訂票
 const cancelBooking = () => {
   showBookingSection.value = false
   selectedShowtime.value = { date: '', time: '' }
+
+  // 滾動回電影資訊
+  const titleElement = document.querySelector('.movie-details .title')
+  if (titleElement) {
+    setTimeout(() => {
+      titleElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+
+      // 補償固定導航欄的高度
+      window.scrollBy({
+        top: -500,
+        behavior: 'smooth'
+      })
+    }, 100)
+  }
 }
 
+// 確認訂票
 const confirmBooking = () => {
   const currentMovieId = selectedMovie.value.id
   if (!movieSeats[currentMovieId] || movieSeats[currentMovieId].length === 0) {
@@ -264,6 +285,7 @@ const confirmBooking = () => {
     return
   }
 
+  // 顯示訂位資訊
   console.log('訂位資訊：', {
     movieId: currentMovieId,
     movieTitle: selectedMovie.value.title,
@@ -271,10 +293,28 @@ const confirmBooking = () => {
     seats: movieSeats[currentMovieId]
   })
 
+  // 訂位成功處理
   alert('訂位成功！')
   movieSeats[currentMovieId] = []
   selectedShowtime.value = { date: '', time: '' }
   showBookingSection.value = false
+
+  // 滾動回電影資訊
+  const titleElement = document.querySelector('.movie-details .title')
+  if (titleElement) {
+    setTimeout(() => {
+      titleElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      })
+
+      // 補償固定導航欄的高度
+      window.scrollBy({
+        top: -500,
+        behavior: 'smooth'
+      })
+    }, 100)
+  }
 }
 </script>
 
@@ -307,7 +347,7 @@ const confirmBooking = () => {
   font-size: 2rem;
   color: #BA0043;
   text-align: center;
-  margin: 0 0 30px 0; /* 使用正常邊距 */
+  margin: 0 0 30px 0;
 }
 
 .content-wrapper {
@@ -397,6 +437,23 @@ const confirmBooking = () => {
   margin-bottom: 24px;
 }
 
+.movie-info {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.movie-info p {
+  margin: 8px 0;
+  color: #495057;
+}
+
+.movie-info strong {
+  color: #333;
+  margin-right: 8px;
+}
+
 .showtimes {
   background: #f8f9fa;
   padding: 20px;
@@ -409,6 +466,7 @@ const confirmBooking = () => {
   color: #333;
   margin-bottom: 16px;
   font-weight: 500;
+  text-align: center;
 }
 
 .time-slots {
@@ -461,6 +519,7 @@ const confirmBooking = () => {
   transform: translateY(-2px);
 }
 
+/* 座位選擇區域樣式 */
 .booking-section {
   padding: 20px;
   margin-top: -20px;
@@ -538,40 +597,48 @@ const confirmBooking = () => {
   background: #6c757d;
 }
 
+/* 更新的座位容器與座位樣式 */
 .seats-container {
   max-width: 100%;
   overflow-x: auto;
   padding: 20px 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .seat-row {
   display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 8px;
+  gap: 6px;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+  padding: 0 20px;
+  min-width: max-content;
 }
 
 .seat {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  min-width: 46px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 14px;
   transition: all 0.2s ease;
+  padding: 0 2px;
+  border: 1px solid #dee2e6;
+  letter-spacing: -0.2px;
+  user-select: none;
 }
 
 .seat.available {
   background: #ffffff;
-  border: 1px solid #dee2e6;
 }
 
 .seat.selected {
   background: #BA0043;
   color: white;
-  border: 1px solid #BA0043;
+  border-color: #BA0043;
 }
 
 .seat.occupied {
@@ -645,6 +712,7 @@ const confirmBooking = () => {
   transform: translateY(-2px);
 }
 
+/* RWD 響應式設計 */
 @media (max-width: 1024px) {
   .fixed-sidebar {
     width: 200px;
@@ -657,53 +725,181 @@ const confirmBooking = () => {
 
 @media (max-width: 768px) {
   .movie-page {
-    padding-top: 120px;
+    padding-top: 80px;
+  }
+
+  .content-wrapper {
+    flex-direction: column;
+    padding-top: 60px;
   }
 
   .fixed-header {
-    top: 120px;
+    top: 60px;
   }
 
   .fixed-sidebar {
-    position: static;
+    position: relative;
     width: 100%;
     height: auto;
-    margin-top: 0;
+    top: 0;
+    padding: 10px;
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
-    z-index: 999;
+    background: #fff;
+    z-index: 10;
+  }
+
+  .movie-list {
+    display: flex;
+    overflow-x: auto;
+    padding: 5px;
+    gap: 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .movie-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .movie-item {
+    flex: 0 0 auto;
+    min-width: 120px;
+    padding: 10px 15px;
+    margin-bottom: 0;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 20px;
   }
 
   .main-content {
     margin-left: 0;
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: var(--footer-height);
   }
 
   .sticky-section {
-    position: static;
-    top: 60px;
+    position: relative;
+    top: 0;
+    margin-top: 0;
   }
 
   .movie-details {
-    padding: 16px;
+    padding: 15px;
+  }
+
+  .title {
+    margin-top: 0;
   }
 
   .main-poster {
-    height: 300px;
+    height: 250px;
   }
 
   .time-slots {
     gap: 8px;
   }
 
+  .date-header {
+    margin-left: 0;
+    text-align: center;
+  }
+
   .time-slot {
-    padding: 6px 12px;
+    padding: 8px 12px;
     font-size: 0.9rem;
   }
 
+  .booking-section {
+    padding: 15px;
+    margin-top: 0;
+  }
+
+  /* 座位相關響應式調整 */
+  .seats-container {
+    padding: 10px 0;
+  }
+
+  .seat-row {
+    gap: 4px;
+    margin-bottom: 4px;
+    padding: 0 10px;
+  }
+
   .seat {
-    width: 32px;
-    height: 32px;
-    font-size: 0.7rem;
+    width: 46px;
+    min-width: 46px;
+    height: 36px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .movie-page {
+    padding-top: 70px;
+  }
+
+  .content-wrapper {
+    padding-top: 50px;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .movie-item {
+    min-width: 100px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  .movie-title {
+    font-size: 1.3rem;
+  }
+
+  .main-poster {
+    height: 200px;
+  }
+
+  .time-slot {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .main-content {
+    margin-top: 15px;
+  }
+
+  .booking-content {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 320px) {
+  .movie-item {
+    min-width: 90px;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+
+  .time-slot {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+
+  .seat-row {
+    padding: 0 5px;
+  }
+
+  .seat {
+    width: 46px;
+    min-width: 46px;
+    height: 36px;
+    font-size: 14px;
   }
 }
 </style>
