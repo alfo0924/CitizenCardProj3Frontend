@@ -3,7 +3,9 @@
     <!-- 優惠列表 -->
     <div class="discounts-content">
       <h2 class="page-title">特店優惠總覽</h2>
-
+      <router-link to="/discountstore/create" class="more-btn">
+        新增店家
+      </router-link>
       <!-- 搜尋和篩選 -->
       <div class="search-filter-container">
         <div class="search-box">
@@ -130,7 +132,6 @@ export default {
   font-size: 2rem;
   font-weight: bold;
   color: rgba(186, 0, 67, 0.9);
-  margin-bottom: 2rem;
 }
 
 .search-filter-container {
@@ -188,11 +189,14 @@ export default {
 }
 
 .store-card {
+  flex: 0 0 calc(33.333% - 1.33rem);
   background: white;
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
 .store-card:hover {
@@ -307,5 +311,23 @@ export default {
     color: inherit;
     cursor: pointer;
   }
+}
+
+.more-btn {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+  width: fit-content;
+  padding: 0.75rem 2rem;
+  background: rgba(186, 0, 67, 0.9);
+  color: white;
+  border-radius: 2rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.more-btn:hover {
+  background: rgba(186, 0, 67, 1);
+  transform: scale(1.05);
 }
 </style>
