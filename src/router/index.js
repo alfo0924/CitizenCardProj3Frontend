@@ -13,6 +13,7 @@ import FAQ from '@/views/other/FAQ.vue'
 import store from '@/store'
 import PartnerStore from '@/views/other/PartnerStore.vue'
 import CityMovie from '@/views/other/CityMovie.vue'
+import StoreCreate from '@/views/discountStore/StoreCreate.vue'
 
 // 特惠商店相關頁面
 const AuthorizedStores = () => import('@/views/store/AuthorizedStores.vue')
@@ -191,6 +192,11 @@ const routes = [
             title: '特店優惠詳細資訊',
             layout: 'default' // 保持與其他路由一致的布局設置
         }
+    },
+    {
+        path: '/discountstore/create',
+        name: 'StoreCreate',
+        component: StoreCreate,
     },
 
     // 優惠活動路由組
