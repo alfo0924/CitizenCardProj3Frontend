@@ -43,7 +43,7 @@
                 <p class="location-info">{{ store.address }}</p>
                 <div class="tags">
                   <span class="tag">{{ store.category }}</span>
-                  <span class="tag">{{ store.tag }}</span>
+                  <span class="tag" style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">{{ store.tag }}</span>
                 </div>
               </div>
             </router-link>
