@@ -4,11 +4,12 @@ const state = {
     token: localStorage.getItem('token') || null,
     user: JSON.parse(localStorage.getItem('user')) || null,
     isLoading: false,
-    error: null
+    error: null,
+    isTokenVerified: false
 }
 
 const getters = {
-    isLoggedIn: state => !!state.token && !!state.user,
+    isLoggedIn: state => !!state.token && !!state.user && state.isTokenVerified,
     isAdmin: state => state.user?.role === 'ROLE_ADMIN',
     currentUser: state => state.user,
     userId: state => state.user?.id || null,
@@ -32,32 +33,44 @@ const getters = {
 }
 
 const actions = {
+    async initAuth({ dispatch }) {
+        const token = localStorage.getItem('token')
+        if (token) {
+            await dispatch('checkToken')
+        }
+    },
+
     async checkToken({ commit, dispatch }) {
         try {
+            commit('SET_LOADING', true)
             const token = localStorage.getItem('token')
             if (!token) {
-                commit('CLEAR_AUTH_DATA')
-                return { success: false, message: '找不到登入令牌' }
+                throw new Error('找不到登入令牌')
             }
 
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
             const response = await api.get('/auth/verify-token')
+
             if (response.data.valid) {
                 const profileResponse = await dispatch('fetchProfile')
                 if (profileResponse.success) {
                     commit('SET_TOKEN', token)
+                    commit('SET_TOKEN_VERIFIED', true)
                     return { success: true }
                 }
             }
-
-            commit('CLEAR_AUTH_DATA')
-            localStorage.removeItem('token')
-            localStorage.removeItem('user')
-            return { success: false, message: '登入令牌已過期' }
+            throw new Error('登入令牌已過期')
         } catch (error) {
             commit('CLEAR_AUTH_DATA')
             localStorage.removeItem('token')
             localStorage.removeItem('user')
-            return { success: false, message: error.response?.data?.message || '驗證失敗' }
+            delete api.defaults.headers.common['Authorization']
+            return {
+                success: false,
+                message: error.response?.data?.message || error.message
+            }
+        } finally {
+            commit('SET_LOADING', false)
         }
     },
 
@@ -80,11 +93,13 @@ const actions = {
             user.last_login_time = now
             user.updated_at = now
 
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
             localStorage.setItem('token', token)
             localStorage.setItem('user', JSON.stringify(user))
 
             commit('SET_AUTH_DATA', { token, user })
-            return response
+            commit('SET_TOKEN_VERIFIED', true)
+            return { success: true, data: response.data }
         } catch (error) {
             let errorMessage = '登入失敗，請稍後再試'
             if (error.response?.status === 404) {
@@ -124,7 +139,7 @@ const actions = {
             }
 
             const response = await api.post('/auth/register', registerData)
-            return response.data
+            return { success: true, data: response.data }
         } catch (error) {
             const errorMessage = error.response?.data?.message || '註冊失敗'
             commit('SET_ERROR', errorMessage)
@@ -137,10 +152,14 @@ const actions = {
     async logout({ commit }) {
         try {
             await api.post('/auth/logout')
+        } catch (error) {
+            console.error('Logout error:', error)
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
+            delete api.defaults.headers.common['Authorization']
             commit('CLEAR_AUTH_DATA')
+            commit('SET_TOKEN_VERIFIED', false)
         }
     },
 
@@ -162,20 +181,15 @@ const actions = {
         }
     },
 
-    async updateProfile({ commit }, userData) {
+    async updateProfile({ commit, state }, userData) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
             const now = new Date().toISOString()
             const updateData = {
-                name: userData.name,
-                phone: userData.phone,
-                birthday: userData.birthday,
-                gender: userData.gender,
-                address: userData.address,
-                avatar: userData.avatar,
+                ...userData,
                 updated_at: now,
-                version: (userData.version || 0) + 1
+                version: (state.user?.version || 0) + 1
             }
 
             const response = await api.put('/auth/profile', updateData)
@@ -206,10 +220,14 @@ const mutations = {
     SET_USER(state, user) {
         state.user = user
     },
+    SET_TOKEN_VERIFIED(state, verified) {
+        state.isTokenVerified = verified
+    },
     CLEAR_AUTH_DATA(state) {
         state.token = null
         state.user = null
         state.error = null
+        state.isTokenVerified = false
     },
     SET_LOADING(state, status) {
         state.isLoading = status
