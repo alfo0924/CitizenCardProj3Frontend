@@ -271,7 +271,11 @@ export const endpoints = {
         deposit: '/wallet/deposit',
         withdraw: '/wallet/withdraw',
         transactions: '/wallet/transactions',
-        statement: '/wallet/statement'
+        statement: '/wallet/statement',
+        tickets: '/wallet/tickets',  // 新增
+        coupons: '/wallet/coupons',  // 新增
+        ticketDetail: id => `/wallet/tickets/${id}`,  // 新增
+        couponDetail: id => `/wallet/coupons/${id}`   // 新增
     },
     stores: {
         list: '/stores',
@@ -295,7 +299,7 @@ const apiService = {
             }
 
             const response = await api(config)
-            return response.data
+            return response
         } catch (error) {
             console.error(`${method.toUpperCase()} ${url} failed:`, error)
             throw error
@@ -312,6 +316,10 @@ const apiService = {
 
     put(url, data = {}, config = {}) {
         return this.request('put', url, { ...config, data })
+    },
+
+    patch(url, data = {}, config = {}) {
+        return this.request('patch', url, { ...config, data })
     },
 
     delete(url, config = {}) {
