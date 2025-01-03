@@ -65,7 +65,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useStore } from 'vuex'
@@ -74,8 +73,9 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 
 export default {
   name: 'AdminDashboard',
-  components: { LoadingSpinner },
-
+  components: {
+    LoadingSpinner
+  },
   setup() {
     const store = useStore()
     const userChartRef = ref(null)
@@ -140,7 +140,6 @@ export default {
       if (!data || typeof data !== 'object') {
         throw new Error('無效的資料格式')
       }
-
       return {
         totalUsers: Number(data.totalUsers) || 0,
         newUsers: Number(data.newUsers) || 0,
@@ -209,41 +208,37 @@ export default {
       }
     }
 
-    // 修改 fetchDashboardData 方法
     const fetchDashboardData = async () => {
       try {
-        isLoading.value = true;
-        error.value = null;
+        isLoading.value = true
+        error.value = null
 
-        // 先檢查登入狀態
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token')
         if (!token) {
-          throw new Error('請先登入');
+          throw new Error('請先登入')
         }
 
-        const response = await store.dispatch('admin/fetchDashboardData');
-
+        const response = await store.dispatch('admin/fetchDashboardData')
         if (!response?.success) {
-          throw new Error(response?.error || '獲取儀表板數據失敗');
+          throw new Error(response?.error || '獲取儀表板數據失敗')
         }
 
-        const validatedData = validateDashboardData(response.data);
-        stats.value = validatedData;
+        const validatedData = validateDashboardData(response.data)
+        stats.value = validatedData
 
-        // 初始化圖表
         if (validatedData.userRoleDistribution && validatedData.storeCategoryDistribution) {
           initCharts(
               validatedData.userRoleDistribution,
               validatedData.storeCategoryDistribution
-          );
+          )
         }
       } catch (err) {
-        error.value = err.message;
-        console.error('儀表板錯誤:', err);
+        error.value = err.message
+        console.error('儀表板錯誤:', err)
       } finally {
-        isLoading.value = false;
+        isLoading.value = false
       }
-    };
+    }
 
     onMounted(async () => {
       await fetchDashboardData()
@@ -266,7 +261,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .admin-dashboard {
   padding: 2rem 0;
@@ -324,6 +318,35 @@ export default {
   font-size: 1.5rem;
 }
 
+.stat-info {
+  flex: 1;
+}
+
+.stat-info h3 {
+  font-size: 1rem;
+  color: var(--text-color-light);
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-bottom: 0.25rem;
+}
+
+.stat-change {
+  font-size: 0.875rem;
+  color: var(--danger-color);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.stat-change.positive {
+  color: var(--success-color);
+}
+
 .chart-card {
   background: white;
   padding: 1.5rem;
@@ -351,6 +374,16 @@ export default {
 
   .stat-card {
     padding: 1rem;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
   }
 }
 </style>
