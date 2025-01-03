@@ -5,7 +5,8 @@ const state = {
     user: JSON.parse(localStorage.getItem('user')) || null,
     isLoading: false,
     error: null,
-    isTokenVerified: false
+    isTokenVerified: false,
+    lastVerification: localStorage.getItem('lastVerification') || null
 }
 
 const getters = {
@@ -29,13 +30,19 @@ const getters = {
     userUpdatedAt: state => state.user?.updated_at || null,
     userVersion: state => state.user?.version || 0,
     authError: state => state.error,
-    isLoading: state => state.isLoading
+    isLoading: state => state.isLoading,
+    tokenNeedsVerification: state => {
+        if (!state.lastVerification) return true
+        const lastCheck = new Date(state.lastVerification)
+        const now = new Date()
+        return now - lastCheck > 15 * 60 * 1000 // 15 minutes
+    }
 }
 
 const actions = {
-    async initAuth({ dispatch }) {
+    async initAuth({ dispatch, getters }) {
         const token = localStorage.getItem('token')
-        if (token) {
+        if (token && getters.tokenNeedsVerification) {
             await dispatch('checkToken')
         }
     },
@@ -56,15 +63,13 @@ const actions = {
                 if (profileResponse.success) {
                     commit('SET_TOKEN', token)
                     commit('SET_TOKEN_VERIFIED', true)
+                    commit('UPDATE_VERIFICATION_TIME')
                     return { success: true }
                 }
             }
             throw new Error('登入令牌已過期')
         } catch (error) {
-            commit('CLEAR_AUTH_DATA')
-            localStorage.removeItem('token')
-            localStorage.removeItem('user')
-            delete api.defaults.headers.common['Authorization']
+            await dispatch('handleAuthError', error)
             return {
                 success: false,
                 message: error.response?.data?.message || error.message
@@ -74,7 +79,30 @@ const actions = {
         }
     },
 
-    async login({ commit }, credentials) {
+    async handleAuthError({ commit }, error) {
+        commit('CLEAR_AUTH_DATA')
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('lastVerification')
+        delete api.defaults.headers.common['Authorization']
+
+        let errorMessage = '認證失敗'
+        if (error.response) {
+            switch (error.response.status) {
+                case 401:
+                    errorMessage = '登入已過期，請重新登入'
+                    break
+                case 403:
+                    errorMessage = '無權限訪問'
+                    break
+                default:
+                    errorMessage = error.response.data?.message || '發生錯誤，請稍後再試'
+            }
+        }
+        commit('SET_ERROR', errorMessage)
+    },
+
+    async login({ commit, dispatch }, credentials) {
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
         try {
@@ -99,15 +127,10 @@ const actions = {
 
             commit('SET_AUTH_DATA', { token, user })
             commit('SET_TOKEN_VERIFIED', true)
+            commit('UPDATE_VERIFICATION_TIME')
             return { success: true, data: response.data }
         } catch (error) {
-            let errorMessage = '登入失敗，請稍後再試'
-            if (error.response?.status === 404) {
-                errorMessage = '此帳號不存在，請先註冊'
-            } else if (error.response?.status === 401) {
-                errorMessage = '帳號密碼錯誤'
-            }
-            commit('SET_ERROR', errorMessage)
+            await dispatch('handleAuthError', error)
             throw error
         } finally {
             commit('SET_LOADING', false)
@@ -157,6 +180,7 @@ const actions = {
         } finally {
             localStorage.removeItem('token')
             localStorage.removeItem('user')
+            localStorage.removeItem('lastVerification')
             delete api.defaults.headers.common['Authorization']
             commit('CLEAR_AUTH_DATA')
             commit('SET_TOKEN_VERIFIED', false)
@@ -168,7 +192,10 @@ const actions = {
         commit('CLEAR_ERROR')
         try {
             const response = await api.get('/auth/profile')
-            const userData = response.data
+            const userData = response.data?.user || response.data
+            if (!userData || !userData.id) {
+                throw new Error('無效的用戶資料')
+            }
             commit('SET_USER', userData)
             localStorage.setItem('user', JSON.stringify(userData))
             return { success: true, data: userData }
@@ -193,7 +220,11 @@ const actions = {
             }
 
             const response = await api.put('/auth/profile', updateData)
-            const updatedUser = response.data
+            const updatedUser = response.data?.user || response.data
+
+            if (!updatedUser || !updatedUser.id) {
+                throw new Error('無效的用戶資料')
+            }
 
             localStorage.setItem('user', JSON.stringify(updatedUser))
             commit('SET_USER', updatedUser)
@@ -223,11 +254,17 @@ const mutations = {
     SET_TOKEN_VERIFIED(state, verified) {
         state.isTokenVerified = verified
     },
+    UPDATE_VERIFICATION_TIME(state) {
+        const now = new Date().toISOString()
+        state.lastVerification = now
+        localStorage.setItem('lastVerification', now)
+    },
     CLEAR_AUTH_DATA(state) {
         state.token = null
         state.user = null
         state.error = null
         state.isTokenVerified = false
+        state.lastVerification = null
     },
     SET_LOADING(state, status) {
         state.isLoading = status
