@@ -2,7 +2,7 @@ import axios from 'axios'
 import store from '@/store'
 import router from '@/router'
 
-// API實例配置
+// API 實例配置
 const api = axios.create({
     baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080/api',
     timeout: 15000,
@@ -12,9 +12,13 @@ const api = axios.create({
     }
 })
 
-// 請求重試配置
-const MAX_RETRIES = 3
-const RETRY_DELAY = 1000
+// 常量配置
+const CONFIG = {
+    MAX_RETRIES: 3,
+    RETRY_DELAY: 1000,
+    TOKEN_REFRESH_THRESHOLD: 5 * 60 * 1000, // 5 minutes in milliseconds
+    REQUEST_TIMEOUT: 15000
+}
 
 // 錯誤狀態碼與消息映射
 const ERROR_MESSAGES = {
@@ -28,15 +32,56 @@ const ERROR_MESSAGES = {
     503: '服務暫時不可用，請稍後再試'
 }
 
+// Token 管理
+const TokenManager = {
+    getToken() {
+        return localStorage.getItem('token')
+    },
+
+    setToken(token) {
+        if (token) {
+            localStorage.setItem('token', token)
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        }
+    },
+
+    removeToken() {
+        localStorage.removeItem('token')
+        delete api.defaults.headers.common['Authorization']
+    },
+
+    isTokenExpiringSoon() {
+        const token = this.getToken()
+        if (!token) return false
+
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]))
+            const expiryTime = payload.exp * 1000
+            return Date.now() > expiryTime - CONFIG.TOKEN_REFRESH_THRESHOLD
+        } catch {
+            return false
+        }
+    }
+}
+
 // 請求攔截器
 api.interceptors.request.use(
-    config => {
+    async config => {
         // 添加重試配置
-        config.retry = MAX_RETRIES
-        config.retryDelay = RETRY_DELAY
+        config.retry = CONFIG.MAX_RETRIES
+        config.retryDelay = CONFIG.RETRY_DELAY
 
-        // 添加認證token
-        const token = localStorage.getItem('token')
+        // 檢查 token 是否即將過期
+        if (TokenManager.isTokenExpiringSoon()) {
+            try {
+                await store.dispatch('auth/refreshToken')
+            } catch (error) {
+                console.warn('Token refresh failed:', error)
+            }
+        }
+
+        // 添加認證 token
+        const token = TokenManager.getToken()
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
@@ -60,10 +105,10 @@ api.interceptors.request.use(
 // 響應攔截器
 api.interceptors.response.use(
     response => {
-        // 處理token更新
-        if (response.data?.token) {
-            localStorage.setItem('token', response.data.token)
-            api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
+        // 處理 token 更新
+        const newToken = response.headers['x-auth-token'] || response.data?.token
+        if (newToken) {
+            TokenManager.setToken(newToken)
         }
         return response
     },
@@ -73,24 +118,28 @@ api.interceptors.response.use(
         // 處理請求重試
         if (error.response?.status === 401 && originalRequest.retry > 0) {
             originalRequest.retry -= 1
+
+            await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY))
+
             try {
-                await store.dispatch('auth/checkToken')
-                return api(originalRequest)
-            } catch (retryError) {
-                // Token刷新失敗，執行登出流程
-                await handleAuthError()
-                return Promise.reject(retryError)
+                const refreshResult = await store.dispatch('auth/refreshToken')
+                if (refreshResult.success) {
+                    return api(originalRequest)
+                }
+            } catch (refreshError) {
+                console.error('Token refresh failed:', refreshError)
             }
+
+            await handleAuthError()
+            return Promise.reject(error)
         }
 
         // 處理錯誤響應
         if (error.response) {
-            handleErrorResponse(error.response)
+            await handleErrorResponse(error.response)
         } else if (error.request) {
-            // 請求發送失敗
             handleNetworkError(error)
         } else {
-            // 其他錯誤
             handleUnexpectedError(error)
         }
 
@@ -100,45 +149,52 @@ api.interceptors.response.use(
 
 // 處理認證錯誤
 async function handleAuthError() {
-    localStorage.removeItem('token')
+    TokenManager.removeToken()
     localStorage.removeItem('user')
-    store.commit('auth/CLEAR_AUTH_DATA')
+    await store.dispatch('auth/logout')
 
     if (router.currentRoute.value.name !== 'login') {
         store.dispatch('setNotification', {
             type: 'warning',
-            message: '登入已過期，請重新登入'
+            message: '登入已過期，請重新登入',
+            duration: 5000
         })
+
         router.push({
             name: 'login',
-            query: { redirect: router.currentRoute.value.fullPath }
+            query: {
+                redirect: router.currentRoute.value.fullPath,
+                expired: 'true'
+            }
         })
     }
 }
 
 // 處理錯誤響應
-function handleErrorResponse(response) {
+async function handleErrorResponse(response) {
     const status = response.status
-    const errorMessage = ERROR_MESSAGES[status] || '發生未知錯誤，請稍後再試'
+    const serverMessage = response.data?.message
+    const errorMessage = serverMessage || ERROR_MESSAGES[status] || '發生未知錯誤，請稍後再試'
 
-    // 設置錯誤通知
     store.dispatch('setNotification', {
         type: 'error',
-        message: errorMessage
+        message: errorMessage,
+        duration: 5000
     })
 
-    // 特殊狀態碼處理
     switch (status) {
         case 401:
-            handleAuthError()
+            await handleAuthError()
             break
         case 403:
-            if (router.currentRoute.value.name !== 'login') {
+            if (!router.currentRoute.value.path.includes('/403')) {
                 router.push('/403')
             }
             break
         case 500:
-            router.push('/500')
+            if (!router.currentRoute.value.path.includes('/500')) {
+                router.push('/500')
+            }
             break
     }
 }
@@ -147,7 +203,8 @@ function handleErrorResponse(response) {
 function handleNetworkError(error) {
     store.dispatch('setNotification', {
         type: 'error',
-        message: '無法連接到伺服器，請檢查網路連線'
+        message: '無法連接到伺服器，請檢查網路連線',
+        duration: 5000
     })
     console.error('Network Error:', error)
 }
@@ -156,7 +213,8 @@ function handleNetworkError(error) {
 function handleUnexpectedError(error) {
     store.dispatch('setNotification', {
         type: 'error',
-        message: '發生意外錯誤，請稍後再試'
+        message: '發生意外錯誤，請稍後再試',
+        duration: 5000
     })
     console.error('Unexpected Error:', error)
 }
@@ -168,137 +226,114 @@ export const endpoints = {
         register: '/auth/register',
         logout: '/auth/logout',
         profile: '/auth/profile',
-        verifyToken: '/auth/verify-token'
+        verifyToken: '/auth/verify-token',
+        refreshToken: '/auth/refresh-token'
     },
     users: {
         profile: '/users/profile',
         update: '/users/profile',
-        changePassword: '/users/change-password'
+        changePassword: '/users/change-password',
+        updateAvatar: '/users/avatar'
     },
     movies: {
         list: '/movies',
         detail: id => `/movies/${id}`,
         schedules: id => `/movies/${id}/schedules`,
-        search: '/movies/search'
+        search: '/movies/search',
+        upcoming: '/movies/upcoming',
+        popular: '/movies/popular'
     },
     schedules: {
         list: '/schedules',
         detail: id => `/schedules/${id}`,
-        seats: id => `/schedules/${id}/seats`
+        seats: id => `/schedules/${id}/seats`,
+        book: id => `/schedules/${id}/book`
     },
     tickets: {
         list: '/movie-tickets',
         create: '/movie-tickets',
         detail: id => `/movie-tickets/${id}`,
         cancel: id => `/movie-tickets/${id}/cancel`,
-        qrcode: id => `/movie-tickets/${id}/qrcode`
+        qrcode: id => `/movie-tickets/${id}/qrcode`,
+        validate: id => `/movie-tickets/${id}/validate`
     },
     discounts: {
         list: '/discount-coupons',
         detail: id => `/discount-coupons/${id}`,
         use: id => `/discount-coupons/${id}/use`,
-        qrcode: id => `/discount-coupons/${id}/qrcode`
+        qrcode: id => `/discount-coupons/${id}/qrcode`,
+        validate: id => `/discount-coupons/${id}/validate`,
+        available: '/discount-coupons/available'
     },
     wallet: {
         info: '/wallet',
         balance: '/wallet/balance',
         deposit: '/wallet/deposit',
         withdraw: '/wallet/withdraw',
-        transactions: '/wallet/transactions'
+        transactions: '/wallet/transactions',
+        statement: '/wallet/statement'
     },
     stores: {
         list: '/stores',
         detail: id => `/stores/${id}`,
         search: '/stores/search',
-        nearby: '/stores/nearby'
+        nearby: '/stores/nearby',
+        categories: '/stores/categories',
+        promotions: id => `/stores/${id}/promotions`
     }
 }
 
 // API服務封裝
 const apiService = {
-    async get(url, config = {}) {
+    async request(method, url, options = {}) {
         try {
-            const response = await api.get(url, {
-                ...config,
+            const config = {
+                method,
+                url,
+                ...options,
                 validateStatus: status => status < 500
-            })
+            }
+
+            const response = await api(config)
             return response.data
         } catch (error) {
-            console.error(`GET ${url} failed:`, error)
+            console.error(`${method.toUpperCase()} ${url} failed:`, error)
             throw error
         }
     },
 
-    async post(url, data = {}, config = {}) {
-        try {
-            const response = await api.post(url, data, {
-                ...config,
-                validateStatus: status => status < 500
-            })
-            return response.data
-        } catch (error) {
-            console.error(`POST ${url} failed:`, error)
-            throw error
-        }
+    get(url, config = {}) {
+        return this.request('get', url, config)
     },
 
-    async put(url, data = {}, config = {}) {
-        try {
-            const response = await api.put(url, data, {
-                ...config,
-                validateStatus: status => status < 500
-            })
-            return response.data
-        } catch (error) {
-            console.error(`PUT ${url} failed:`, error)
-            throw error
-        }
+    post(url, data = {}, config = {}) {
+        return this.request('post', url, { ...config, data })
     },
 
-    async delete(url, config = {}) {
-        try {
-            const response = await api.delete(url, {
-                ...config,
-                validateStatus: status => status < 500
-            })
-            return response.data
-        } catch (error) {
-            console.error(`DELETE ${url} failed:`, error)
-            throw error
-        }
+    put(url, data = {}, config = {}) {
+        return this.request('put', url, { ...config, data })
     },
 
-    // 上傳文件
+    delete(url, config = {}) {
+        return this.request('delete', url, config)
+    },
+
     async upload(url, formData, config = {}) {
-        try {
-            const response = await api.post(url, formData, {
-                ...config,
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                validateStatus: status => status < 500
-            })
-            return response.data
-        } catch (error) {
-            console.error(`Upload to ${url} failed:`, error)
-            throw error
-        }
+        return this.request('post', url, {
+            ...config,
+            data: formData,
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
     },
 
-    // 下載文件
     async download(url, config = {}) {
-        try {
-            const response = await api.get(url, {
-                ...config,
-                responseType: 'blob',
-                validateStatus: status => status < 500
-            })
-            return response.data
-        } catch (error) {
-            console.error(`Download from ${url} failed:`, error)
-            throw error
-        }
+        return this.request('get', url, {
+            ...config,
+            responseType: 'blob'
+        })
     }
 }
 
-export { api as default, apiService }
+export { api as default, apiService, TokenManager }
