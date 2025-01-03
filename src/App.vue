@@ -84,8 +84,10 @@
 </template>
 
 <script>
-import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+
+//App.vue script部分
+import { computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
@@ -106,56 +108,84 @@ export default {
 
   setup() {
     const route = useRoute()
+    const router = useRouter()
     const store = useStore()
+
+    // 設定需要驗證的路由
+    const authRequiredRoutes = [
+      'profile',
+      'wallet',
+      'transactions',
+      'deposit',
+      'booking'
+    ]
+
+    // 不顯示布局的路由
+    const noLayoutRoutes = []
+    const noBreadcrumbRoutes = ['home', 'city-movie']
 
     // 初始化檢查
     const initCheck = async () => {
-      const token = localStorage.getItem('token')
-      if (token) {
-        try {
-          // 從 API 獲取用戶信息
-          await store.dispatch('auth/getUserProfile')
-        } catch (error) {
-          // 如果 token 無效，執行登出
-          store.commit('auth/logout')
-          // 顯示錯誤訊息
+      try {
+        // 初始化認證狀態
+        await store.dispatch('auth/initAuth')
+
+        // 檢查當前路由是否需要認證
+        if (authRequiredRoutes.includes(route.name) && !store.getters['auth/isLoggedIn']) {
+          // 儲存目標路由
+          const targetPath = route.fullPath
+          // 跳轉到登入頁面
+          router.push({
+            name: 'login',
+            query: { redirect: targetPath }
+          })
+          // 顯示提示訊息
           store.dispatch('setNotification', {
-            type: 'error',
-            message: '登入已過期，請重新登入'
+            type: 'warning',
+            message: '請先登入再造訪此頁面'
           })
         }
+      } catch (error) {
+        console.error('初始化檢查失敗:', error)
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '系統發生錯誤，請稍後再試'
+        })
       }
     }
+
+    // 監聽路由變化
+    watch(
+        () => route.name,
+        async (newRouteName) => {
+          if (authRequiredRoutes.includes(newRouteName)) {
+            const isLoggedIn = store.getters['auth/isLoggedIn']
+            if (!isLoggedIn) {
+              router.push({
+                name: 'login',
+                query: { redirect: route.fullPath }
+              })
+              store.dispatch('setNotification', {
+                type: 'warning',
+                message: '請先登入再造訪此頁面'
+              })
+            }
+          }
+        }
+    )
 
     // 在組件掛載後執行初始化檢查
     onMounted(() => {
       initCheck()
     })
 
-    // 不顯示布局的路由
-    const noLayoutRoutes = ['']
-    const noBreadcrumbRoutes = ['home']
+    // 計算屬性
+    const showHeader = computed(() => !noLayoutRoutes.includes(route.name))
+    const showFooter = computed(() => !noLayoutRoutes.includes(route.name))
+    const showBreadcrumb = computed(() => !noBreadcrumbRoutes.includes(route.name))
+    const isMoviePage = computed(() => route.path.includes('/city-movie'))
 
-    // 計算是否顯示Header
-    const showHeader = computed(() => {
-      return !noLayoutRoutes.includes(route.name)
-    })
-
-    // 計算是否顯示Footer
-    const showFooter = computed(() => {
-      return !noLayoutRoutes.includes(route.name)
-    })
-
-    // 計算是否顯示Breadcrumb
-    const showBreadcrumb = computed(() => {
-      return !noBreadcrumbRoutes.includes(route.name)
-    })
-
-    // 計算是否為電影頁面
-    const isMoviePage = computed(() => {
-      return route.path.includes('/city-movie')
-    })
-
+    // 返回需要在模板中使用的數據和方法
     return {
       route,
       showHeader,
@@ -165,6 +195,7 @@ export default {
     }
   }
 }
+
 </script>
 
 <style>
