@@ -3,9 +3,7 @@
     <!-- 優惠列表 -->
     <div class="discounts-content">
       <h2 class="page-title">特店優惠總覽</h2>
-      <router-link to="/discountstore/create" class="more-btn">
-        新增店家
-      </router-link>
+      
       <!-- 搜尋和篩選 -->
       <div class="search-filter-container">
         <div class="search-box">
