@@ -7,6 +7,7 @@ import discount from './modules/discount'
 import storeModule from './modules/store'
 import user from './modules/user'
 import api from '@/services/api.config'
+import admin from "@/store/modules/admin";
 
 const vuexStore = createStore({
     state: {
@@ -86,7 +87,8 @@ const vuexStore = createStore({
         wallet,
         discount,
         store: storeModule,
-        user
+        user,
+        admin
     },
 
     plugins: [
