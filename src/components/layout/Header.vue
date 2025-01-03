@@ -55,11 +55,6 @@
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
               >
-                <img
-                    :src="userAvatar"
-                    class="user-avatar"
-                    :alt="userName"
-                >
                 {{ userName }}
               </a>
               <ul class="dropdown-menu dropdown-menu-end custom-dropdown" aria-labelledby="userDropdown">
@@ -129,7 +124,6 @@ export default {
     const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
     const isAdmin = computed(() => store.getters['auth/isAdmin'])
     const userName = computed(() => store.getters['auth/userName'])
-    const userAvatar = computed(() => store.getters['auth/userAvatar'] || '/default-avatar.png')
 
     // 導航控制
     const toggleNav = () => {
@@ -176,7 +170,6 @@ export default {
       isLoggedIn,
       isAdmin,
       userName,
-      userAvatar,
       toggleNav,
       handleLogout,
       breadcrumbs,
@@ -242,18 +235,12 @@ export default {
   left: 0;
 }
 
-/* 其他樣式保持不變 */
 .user-menu {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.user-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
+  font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .btn-custom-outline {
@@ -360,6 +347,10 @@ export default {
 
   .custom-dropdown .dropdown-item {
     font-size: 1rem;
+  }
+
+  .user-menu {
+    font-size: 1.25rem;
   }
 }
 
