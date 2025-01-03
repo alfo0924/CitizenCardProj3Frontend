@@ -5,10 +5,7 @@
       <div class="container">
         <div class="d-flex justify-content-between align-items-center">
           <h2 class="mb-0">商店管理</h2>
-          <button
-              class="btn btn-primary"
-              @click="showAddStoreModal"
-          >
+          <button class="btn btn-primary" @click="showAddStoreModal">
             <i class="bi bi-plus-lg"></i> 新增商店
           </button>
         </div>
@@ -125,21 +122,17 @@
                 </div>
               </div>
             </td>
-
             <!-- 類別 -->
             <td>
               <span class="badge bg-secondary">{{ store.category }}</span>
             </td>
-
             <!-- 地址 -->
             <td>{{ store.address }}</td>
-
             <!-- 聯絡方式 -->
             <td>
               <div>{{ store.phone }}</div>
               <div class="small text-muted">{{ store.email }}</div>
             </td>
-
             <!-- 狀態 -->
             <td>
                 <span
@@ -148,7 +141,6 @@
                   {{ getStatusText(store.status) }}
                 </span>
             </td>
-
             <!-- 操作按鈕 -->
             <td>
               <div class="btn-group">
@@ -313,7 +305,6 @@
                   ></textarea>
                 </div>
               </div>
-
               <div class="text-end mt-4">
                 <button
                     type="button"
@@ -380,6 +371,7 @@
     </div>
   </div>
 </template>
+
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
@@ -409,64 +401,8 @@ export default {
     const categories = ref([])
     const totalItems = ref(0)
     const itemsPerPage = 10
-
-    // 模擬商店資料
-    const mockStores = [
-      {
-        id: 1,
-        name: '星巴克逢甲店',
-        category: '咖啡廳',
-        description: '提供優質咖啡和輕食的休閒空間',
-        address: '台中市西屯區文華路100號',
-        phone: '04-12345678',
-        email: 'fcustar@gmail.com',
-        website: 'https://www.starbucks.com.tw',
-        openingHours: '週一至週日 07:00-22:00',
-        imageUrl: '/images/stores/starbucks.jpg',
-        rating: 4.5,
-        ratingCount: 128,
-        status: 'active'
-      },
-      {
-        id: 2,
-        name: '麥當勞逢甲店',
-        category: '速食',
-        description: '24小時營業的速食餐廳',
-        address: '台中市西屯區文華路120號',
-        phone: '04-23456789',
-        email: 'fcumc@gmail.com',
-        website: 'https://www.mcdonalds.com.tw',
-        openingHours: '24小時營業',
-        imageUrl: '/images/stores/mcdonalds.jpg',
-        rating: 4.3,
-        ratingCount: 256,
-        status: 'active'
-      },
-      {
-        id: 3,
-        name: '全家便利商店',
-        category: '便利商店',
-        description: '24小時便利商店',
-        address: '台中市西屯區文華路80號',
-        phone: '04-34567890',
-        email: 'fcufamily@gmail.com',
-        website: 'https://www.family.com.tw',
-        openingHours: '24小時營業',
-        imageUrl: '/images/stores/family.jpg',
-        rating: 4.2,
-        ratingCount: 186,
-        status: 'pending'
-      }
-    ]
-
-    // 模擬類別資料
-    const mockCategories = [
-      { id: 1, name: '咖啡廳' },
-      { id: 2, name: '速食' },
-      { id: 3, name: '便利商店' },
-      { id: 4, name: '餐廳' },
-      { id: 5, name: '飲料店' }
-    ]
+    let storeModal = null
+    let deleteModal = null
 
     // 表單數據
     const storeForm = ref({
@@ -478,7 +414,6 @@ export default {
       email: '',
       description: ''
     })
-
     const editingStore = ref(null)
     const storeToDelete = ref(null)
 
@@ -513,20 +448,13 @@ export default {
           sort: sortBy.value,
           search: searchQuery.value
         })
-
-        if (response && response.success) {
+        if (response?.success) {
           stores.value = response.data.content
           totalItems.value = response.data.totalElements
-        } else {
-          console.log('使用模擬數據')
-          stores.value = mockStores
-          totalItems.value = mockStores.length
         }
       } catch (err) {
         error.value = '載入商店資料失敗'
         console.error('Error fetching stores:', err)
-        stores.value = mockStores
-        totalItems.value = mockStores.length
       } finally {
         loading.value = false
       }
@@ -536,14 +464,11 @@ export default {
     const fetchCategories = async () => {
       try {
         const response = await store.dispatch('store/fetchCategories')
-        if (response && response.success) {
+        if (response?.success) {
           categories.value = response.data
-        } else {
-          categories.value = mockCategories
         }
       } catch (err) {
         console.error('Error fetching categories:', err)
-        categories.value = mockCategories
       }
     }
 
@@ -652,8 +577,10 @@ export default {
       return statusMap[status] || status
     }
 
-    // 生命週期鉤子
+    // 初始化 Modal 實例
     onMounted(() => {
+      storeModal = new Modal(document.getElementById('storeModal'))
+      deleteModal = new Modal(document.getElementById('deleteModal'))
       fetchCategories()
       fetchStores()
     })
@@ -741,6 +668,32 @@ export default {
   overflow-y: auto;
 }
 
+.filter-section {
+  background-color: #fff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.store-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination {
+  margin-bottom: 2rem;
+}
+
+.pagination .page-link {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.pagination .active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
 @media (max-width: 768px) {
   .filter-section {
     padding: 1rem;
@@ -753,6 +706,14 @@ export default {
   .store-thumbnail {
     width: 40px;
     height: 40px;
+  }
+
+  .btn-group .btn {
+    padding: 0.2rem 0.4rem;
+  }
+
+  .btn-group .btn i {
+    font-size: 0.875rem;
   }
 }
 </style>

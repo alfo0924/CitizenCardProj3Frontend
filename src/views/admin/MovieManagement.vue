@@ -5,20 +5,13 @@
       <LoadingSpinner v-if="isLoading" />
 
       <!-- 錯誤提示 -->
-      <AlertMessage
-          v-if="error"
-          type="error"
-          :message="error"
-      />
+      <AlertMessage v-if="error" type="error" :message="error" />
 
       <!-- 管理介面 -->
       <div v-else class="management-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>電影管理</h2>
-          <button
-              class="btn btn-primary"
-              @click="openMovieModal()"
-          >
+          <button class="btn btn-primary" @click="openMovieModal()">
             <i class="fas fa-plus me-2"></i>新增電影
           </button>
         </div>
@@ -252,7 +245,6 @@
     </div>
   </div>
 </template>
-
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
@@ -321,7 +313,9 @@ export default {
       return storeMovies && storeMovies.length > 0 ? storeMovies : mockMovies
     })
 
-    const totalPages = computed(() => store.state.movie.totalPages || Math.ceil(mockMovies.length / 10))
+    const totalPages = computed(() =>
+        store.state.movie.totalPages || Math.ceil(mockMovies.length / 10)
+    )
 
     // 分頁顯示
     const displayedPages = computed(() => {
@@ -342,23 +336,18 @@ export default {
       try {
         isLoading.value = true
         error.value = null
-
-        // 嘗試從後端獲取數據
         const response = await store.dispatch('movie/fetchMovies', {
           page: currentPage.value,
           status: selectedStatus.value,
           keyword: searchKeyword.value
         })
-
         if (!response || !response.success) {
           console.log('使用模擬數據')
-          // 如果後端請求失敗，使用模擬數據
           store.commit('movie/setMovies', mockMovies)
         }
       } catch (err) {
         console.error('Error fetching movies:', err)
         error.value = '載入電影列表失敗'
-        // 發生錯誤時使用模擬數據
         store.commit('movie/setMovies', mockMovies)
       } finally {
         isLoading.value = false
@@ -456,28 +445,28 @@ export default {
     // 獲取狀態樣式
     const getStatusClass = (status) => {
       switch (status) {
-      case 'SHOWING':
-        return 'bg-success'
-      case 'COMING':
-        return 'bg-primary'
-      case 'ENDED':
-        return 'bg-secondary'
-      default:
-        return 'bg-secondary'
+        case 'SHOWING':
+          return 'bg-success'
+        case 'COMING':
+          return 'bg-primary'
+        case 'ENDED':
+          return 'bg-secondary'
+        default:
+          return 'bg-secondary'
       }
     }
 
     // 獲取狀態文字
     const getStatusText = (status) => {
       switch (status) {
-      case 'SHOWING':
-        return '上映中'
-      case 'COMING':
-        return '即將上映'
-      case 'ENDED':
-        return '已下檔'
-      default:
-        return '未知'
+        case 'SHOWING':
+          return '上映中'
+        case 'COMING':
+          return '即將上映'
+        case 'ENDED':
+          return '已下檔'
+        default:
+          return '未知'
       }
     }
 
@@ -516,22 +505,41 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .movie-management {
   padding: 2rem 0;
+  min-height: 100vh;
+  background-color: var(--bg-color-light);
 }
 
 .movie-poster {
   width: 60px;
   height: 90px;
   object-fit: cover;
-  border-radius: var(--border-radius-sm);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .badge {
   padding: 0.5rem 0.75rem;
   font-weight: 500;
+  border-radius: 4px;
+}
+
+.table {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+}
+
+.table th {
+  font-weight: 600;
+  white-space: nowrap;
+  background-color: var(--bg-color-light);
+}
+
+.table td {
+  vertical-align: middle;
 }
 
 .modal-body {
@@ -539,9 +547,48 @@ export default {
   overflow-y: auto;
 }
 
+.filters {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+}
+
+.pagination {
+  margin-bottom: 2rem;
+}
+
+.pagination .page-link {
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
+.pagination .active .page-link {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+
 @media (max-width: 768px) {
+  .movie-management {
+    padding: 1rem 0;
+  }
+
   .filters .row {
     row-gap: 1rem;
+  }
+
+  .movie-poster {
+    width: 45px;
+    height: 68px;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .badge {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
   }
 }
 </style>
