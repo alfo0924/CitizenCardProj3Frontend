@@ -1,4 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import store from '@/store'
+
+// 靜態導入的組件
 import Home from '@/views/Home.vue'
 import Login from '@/views/auth/Login.vue'
 import Register from '@/views/auth/Register.vue'
@@ -10,19 +13,15 @@ import Wallet from '@/views/user/Wallet.vue'
 import Discounts from '@/views/discount/Discounts.vue'
 import NotFound from '@/views/NotFound.vue'
 import FAQ from '@/views/other/FAQ.vue'
-import store from '@/store'
 import PartnerStore from '@/views/other/PartnerStore.vue'
 import CityMovie from '@/views/other/CityMovie.vue'
 
-// 特惠商店相關頁面
+// 動態導入的組件
 const AuthorizedStores = () => import('@/views/store/AuthorizedStores.vue')
 const StoreSearch = () => import('@/views/store/StoreSearch.vue')
 const StoreDetail = () => import('@/views/store/StoreDetail.vue')
-
-// 優惠活動相關頁面
 const Promotions = () => import('@/views/promotion/Promotions.vue')
 const PromotionDetail = () => import('@/views/promotion/PromotionDetail.vue')
-// 特店優惠相關頁面
 const DiscountStore = () => import('@/views/discountStore/DiscountStore.vue')
 const StoreOverview = () => import('@/views/discountStore/StoreOverview.vue')
 const DiscountStoreDetail = () => import('@/views/discountStore/DiscountStoreDetail.vue')
@@ -112,6 +111,7 @@ const routes = [
                 name: 'wallet-deposit',
                 component: () => import('@/views/user/wallet/Deposit.vue'),
                 meta: {
+                    requiresAuth: true,
                     title: '儲值',
                     layout: 'user'
                 }
@@ -121,12 +121,14 @@ const routes = [
                 name: 'wallet-transactions',
                 component: () => import('@/views/user/wallet/Transactions.vue'),
                 meta: {
+                    requiresAuth: true,
                     title: '交易記錄',
                     layout: 'user'
                 }
             }
         ]
-    }, {
+    },
+    {
         path: '/discounts',
         name: 'discounts',
         component: Discounts,
@@ -162,7 +164,6 @@ const routes = [
             layout: 'default'
         }
     },
-
     // 特店優惠路由組
     {
         path: '/discountstore',
@@ -170,7 +171,7 @@ const routes = [
         component: DiscountStore,
         meta: {
             title: '特店優惠',
-            layout: 'default' // 保持與其他路由一致的布局設置
+            layout: 'default'
         }
     },
     {
@@ -179,7 +180,7 @@ const routes = [
         component: StoreOverview,
         meta: {
             title: '特店優惠總覽',
-            layout: 'default' // 保持與其他路由一致的布局設置
+            layout: 'default'
         }
     },
     {
@@ -189,10 +190,9 @@ const routes = [
         props: true,
         meta: {
             title: '特店優惠詳細資訊',
-            layout: 'default' // 保持與其他路由一致的布局設置
+            layout: 'default'
         }
     },
-
     // 優惠活動路由組
     {
         path: '/promotions',
@@ -213,7 +213,6 @@ const routes = [
             layout: 'default'
         }
     },
-
     // 管理員路由組
     {
         path: '/admin',
@@ -259,7 +258,6 @@ const routes = [
             layout: 'admin'
         }
     },
-
     // 錯誤頁面
     {
         path: '/403',
@@ -292,7 +290,9 @@ const routes = [
         path: '/:pathMatch(.*)*',
         redirect: { name: 'not-found' }
     }
-]// 創建路由實例
+]
+
+// 創建路由實例
 const router = createRouter({
     history: createWebHistory(process.env.BASE_URL),
     routes,
@@ -305,25 +305,34 @@ const router = createRouter({
     }
 })
 
-// 導航守衛
-// 導航守衛
+// 檢查認證狀態
+const checkAuth = async () => {
+    const token = localStorage.getItem('token')
+    if (token && store.getters['auth/tokenNeedsVerification']) {
+        try {
+            await store.dispatch('auth/checkToken')
+        } catch (error) {
+            console.error('Token verification failed:', error)
+            return false
+        }
+    }
+    return store.getters['auth/isLoggedIn']
+}
+
+// 全局前置守衛
 router.beforeEach(async (to, from, next) => {
-    document.title = to.meta.title
-        ? `${to.meta.title} - 市民卡系統`
-        : '市民卡系統'
+    // 開始加載
+    store.dispatch('setLoading', true)
 
     try {
-        const isLoggedIn = store.getters['auth/isLoggedIn']
-        const isAdmin = store.getters['auth/isAdmin']
-        const loginError = store.state.auth?.error
+        // 更新頁面標題
+        document.title = to.meta.title
+            ? `${to.meta.title} - 市民卡系統`
+            : '市民卡系統'
 
-        // 處理登入錯誤情況
-        if (from.name === 'login' && loginError) {
-            // 清除錯誤狀態
-            store.commit('auth/CLEAR_ERROR')
-            // 停留在登入頁面
-            return next(false)
-        }
+        // 驗證用戶身份
+        const isLoggedIn = await checkAuth()
+        const isAdmin = store.getters['auth/isAdmin']
 
         // 需要登入的頁面
         if (to.meta.requiresAuth && !isLoggedIn) {
@@ -359,54 +368,48 @@ router.beforeEach(async (to, from, next) => {
         next()
     } catch (error) {
         console.error('Navigation error:', error)
-
-        // 如果是登入相關錯誤，停留在當前頁面
-        if (to.name === 'login' || from.name === 'login') {
-            store.dispatch('setNotification', {
-                type: 'error',
-                message: '登入失敗，請檢查帳號密碼'
-            })
-            return next(false)
-        }
-
-        // 其他錯誤才導向錯誤頁面
         store.dispatch('setNotification', {
             type: 'error',
-            message: '發生錯誤，請稍後再試'
+            message: '系統發生錯誤，請稍後再試'
         })
-        next({ name: 'server-error' })
+
+        if (to.name !== 'server-error') {
+            next({ name: 'server-error' })
+        } else {
+            next()
+        }
     }
 })
+
 // 全局後置守衛
 router.afterEach(() => {
     // 關閉loading狀態
     store.dispatch('setLoading', false)
 })
 
-// 錯誤處理
+// 路由錯誤處理
 router.onError((error) => {
     console.error('Router error:', error)
+    store.dispatch('setLoading', false)
 
-    // 如果是在登入頁面發生錯誤，不進行跳轉
-    if (router.currentRoute.value.name === 'login') {
-        store.dispatch('setNotification', {
-            type: 'error',
-            message: '登入過程發生錯誤，請重試'
-        })
-        return
-    }
-
-    // 處理代碼分割加載失敗
+    // 組件加載失敗時自動重新加載頁面
     if (error.name === 'ChunkLoadError') {
         window.location.reload()
         return
     }
 
-    // 其他錯誤才導向錯誤頁面
-    router.push({
-        name: 'server-error',
-        params: { error: error.message }
+    store.dispatch('setNotification', {
+        type: 'error',
+        message: '載入頁面時發生錯誤，請重試'
     })
+
+    // 導航到錯誤頁面
+    if (router.currentRoute.value.name !== 'server-error') {
+        router.push({
+            name: 'server-error',
+            params: { error: error.message }
+        })
+    }
 })
 
 export default router

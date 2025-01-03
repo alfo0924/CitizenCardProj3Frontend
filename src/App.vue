@@ -84,8 +84,9 @@
 </template>
 
 <script>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { useStore } from 'vuex'
 import Header from '@/components/layout/Header.vue'
 import Footer from '@/components/layout/Footer.vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -105,6 +106,31 @@ export default {
 
   setup() {
     const route = useRoute()
+    const store = useStore()
+
+    // 初始化檢查
+    const initCheck = async () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        try {
+          // 從 API 獲取用戶信息
+          await store.dispatch('auth/getUserProfile')
+        } catch (error) {
+          // 如果 token 無效，執行登出
+          store.commit('auth/logout')
+          // 顯示錯誤訊息
+          store.dispatch('setNotification', {
+            type: 'error',
+            message: '登入已過期，請重新登入'
+          })
+        }
+      }
+    }
+
+    // 在組件掛載後執行初始化檢查
+    onMounted(() => {
+      initCheck()
+    })
 
     // 不顯示布局的路由
     const noLayoutRoutes = ['']
