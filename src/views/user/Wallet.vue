@@ -14,23 +14,28 @@
         <!-- 票券類型切換 -->
         <ul class="nav nav-tabs mb-4">
           <li class="nav-item">
-            <a class="nav-link" :class="{ active: activeTab === 'movie' }"
-               @click="activeTab = 'movie'">電影票</a>
+            <a class="nav-link"
+               :class="{ active: activeTab === 'movie' }"
+               @click="switchTab('movie')">電影票</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" :class="{ active: activeTab === 'discount' }"
-               @click="activeTab = 'discount'">優惠券</a>
+            <a class="nav-link"
+               :class="{ active: activeTab === 'discount' }"
+               @click="switchTab('discount')">優惠券</a>
           </li>
         </ul>
 
         <!-- 電影票列表 -->
         <div v-if="activeTab === 'movie'" class="ticket-list">
-          <div v-if="movieTickets.length === 0" class="text-center py-5">
+          <div v-if="!movieTickets.length" class="text-center py-5">
             <i class="fas fa-ticket-alt fa-3x mb-3 text-muted"></i>
             <p class="text-muted">目前沒有電影票</p>
           </div>
+
           <div v-else class="row g-4">
-            <div v-for="ticket in movieTickets" :key="ticket.id" class="col-md-6">
+            <div v-for="ticket in movieTickets"
+                 :key="ticket.id"
+                 class="col-md-6">
               <div class="ticket-card">
                 <div class="ticket-header">
                   <h5>{{ ticket.movieTitle }}</h5>
@@ -53,16 +58,33 @@
               </div>
             </div>
           </div>
+
+          <!-- 分頁控制 -->
+          <div v-if="movieTickets.length" class="d-flex justify-content-center mt-4">
+            <button class="btn btn-outline-primary me-2"
+                    :disabled="currentPage <= 0"
+                    @click="changePage(currentPage - 1)">
+              上一頁
+            </button>
+            <button class="btn btn-outline-primary"
+                    :disabled="!hasNextPage"
+                    @click="changePage(currentPage + 1)">
+              下一頁
+            </button>
+          </div>
         </div>
 
         <!-- 優惠券列表 -->
         <div v-if="activeTab === 'discount'" class="coupon-list">
-          <div v-if="discountCoupons.length === 0" class="text-center py-5">
+          <div v-if="!discountCoupons.length" class="text-center py-5">
             <i class="fas fa-tag fa-3x mb-3 text-muted"></i>
             <p class="text-muted">目前沒有優惠券</p>
           </div>
+
           <div v-else class="row g-4">
-            <div v-for="coupon in discountCoupons" :key="coupon.id" class="col-md-6">
+            <div v-for="coupon in discountCoupons"
+                 :key="coupon.id"
+                 class="col-md-6">
               <div class="coupon-card">
                 <div class="coupon-header">
                   <h5>{{ coupon.title }}</h5>
@@ -93,162 +115,192 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+import { apiService, endpoints } from '@/services/api.config'
 
 export default {
   name: 'Wallet',
+
   components: {
     LoadingSpinner,
     AlertMessage
   },
+
   setup() {
     const store = useStore()
+    const router = useRouter()
     const activeTab = ref('movie')
     const isLoading = ref(false)
     const error = ref(null)
     const movieTickets = ref([])
     const discountCoupons = ref([])
+    const currentPage = ref(0)
+    const pageSize = ref(10)
+    const hasNextPage = ref(false)
 
-    // 模擬票券資料
-    const mockData = {
-      movieTickets: [
-        {
-          id: 1,
-          movieTitle: '蜘蛛人：穿越新宇宙',
-          showTime: '2024-12-15T14:30:00',
-          hall: 'A廳',
-          seatNumber: 'A12',
-          status: 'VALID'
-        },
-        {
-          id: 2,
-          movieTitle: '玩具總動員4',
-          showTime: '2024-12-20T16:30:00',
-          hall: 'A廳',
-          seatNumber: 'B15',
-          status: 'USED'
-        },
-        {
-          id: 3,
-          movieTitle: '魔物獵人',
-          showTime: '2024-12-25T19:30:00',
-          hall: 'A廳',
-          seatNumber: 'C08',
-          status: 'EXPIRED'
-        }
-      ],
-      discountCoupons: [
-        {
-          id: 1,
-          title: '特約商店優惠',
-          description: '全館商品9折',
-          discountType: 'PERCENTAGE',
-          discountValue: 10.00,
-          status: 'VALID',
-          expiryDate: '2024-02-01'
-        },
-        {
-          id: 2,
-          title: '生日特別優惠',
-          description: '特約商店享85折優惠',
-          discountType: 'PERCENTAGE',
-          discountValue: 15.00,
-          status: 'VALID',
-          expiryDate: '2024-02-15'
-        },
-        {
-          id: 3,
-          title: '商品折扣券',
-          description: '指定商品折抵50元',
-          discountType: 'FIXED_AMOUNT',
-          discountValue: 50.00,
-          status: 'USED',
-          expiryDate: '2024-01-31'
-        }
-      ]
-    }
-
-    // 獲取票券資料
-    const fetchTickets = async () => {
+    const fetchTickets = async (page = 0) => {
       try {
         isLoading.value = true
         error.value = null
 
-        const response = await store.dispatch('wallet/fetchTickets')
+        const endpoint = activeTab.value === 'movie' ?
+            endpoints.wallet.tickets :
+            endpoints.wallet.coupons
 
-        if (response && response.success) {
-          movieTickets.value = response.data.movieTickets
-          discountCoupons.value = response.data.discountCoupons
-        } else {
-          console.log('使用模擬數據')
-          movieTickets.value = mockData.movieTickets
-          discountCoupons.value = mockData.discountCoupons
+        const sortField = activeTab.value === 'movie' ? 'createdAt' : 'expiryDate'
+        const sortDirection = activeTab.value === 'movie' ? 'DESC' : 'ASC'
+
+        const response = await apiService.get(endpoint, {
+          params: {
+            page,
+            size: pageSize.value,
+            sort: `${sortField},${sortDirection}`
+          }
+        })
+
+        if (response?.data?.content) {
+          if (activeTab.value === 'movie') {
+            movieTickets.value = response.data.content.map(ticket => ({
+              ...ticket,
+              showTime: ticket.showTime ? new Date(ticket.showTime) : null
+            }))
+          } else {
+            discountCoupons.value = response.data.content.map(coupon => ({
+              ...coupon,
+              expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate) : null
+            }))
+          }
+          hasNextPage.value = !response.data.last
+          currentPage.value = page
         }
       } catch (err) {
-        console.error('Fetch tickets error:', err)
-        movieTickets.value = mockData.movieTickets
-        discountCoupons.value = mockData.discountCoupons
+        console.error('獲取票券失敗:', err)
+        error.value = '獲取票券資料失敗，請稍後再試'
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '獲取票券資料失敗',
+          duration: 3000
+        })
       } finally {
         isLoading.value = false
       }
     }
 
-    // 格式化日期時間
+    const switchTab = async (tab) => {
+      try {
+        activeTab.value = tab
+        currentPage.value = 0
+        await fetchTickets(0)
+      } catch (err) {
+        console.error('切換標籤失敗:', err)
+      }
+    }
+
+    const changePage = async (page) => {
+      if (page < 0) return
+      try {
+        await fetchTickets(page)
+      } catch (err) {
+        console.error('切換頁面失敗:', err)
+      }
+    }
+
     const formatDateTime = (datetime) => {
       if (!datetime) return ''
-      return new Date(datetime).toLocaleString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
+      try {
+        const date = datetime instanceof Date ? datetime : new Date(datetime)
+        return new Intl.DateTimeFormat('zh-TW', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).format(date)
+      } catch (err) {
+        console.error('日期格式化失敗:', err)
+        return datetime
+      }
     }
 
-    // 格式化日期
     const formatDate = (date) => {
       if (!date) return ''
-      return new Date(date).toLocaleDateString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      })
+      try {
+        const dateObj = date instanceof Date ? date : new Date(date)
+        return new Intl.DateTimeFormat('zh-TW', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }).format(dateObj)
+      } catch (err) {
+        console.error('日期格式化失敗:', err)
+        return date
+      }
     }
 
-    // 取得狀態樣式
     const getStatusClass = (status) => {
       const classes = {
         'VALID': 'status-valid',
         'USED': 'status-used',
-        'EXPIRED': 'status-expired'
+        'EXPIRED': 'status-expired',
+        'CANCELLED': 'status-cancelled'
       }
       return classes[status] || 'status-default'
     }
 
-    // 取得狀態文字
     const getStatusText = (status) => {
       const texts = {
         'VALID': '可使用',
         'USED': '已使用',
-        'EXPIRED': '已過期'
+        'EXPIRED': '已過期',
+        'CANCELLED': '已取消'
       }
-      return texts[status] || '未知'
+      return texts[status] || '未知狀態'
     }
 
-    // 顯示票券詳情
-    const showTicketDetail = (ticket) => {
-      console.log('查看票券詳情:', ticket)
+    const showTicketDetail = async (ticket) => {
+      if (!ticket?.id) return
+      try {
+        const response = await apiService.get(endpoints.wallet.ticketDetail(ticket.id))
+        if (response?.data) {
+          store.dispatch('wallet/setCurrentTicket', response.data)
+          router.push({
+            name: 'ticket-detail',
+            params: { id: ticket.id }
+          })
+        }
+      } catch (err) {
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '獲取票券詳情失敗',
+          duration: 3000
+        })
+      }
     }
 
-    // 顯示優惠券詳情
-    const showCouponDetail = (coupon) => {
-      console.log('使用優惠券:', coupon)
+    const showCouponDetail = async (coupon) => {
+      if (!coupon?.id) return
+      try {
+        const response = await apiService.get(endpoints.wallet.couponDetail(coupon.id))
+        if (response?.data) {
+          store.dispatch('wallet/setCurrentCoupon', response.data)
+          router.push({
+            name: 'coupon-detail',
+            params: { id: coupon.id }
+          })
+        }
+      } catch (err) {
+        store.dispatch('setNotification', {
+          type: 'error',
+          message: '獲取優惠券詳情失敗',
+          duration: 3000
+        })
+      }
     }
 
-    onMounted(() => {
-      fetchTickets()
-    })
+    onMounted(fetchTickets)
 
     return {
       activeTab,
@@ -256,12 +308,16 @@ export default {
       error,
       movieTickets,
       discountCoupons,
+      currentPage,
+      hasNextPage,
       formatDateTime,
       formatDate,
       getStatusClass,
       getStatusText,
       showTicketDetail,
-      showCouponDetail
+      showCouponDetail,
+      switchTab,
+      changePage
     }
   }
 }
@@ -288,14 +344,23 @@ export default {
   border-color: #BA0043;
 }
 
-.ticket-card, .coupon-card {
+.ticket-card,
+.coupon-card {
   background: white;
   border-radius: 10px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
+  transition: transform 0.2s;
 }
 
-.ticket-header, .coupon-header {
+.ticket-card:hover,
+.coupon-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.ticket-header,
+.coupon-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -304,6 +369,7 @@ export default {
 
 .status-valid {
   color: #28a745;
+  font-weight: 500;
 }
 
 .status-used {
@@ -314,15 +380,18 @@ export default {
   color: #dc3545;
 }
 
-.ticket-body, .coupon-body {
+.ticket-body,
+.coupon-body {
   margin-bottom: 1rem;
 }
 
-.ticket-body p, .coupon-body p {
+.ticket-body p,
+.coupon-body p {
   margin-bottom: 0.5rem;
 }
 
-.ticket-body i, .coupon-body i {
+.ticket-body i,
+.coupon-body i {
   margin-right: 0.5rem;
   color: #BA0043;
 }
@@ -330,6 +399,7 @@ export default {
 .btn-outline-primary {
   color: #BA0043;
   border-color: #BA0043;
+  transition: all 0.3s;
 }
 
 .btn-outline-primary:hover {
@@ -340,11 +410,27 @@ export default {
 .btn-outline-primary:disabled {
   color: #6c757d;
   border-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.ticket-footer,
+.coupon-footer {
+  text-align: right;
 }
 
 @media (max-width: 768px) {
-  .ticket-card, .coupon-card {
+  .ticket-card,
+  .coupon-card {
     padding: 1rem;
+  }
+
+  .ticket-header h5,
+  .coupon-header h5 {
+    font-size: 1rem;
+  }
+
+  .btn-outline-primary {
+    width: 100%;
   }
 }
 </style>
