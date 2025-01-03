@@ -13,10 +13,24 @@
             <i class="fas fa-search"></i>
           </span>
           <input type="text" placeholder="搜尋" v-model="searchKeyword">
-          <button class="advanced-search-btn">
+          <button class="advanced-search-btn" @click="toggleAdvancedSearch">
             <i class="bi bi-filter-left"></i>
             進階搜尋
           </button>
+        </div>
+      </div>
+      <!-- 進階搜尋區塊 -->
+      <div class="advanced-search-panel" :class="{ 'expanded': isAdvancedSearchOpen }" v-show="isAdvancedSearchOpen">
+        <div class="advanced-search-content">
+          <!-- 這裡可以放進階搜尋的表單內容 -->
+          <div class="form-group">
+            <label>類別</label>
+            <select v-model="advancedFilters.category">
+              <option value="">全部</option>
+              <!-- 加入你的類別選項 -->
+            </select>
+          </div>
+          <!-- 可以繼續加入其他篩選條件 -->
         </div>
       </div>
 
@@ -84,6 +98,13 @@ export default {
       currentPage: 1,
       pageSize: 15,
       stores: storeData.stores,
+      //進階搜尋
+      searchKeyword: '',
+      isAdvancedSearchOpen: false,
+      advancedFilters: {
+        category: '',
+        // 其他進階搜尋的篩選條件
+      }
     };
   },
   computed: {
@@ -119,6 +140,11 @@ export default {
       return pages;
     },
   },
+  methods: {
+    toggleAdvancedSearch() {
+      this.isAdvancedSearchOpen = !this.isAdvancedSearchOpen;
+    },
+  }
 };
 </script>
 
@@ -329,5 +355,75 @@ export default {
 .more-btn:hover {
   background: rgba(186, 0, 67, 1);
   transform: scale(1.05);
+}
+
+/** 進階搜尋區塊 */
+.search-filter-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.advanced-search-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.advanced-search-btn:hover {
+  background: #e9e9e9;
+}
+
+.advanced-search-panel {
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 0 0 4px 4px;
+  margin-top: -1px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform-origin: top;
+  transform: scaleY(0);
+  transition: transform 0.3s ease;
+  z-index: 10;
+}
+
+.advanced-search-panel.expanded {
+  transform: scaleY(1);
+}
+
+.advanced-search-content {
+  padding: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 </style>
