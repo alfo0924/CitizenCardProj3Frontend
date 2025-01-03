@@ -1,6 +1,8 @@
 import api from '@/services/api.config'
 
-const TOKEN_VERIFY_INTERVAL = 15 * 60 * 1000 // 15 minutes
+const TOKEN_VERIFY_INTERVAL = 15 * 60 * 1000 // 15 分鐘
+const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000 // 5 分鐘
+
 const STORAGE_KEYS = {
     TOKEN: 'token',
     USER: 'user',
@@ -14,7 +16,8 @@ const state = {
     error: null,
     isTokenVerified: false,
     lastVerification: localStorage.getItem(STORAGE_KEYS.LAST_VERIFICATION) || null,
-    isInitialized: false
+    isInitialized: false,
+    refreshInterval: null
 }
 
 const getters = {
@@ -48,7 +51,7 @@ const getters = {
 }
 
 const actions = {
-    async initAuth({ dispatch, commit, getters }) {
+    async initAuth({ dispatch, commit, getters, state }) {
         try {
             commit('SET_LOADING', true)
             const token = localStorage.getItem(STORAGE_KEYS.TOKEN)
@@ -69,6 +72,14 @@ const actions = {
                     await dispatch('forceLogout')
                     return false
                 }
+
+                // 設置自動刷新
+                if (!state.refreshInterval) {
+                    const interval = setInterval(() => {
+                        dispatch('refreshAuthState')
+                    }, AUTO_REFRESH_INTERVAL)
+                    commit('SET_REFRESH_INTERVAL', interval)
+                }
             }
 
             return true
@@ -81,32 +92,35 @@ const actions = {
         }
     },
 
+    async refreshAuthState({ dispatch, getters }) {
+        if (getters.isLoggedIn && getters.tokenNeedsVerification) {
+            await dispatch('checkToken')
+            await dispatch('fetchProfile')
+        }
+    },
+
     async checkToken({ commit, dispatch }) {
         try {
             const response = await api.get('/auth/verify-token')
-
             if (response.data.valid) {
                 commit('SET_TOKEN_VERIFIED', true)
                 commit('UPDATE_VERIFICATION_TIME')
                 return { success: true }
             }
-
             throw new Error('登入令牌已過期')
         } catch (error) {
             await dispatch('handleAuthError', error)
-            return {
-                success: false,
-                message: error.response?.data?.message || error.message
-            }
+            return { success: false, message: error.response?.data?.message || error.message }
         }
     },
 
-    async handleAuthError({ commit }, error) {
+    async handleAuthError({ commit, dispatch }, error) {
         let errorMessage = '認證失敗'
         if (error.response) {
             switch (error.response.status) {
                 case 401:
                     errorMessage = '登入已過期，請重新登入'
+                    await dispatch('forceLogout')
                     break
                 case 403:
                     errorMessage = '無權限訪問'
@@ -118,7 +132,10 @@ const actions = {
         commit('SET_ERROR', errorMessage)
     },
 
-    async forceLogout({ commit }) {
+    async forceLogout({ commit, state }) {
+        if (state.refreshInterval) {
+            clearInterval(state.refreshInterval)
+        }
         Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key))
         delete api.defaults.headers.common['Authorization']
         commit('RESET_STATE')
@@ -151,6 +168,9 @@ const actions = {
             commit('SET_AUTH_DATA', { token, user })
             commit('SET_TOKEN_VERIFIED', true)
             commit('UPDATE_VERIFICATION_TIME')
+
+            // 啟動自動刷新
+            await dispatch('initAuth')
 
             return { success: true, data: response.data }
         } catch (error) {
@@ -268,6 +288,10 @@ const mutations = {
         state.isTokenVerified = false
         state.lastVerification = null
         state.isInitialized = false
+        if (state.refreshInterval) {
+            clearInterval(state.refreshInterval)
+            state.refreshInterval = null
+        }
     },
     SET_AUTH_DATA(state, { token, user }) {
         state.token = token
@@ -285,6 +309,9 @@ const mutations = {
     },
     SET_INITIALIZED(state) {
         state.isInitialized = true
+    },
+    SET_REFRESH_INTERVAL(state, interval) {
+        state.refreshInterval = interval
     },
     UPDATE_VERIFICATION_TIME(state) {
         const now = new Date().toISOString()
