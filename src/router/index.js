@@ -48,7 +48,7 @@ const asyncComponents = {
     ServerError: () => import('@/views/error/500.vue')
 }
 
-// 路由配置
+// 基本路由配置
 const routes = [
     {
         path: '/',
@@ -332,19 +332,16 @@ const router = createRouter({
 
 // 認證檢查函數
 const checkAuth = async (to) => {
-    // 如果路由不需要認證，直接返回 true
     if (!to.meta.requiresAuth && !to.meta.requiresAdmin) {
         return true
     }
 
     try {
-        // 初始化認證狀態
         await store.dispatch('auth/initAuth')
 
         const isLoggedIn = store.getters['auth/isLoggedIn']
         const isAdmin = store.getters['auth/isAdmin']
 
-        // 檢查基本認證
         if (to.meta.requiresAuth && !isLoggedIn) {
             store.dispatch('setNotification', {
                 type: 'warning',
@@ -354,7 +351,6 @@ const checkAuth = async (to) => {
             return false
         }
 
-        // 檢查管理員權限
         if (to.meta.requiresAdmin && !isAdmin) {
             store.dispatch('setNotification', {
                 type: 'error',
@@ -373,33 +369,27 @@ const checkAuth = async (to) => {
 
 // 全局前置守衛
 router.beforeEach(async (to, from, next) => {
-    // 開始載入
     store.dispatch('setLoading', true)
 
     try {
-        // 更新頁面標題
         document.title = to.meta.title
             ? `${to.meta.title} - ${ROUTE_META.DEFAULT_TITLE}`
             : ROUTE_META.DEFAULT_TITLE
 
-        // 檢查認證狀態
         const authResult = await checkAuth(to)
 
         if (!authResult) {
-            // 認證失敗，重定向到登入頁面
             return next({
                 name: 'login',
                 query: { redirect: to.fullPath }
             })
         }
 
-        // 檢查訪客限制
         const isLoggedIn = store.getters['auth/isLoggedIn']
         if (to.meta.requiresGuest && isLoggedIn) {
             return next({ name: 'profile' })
         }
 
-        // 設置布局
         if (to.meta.layout) {
             store.commit('setLayout', to.meta.layout)
         }
@@ -423,10 +413,8 @@ router.beforeEach(async (to, from, next) => {
 
 // 全局後置守衛
 router.afterEach((to) => {
-    // 關閉載入狀態
     store.dispatch('setLoading', false)
 
-    // 記錄路由歷史（如果需要的話）
     if (!to.meta.skipHistory) {
         store.commit('addToHistory', to.fullPath)
     }
@@ -437,9 +425,7 @@ router.onError((error) => {
     console.error('Router error:', error)
     store.dispatch('setLoading', false)
 
-    // 組件加載失敗時的處理
     if (error.name === 'ChunkLoadError') {
-        // 重新加載頁面
         window.location.reload()
         return
     }
@@ -450,7 +436,6 @@ router.onError((error) => {
         duration: 3000
     })
 
-    // 導航到錯誤頁面
     if (router.currentRoute.value.name !== 'server-error') {
         router.push({
             name: 'server-error',
