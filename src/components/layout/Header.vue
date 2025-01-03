@@ -107,7 +107,7 @@
 </template>
 
 <script>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 
@@ -120,10 +120,31 @@ export default {
     const route = useRoute()
     const isNavCollapsed = ref(true)
 
-    // 用戶狀態
-    const isLoggedIn = computed(() => store.getters['auth/isLoggedIn'])
-    const isAdmin = computed(() => store.getters['auth/isAdmin'])
-    const userName = computed(() => store.getters['auth/userName'])
+    // 用戶狀態監聽
+    const isLoggedIn = computed(() => {
+      return store.getters['auth/isLoggedIn']
+    })
+
+    const isAdmin = computed(() => {
+      return store.getters['auth/isAdmin']
+    })
+
+    const userName = computed(() => {
+      return store.getters['auth/userName']
+    })
+
+    // 監聽路由變化
+    watch(
+        () => route.path,
+        () => {
+          store.dispatch('auth/checkAuthStatus')
+        }
+    )
+
+    // 組件掛載時檢查登入狀態
+    onMounted(() => {
+      store.dispatch('auth/checkAuthStatus')
+    })
 
     // 導航控制
     const toggleNav = () => {
@@ -134,11 +155,17 @@ export default {
     const handleLogout = async () => {
       try {
         await store.dispatch('auth/logout')
+        await store.dispatch('auth/clearAuthState')
+
         router.push('/login')
+
         store.dispatch('setNotification', {
           type: 'success',
           message: '已成功登出'
         })
+
+        // 強制更新登入狀態
+        await store.dispatch('auth/checkAuthStatus')
       } catch (error) {
         console.error('Logout error:', error)
         store.dispatch('setNotification', {
@@ -178,6 +205,7 @@ export default {
     }
   }
 }
+
 </script>
 
 <style scoped>
