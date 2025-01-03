@@ -1,4 +1,4 @@
-import storeService from '@/services/store.service';
+import StoreService from '@/services/store.service';
 
 // 初始狀態
 const initialState = {
@@ -156,7 +156,7 @@ const actions = {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      const response = await storeService.searchStores(params);
+      const response = await StoreService.searchStores(params);
       commit('SET_STORES', response.data.stores);
       commit('SET_TOTAL_RESULTS', response.data.total);
       commit('SET_SEARCH_PARAMS', params);
@@ -174,7 +174,7 @@ const actions = {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      const response = await storeService.getStoreDetails(storeId);
+      const response = await StoreService.getStoreDetails(storeId);
       commit('SET_CURRENT_STORE', response.data);
       return response;
     } catch (error) {
@@ -188,7 +188,7 @@ const actions = {
   // 獲取類別列表
   async fetchCategories({ commit }) {
     try {
-      const response = await storeService.getCategories();
+      const response = await StoreService.getCategories();
       commit('SET_CATEGORIES', response.data);
       return response;
     } catch (error) {
@@ -200,7 +200,7 @@ const actions = {
   // 獲取地區列表
   async fetchAreas({ commit }) {
     try {
-      const response = await storeService.getAreas();
+      const response = await StoreService.getAreas();
       commit('SET_AREAS', response.data);
       return response;
     } catch (error) {
@@ -212,7 +212,7 @@ const actions = {
   // 獲取商店評價
   async fetchStoreReviews({ commit }, { storeId, params }) {
     try {
-      const response = await storeService.getStoreReviews(storeId, params);
+      const response = await StoreService.getStoreReviews(storeId, params);
       return response;
     } catch (error) {
       commit('SET_ERROR', error.message);
@@ -223,7 +223,7 @@ const actions = {
   // 提交評價
   async submitReview({ commit }, { storeId, reviewData }) {
     try {
-      const response = await storeService.submitReview(storeId, reviewData);
+      const response = await StoreService.submitReview(storeId, reviewData);
       commit('UPDATE_STORE_REVIEW', {
         storeId,
         review: response.data
@@ -238,7 +238,7 @@ const actions = {
   // 切換收藏狀態
   async toggleFavorite({ commit }, { storeId, isFavorite }) {
     try {
-      await storeService.toggleFavorite(storeId, isFavorite);
+      await StoreService.toggleFavorite(storeId, isFavorite);
       if (isFavorite) {
         commit('ADD_FAVORITE', storeId);
       } else {
@@ -257,7 +257,7 @@ const actions = {
   // 檢查收藏狀態
   async checkFavoriteStatus({ commit }, storeId) {
     try {
-      const response = await storeService.checkFavoriteStatus(storeId);
+      const response = await StoreService.checkFavoriteStatus(storeId);
       if (response.data.isFavorite) {
         commit('ADD_FAVORITE', storeId);
       }
@@ -271,7 +271,7 @@ const actions = {
   // 獲取收藏的商店
   async fetchFavoriteStores({ commit }, params) {
     try {
-      const response = await storeService.getFavoriteStores(params);
+      const response = await StoreService.getFavoriteStores(params);
       commit('SET_FAVORITES', response.data.stores.map(store => store.id));
       return response;
     } catch (error) {
@@ -283,7 +283,7 @@ const actions = {
   // 獲取附近商店
   async fetchNearbyStores({ commit }, params) {
     try {
-      const response = await storeService.getNearbyStores(params);
+      const response = await StoreService.getNearbyStores(params);
       return response;
     } catch (error) {
       commit('SET_ERROR', error.message);
@@ -294,7 +294,7 @@ const actions = {
   // 回報商店資訊
   async reportStore({ commit }, { storeId, reportData }) {
     try {
-      const response = await storeService.reportStore(storeId, reportData);
+      const response = await StoreService.reportStore(storeId, reportData);
       return response;
     } catch (error) {
       commit('SET_ERROR', error.message);
