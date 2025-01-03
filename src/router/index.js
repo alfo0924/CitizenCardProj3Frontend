@@ -15,6 +15,9 @@ import NotFound from '@/views/NotFound.vue'
 import FAQ from '@/views/other/FAQ.vue'
 import PartnerStore from '@/views/other/PartnerStore.vue'
 import CityMovie from '@/views/other/CityMovie.vue'
+import DiscountStore from '@/views/discountStore/DiscountStore.vue'
+import StoreOverview from '@/views/discountStore/StoreOverview.vue'
+import DiscountStoreDetail from '@/views/discountStore/DiscountStoreDetail.vue'
 
 // 路由配置常量
 const ROUTE_META = {
@@ -35,9 +38,6 @@ const asyncComponents = {
     StoreDetail: () => import('@/views/store/StoreDetail.vue'),
     Promotions: () => import('@/views/promotion/Promotions.vue'),
     PromotionDetail: () => import('@/views/promotion/PromotionDetail.vue'),
-    DiscountStore: () => import('@/views/discountStore/DiscountStore.vue'),
-    StoreOverview: () => import('@/views/discountStore/StoreOverview.vue'),
-    DiscountStoreDetail: () => import('@/views/discountStore/DiscountStoreDetail.vue'),
     // 管理員組件
     AdminDashboard: () => import('@/views/admin/AdminDashboard.vue'),
     MovieManagement: () => import('@/views/admin/MovieManagement.vue'),
@@ -191,7 +191,7 @@ const routes = [
     {
         path: '/discountstore',
         name: 'discountstore',
-        component: asyncComponents.DiscountStore,
+        component: DiscountStore,
         meta: {
             title: '特店優惠',
             layout: ROUTE_META.LAYOUTS.DEFAULT
@@ -200,7 +200,7 @@ const routes = [
     {
         path: '/discountstore/overview',
         name: 'storeoverview',
-        component: asyncComponents.StoreOverview,
+        component: StoreOverview,
         meta: {
             title: '特店優惠總覽',
             layout: ROUTE_META.LAYOUTS.DEFAULT
@@ -208,8 +208,8 @@ const routes = [
     },
     {
         path: '/store/:id',
-        name: 'store-detail',
-        component: asyncComponents.DiscountStoreDetail,
+        name: 'StoreDetail',
+        component: DiscountStoreDetail,
         props: true,
         meta: {
             title: '特店優惠詳細資訊',
