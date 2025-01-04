@@ -51,16 +51,25 @@ const actions = {
             throw error
         }
     },
-    async updateMovie({ commit }, { id, data }) {
+    async updateMovie({ commit, dispatch }, { id, data }) {
         try {
             const response = await axios.put(`/movies/${id}`, data, {
                 headers: {
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'multipart/form-data',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
                 }
             })
             return response.data
         } catch (error) {
-            console.error('Error updating movie:', error)
+            if (error.response?.status === 401) {
+                try {
+                    await store.dispatch('auth/handleAuthError', error)
+                    // 重新獲取 token 後重試
+                    return await this.updateMovie({ commit }, { id, data })
+                } catch (authError) {
+                    throw new Error('認證失敗，請重新登入')
+                }
+            }
             throw error
         }
     },
