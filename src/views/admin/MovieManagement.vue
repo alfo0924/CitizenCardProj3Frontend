@@ -68,46 +68,45 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="movie in movies" :key="movie.id">
-              <td>
-                <img
-                    :src="movie.posterUrl || require('@/assets/images/default-poster.jpg')"
-                    :alt="movie.title"
-                    class="movie-poster"
-                >
-              </td>
-              <td>{{ movie.title }}</td>
-              <td>{{ formatDate(movie.release_date) }}</td>
-              <td>{{ formatDate(movie.end_date) }}</td>
-              <td>{{ movie.duration }}分鐘</td>
-              <td>{{ movie.director }}</td>
-              <td>{{ movie.genre }}</td>
-              <td>${{ movie.price }}</td>
-              <td>{{ movie.score ? movie.score.toFixed(1) : '尚無評分' }}</td>
-              <td>
-        <span
-            class="badge"
-            :class="getStatusClass(movie.isShowing)"
-        >
-          {{ getStatusText(movie.isShowing) }}
-        </span>
-              </td>
-              <td>
-                <button
-                    class="btn btn-sm btn-outline-primary me-2"
-                    @click="openMovieModal(movie)"
-                >
-                  編輯
-                </button>
-                <button
-                    class="btn btn-sm btn-outline-danger"
-                    @click="confirmDelete(movie)"
-                >
-                  刪除
-                </button>
-              </td>
-            </tr>
-            </tbody>
+          <tr v-for="movie in movies" :key="movie.id">
+            <td>
+              <img
+                  :src="movie.poster_url || require('@/assets/images/default-poster.jpg')"
+                  :alt="movie.title"
+                  class="movie-poster"
+              >
+            </td>
+            <td>{{ movie.title }}</td>
+            <td>{{ formatDate(movie.release_date) }}</td>
+            <td>{{ formatDate(movie.end_date) }}</td>
+            <td>{{ movie.duration }}分鐘</td>
+            <td>{{ movie.director || '尚未設定' }}</td>
+            <td>{{ movie.genre || '未分類' }}</td>
+            <td>${{ movie.price || 0 }}</td>
+            <td>
+      <span
+          class="badge"
+          :class="getStatusClass(movie.is_showing)"
+      >
+        {{ getStatusText(movie.is_showing) }}
+      </span>
+            </td>
+            <td>
+              <button
+                  class="btn btn-sm btn-outline-primary me-2"
+                  @click="openMovieModal(movie)"
+              >
+                編輯
+              </button>
+              <button
+                  class="btn btn-sm btn-outline-danger"
+                  @click="confirmDelete(movie)"
+              >
+                刪除
+              </button>
+            </td>
+          </tr>
+          </tbody>
           </table>
         </div>
 
@@ -203,7 +202,7 @@
                   <input
                       type="date"
                       class="form-control"
-                      v-model="editingMovie.releaseDate"
+                      v-model="editingMovie.release_date"
                       required
                   >
                 </div>
@@ -212,7 +211,7 @@
                   <input
                       type="date"
                       class="form-control"
-                      v-model="editingMovie.endDate"
+                      v-model="editingMovie.end_date"
                       required
                   >
                 </div>
@@ -331,7 +330,7 @@ import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
-import {useRouter} from "vue-router";
+import { useRouter } from "vue-router";
 import { debounce } from 'lodash'
 
 export default {
@@ -352,10 +351,15 @@ export default {
     const currentPage = ref(1)
     const editingMovie = ref({
       title: '',
-      releaseDate: '',
+      release_date: '',
+      end_date: '',
       duration: '',
       description: '',
-      status: 'SHOWING'
+      director: '',
+      genre: '',
+      price: 0,
+      is_showing: true,
+      poster_url: ''
     })
     const goBack = () => {
       router.back()
@@ -446,7 +450,6 @@ export default {
         // 直接使用後端回傳的資料
         store.commit('movie/setMovies', response.data.content)
         store.commit('movie/SET_TOTAL_PAGES', response.data.totalPages)
-
       } catch (err) {
         console.error('Error fetching movies:', err)
         error.value = '載入電影列表失敗'
@@ -483,10 +486,15 @@ export default {
       } else {
         editingMovie.value = {
           title: '',
-          releaseDate: '',
+          release_date: '',
+          end_date: '',
           duration: '',
           description: '',
-          status: 'SHOWING'
+          director: '',
+          genre: '',
+          price: 0,
+          is_showing: true,
+          poster_url: ''
         }
       }
       const modal = new Modal(movieModal.value)
@@ -508,7 +516,7 @@ export default {
         isProcessing.value = true
         const formData = new FormData()
 
-        // 將編輯資料加入 FormData
+        // 將編輯資料加入 FormData，使用正確的欄位名稱
         Object.keys(editingMovie.value).forEach(key => {
           if (key !== 'posterFile') {
             formData.append(key, editingMovie.value[key])
@@ -534,7 +542,7 @@ export default {
         await fetchMovies()
       } catch (err) {
         console.error('Error saving movie:', err)
-        Swal.fire('錯誤', '儲存電影資料失敗', 'error')
+        Swal.fire('錯誤', err.response?.data?.message || '儲存電影資料失敗', 'error')
       } finally {
         isProcessing.value = false
       }
@@ -599,6 +607,7 @@ export default {
 
     // 格式化日期
     const formatDate = (date) => {
+      if (!date) return '未設定'
       return new Date(date).toLocaleDateString('zh-TW')
     }
 
