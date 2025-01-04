@@ -37,6 +37,42 @@ const getters = {
 
 // actions
 const actions = {
+
+    async createMovie({ commit }, movieData) {
+        try {
+            const response = await axios.post('/movies', movieData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            return response.data
+        } catch (error) {
+            console.error('Error creating movie:', error)
+            throw error
+        }
+    },
+    async updateMovie({ commit }, { id, data }) {
+        try {
+            const response = await axios.put(`/movies/${id}`, data, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+            return response.data
+        } catch (error) {
+            console.error('Error updating movie:', error)
+            throw error
+        }
+    },
+    async deleteMovie({ commit }, id) {
+        try {
+            await axios.delete(`/movies/${id}`)
+            return true
+        } catch (error) {
+            console.error('Error deleting movie:', error)
+            throw error
+        }
+    },
     // 清理數據
     clearMovieData({ commit }) {
         commit('SET_MOVIES', [])
