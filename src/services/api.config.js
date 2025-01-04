@@ -4,7 +4,7 @@ import router from '@/router'
 export const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:8080'
 // API 實例配置
 const api = axios.create({
-    baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080/api',
+    baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080',
     timeout: 15000,
     headers: {
         'Content-Type': 'application/json',
@@ -222,68 +222,68 @@ function handleUnexpectedError(error) {
 // API端點配置
 export const endpoints = {
     auth: {
-        login: '/auth/login',
-        register: '/auth/register',
-        logout: '/auth/logout',
-        profile: '/auth/profile',
-        verifyToken: '/auth/verify-token',
-        refreshToken: '/auth/refresh-token'
+        login: '/api/auth/login',
+        register: '/api/auth/register',
+        logout: '/api/auth/logout',
+        profile: '/api/auth/profile',
+        verifyToken: '/api/auth/verify-token',
+        refreshToken: '/api/auth/refresh-token'
     },
     users: {
-        profile: '/users/profile',
-        update: '/users/profile',
-        changePassword: '/users/change-password',
-        updateAvatar: '/users/avatar'
+        profile: '/api/users/profile',
+        update: '/api/users/profile',
+        changePassword: '/api/users/change-password',
+        updateAvatar: '/api/users/avatar'
     },
     movies: {
-        list: '/movies',
-        detail: id => `/movies/${id}`,
-        schedules: id => `/movies/${id}/schedules`,
-        search: '/movies/search',
-        upcoming: '/movies/upcoming',
-        popular: '/movies/popular'
+        list: '/api/movies',
+        detail: id => `/api/movies/${id}`,
+        schedules: id => `/api/movies/${id}/schedules`,
+        search: '/api/movies/search',
+        upcoming: '/api/movies/upcoming',
+        popular: '/api/movies/popular'
     },
     schedules: {
-        list: '/schedules',
-        detail: id => `/schedules/${id}`,
-        seats: id => `/schedules/${id}/seats`,
-        book: id => `/schedules/${id}/book`
+        list: '/api/schedules',
+        detail: id => `/api/schedules/${id}`,
+        seats: id => `/api/schedules/${id}/seats`,
+        book: id => `/api/schedules/${id}/book`
     },
     tickets: {
-        list: '/movie-tickets',
-        create: '/movie-tickets',
-        detail: id => `/movie-tickets/${id}`,
-        cancel: id => `/movie-tickets/${id}/cancel`,
-        qrcode: id => `/movie-tickets/${id}/qrcode`,
-        validate: id => `/movie-tickets/${id}/validate`
+        list: '/api/movie-tickets',
+        create: '/api/movie-tickets',
+        detail: id => `/api/movie-tickets/${id}`,
+        cancel: id => `/api/movie-tickets/${id}/cancel`,
+        qrcode: id => `/api/movie-tickets/${id}/qrcode`,
+        validate: id => `/api/movie-tickets/${id}/validate`
     },
     discounts: {
-        list: '/discount-coupons',
-        detail: id => `/discount-coupons/${id}`,
-        use: id => `/discount-coupons/${id}/use`,
-        qrcode: id => `/discount-coupons/${id}/qrcode`,
-        validate: id => `/discount-coupons/${id}/validate`,
-        available: '/discount-coupons/available'
+        list: '/api/discount-coupons',
+        detail: id => `/api/discount-coupons/${id}`,
+        use: id => `/api/discount-coupons/${id}/use`,
+        qrcode: id => `/api/discount-coupons/${id}/qrcode`,
+        validate: id => `/api/discount-coupons/${id}/validate`,
+        available: '/api/discount-coupons/available'
     },
     wallet: {
-        info: '/wallet',
-        balance: '/wallet/balance',
-        deposit: '/wallet/deposit',
-        withdraw: '/wallet/withdraw',
-        transactions: '/wallet/transactions',
-        statement: '/wallet/statement',
-        tickets: '/wallet/tickets',  // 新增
-        coupons: '/wallet/coupons',  // 新增
-        ticketDetail: id => `/wallet/tickets/${id}`,  // 新增
-        couponDetail: id => `/wallet/coupons/${id}`   // 新增
+        info: '/api/wallet',
+        balance: '/api/wallet/balance',
+        deposit: '/api/wallet/deposit',
+        withdraw: '/api/wallet/withdraw',
+        transactions: '/api/wallet/transactions',
+        statement: '/api/wallet/statement',
+        tickets: '/api/wallet/tickets',  // 新增
+        coupons: '/api/wallet/coupons',  // 新增
+        ticketDetail: id => `/api/wallet/tickets/${id}`,  // 新增
+        couponDetail: id => `/api/wallet/coupons/${id}`   // 新增
     },
     stores: {
-        list: '/stores',
-        detail: id => `/stores/${id}`,
-        search: '/stores/search',
-        nearby: '/stores/nearby',
-        categories: '/stores/categories',
-        promotions: id => `/stores/${id}/promotions`
+        list: '/api/stores',
+        detail: id => `/api/stores/${id}`,
+        search: '/api/stores/search',
+        nearby: '/api/stores/nearby',
+        categories: '/api/stores/categories',
+        promotions: id => `/api/stores/${id}/promotions`
     }
 }
 

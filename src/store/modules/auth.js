@@ -277,6 +277,29 @@ const actions = {
         } finally {
             commit('SET_LOADING', false)
         }
+    },
+    async refreshToken({ commit }) {
+        try {
+            const response = await api.post(endpoints.auth.refreshToken)
+            if (response.data?.token) {
+                TokenManager.setToken(response.data.token)
+                return { success: true }
+            }
+            return { success: false }
+        } catch (error) {
+            return { success: false }
+        }
+    },
+    async checkAuthStatus({ commit }) {
+        try {
+            const token = localStorage.getItem('token')
+            if (!token) return { isAuthenticated: false }
+
+            const response = await api.get('/api/auth/verify-token')
+            return { isAuthenticated: response.data.valid }
+        } catch (error) {
+            return { isAuthenticated: false }
+        }
     }
 }
 
