@@ -8,9 +8,14 @@
       <AlertMessage v-if="error" type="error" :message="error" />
 
       <!-- 管理介面 -->
-      <div v-else class="management-content">
+      <div class="management-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h2>電影管理</h2>
+          <div class="d-flex align-items-center">
+            <button class="btn btn-outline-secondary me-3" @click="goBack">
+              <i class="fas fa-arrow-left me-1"></i>返回
+            </button>
+            <h2>電影管理</h2>
+          </div>
           <button class="btn btn-primary" @click="openMovieModal()">
             <i class="fas fa-plus me-2"></i>新增電影
           </button>
@@ -252,6 +257,8 @@ import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+import {useRouter} from "vue-router";
+
 
 export default {
   name: 'MovieManagement',
@@ -261,6 +268,7 @@ export default {
   },
   setup() {
     const store = useStore()
+    const router = useRouter()
     const movieModal = ref(null)
     const isLoading = ref(false)
     const error = ref(null)
@@ -275,7 +283,9 @@ export default {
       description: '',
       status: 'SHOWING'
     })
-
+    const goBack = () => {
+      router.back()
+    }
     // 模擬資料
     const mockMovies = [
       {
@@ -336,19 +346,15 @@ export default {
       try {
         isLoading.value = true
         error.value = null
-        const response = await store.dispatch('movie/fetchMovies', {
-          page: currentPage.value,
+        await store.dispatch('movie/fetchMovies', {
+          page: currentPage.value - 1, // 後端分頁從0開始
+          size: 10,
           status: selectedStatus.value,
           keyword: searchKeyword.value
         })
-        if (!response || !response.success) {
-          console.log('使用模擬數據')
-          store.commit('movie/setMovies', mockMovies)
-        }
       } catch (err) {
         console.error('Error fetching movies:', err)
         error.value = '載入電影列表失敗'
-        store.commit('movie/setMovies', mockMovies)
       } finally {
         isLoading.value = false
       }
@@ -395,8 +401,8 @@ export default {
     const handleImageUpload = (event) => {
       const file = event.target.files[0]
       if (file) {
-        // TODO: 實作圖片上傳
-        console.log('Uploading image:', file.name)
+        editingMovie.value.posterFile = file
+        editingMovie.value.posterUrl = URL.createObjectURL(file)
       }
     }
 
@@ -404,16 +410,35 @@ export default {
     const saveMovie = async () => {
       try {
         isProcessing.value = true
-        if (editingMovie.value.id) {
-          await store.dispatch('movie/updateMovie', editingMovie.value)
-        } else {
-          await store.dispatch('movie/createMovie', editingMovie.value)
+        const formData = new FormData()
+
+        // 將編輯資料加入 FormData
+        Object.keys(editingMovie.value).forEach(key => {
+          if (key !== 'posterFile') {
+            formData.append(key, editingMovie.value[key])
+          }
+        })
+
+        if (editingMovie.value.posterFile) {
+          formData.append('poster', editingMovie.value.posterFile)
         }
+
+        if (editingMovie.value.id) {
+          await store.dispatch('movie/updateMovie', {
+            id: editingMovie.value.id,
+            data: formData
+          })
+          Swal.fire('成功', '電影資料已更新', 'success')
+        } else {
+          await store.dispatch('movie/createMovie', formData)
+          Swal.fire('成功', '已新增電影', 'success')
+        }
+
         Modal.getInstance(movieModal.value).hide()
         await fetchMovies()
       } catch (err) {
-        error.value = '儲存電影失敗'
         console.error('Error saving movie:', err)
+        Swal.fire('錯誤', '儲存電影資料失敗', 'error')
       } finally {
         isProcessing.value = false
       }
@@ -500,7 +525,8 @@ export default {
       confirmDelete,
       getStatusClass,
       getStatusText,
-      formatDate
+      formatDate,
+      goBack,
     }
   }
 }
