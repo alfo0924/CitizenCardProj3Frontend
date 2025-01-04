@@ -107,12 +107,18 @@ const actions = {
                 commit('UPDATE_VERIFICATION_TIME')
                 return { success: true }
             }
+            // Token 無效時嘗試更新
+            const refreshResult = await dispatch('refreshToken')
+            if (refreshResult.success) {
+                return { success: true }
+            }
             throw new Error('登入令牌已過期')
         } catch (error) {
             await dispatch('handleAuthError', error)
             return { success: false, message: error.response?.data?.message || error.message }
         }
-    },
+    }
+    ,
 
     async handleAuthError({ commit, dispatch }, error) {
         let errorMessage = '認證失敗'
@@ -278,29 +284,7 @@ const actions = {
             commit('SET_LOADING', false)
         }
     },
-    async refreshToken({ commit }) {
-        try {
-            const response = await api.post(endpoints.auth.refreshToken)
-            if (response.data?.token) {
-                TokenManager.setToken(response.data.token)
-                return { success: true }
-            }
-            return { success: false }
-        } catch (error) {
-            return { success: false }
-        }
-    },
-    async checkAuthStatus({ commit }) {
-        try {
-            const token = localStorage.getItem('token')
-            if (!token) return { isAuthenticated: false }
 
-            const response = await api.get('/api/auth/verify-token')
-            return { isAuthenticated: response.data.valid }
-        } catch (error) {
-            return { isAuthenticated: false }
-        }
-    }
 }
 
 const mutations = {

@@ -1,4 +1,6 @@
 import StoreService from '@/services/store.service';
+import api from "@/services/api.config";
+import {errorHandler} from "@/utils/helpers";
 
 // 初始狀態
 const initialState = {
@@ -156,29 +158,13 @@ const actions = {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      const response = await StoreService.searchStores(params);
-      commit('SET_STORES', response.data.stores);
-      commit('SET_TOTAL_RESULTS', response.data.total);
+      const response = await api.get('/stores/search', { params });
+      commit('SET_STORES', response.data.content);// 使用 Spring Data JPA 分頁回傳的格式
+      commit('SET_TOTAL_RESULTS', response.data.totalElements);
       commit('SET_SEARCH_PARAMS', params);
-      return response;
+      return response.data;
     } catch (error) {
-      commit('SET_ERROR', error.message);
-      throw error;
-    } finally {
-      commit('SET_LOADING', false);
-    }
-  },
-
-  // 獲取商店詳情
-  async fetchStoreDetails({ commit }, storeId) {
-    commit('SET_LOADING', true);
-    commit('SET_ERROR', null);
-    try {
-      const response = await StoreService.getStoreDetails(storeId);
-      commit('SET_CURRENT_STORE', response.data);
-      return response;
-    } catch (error) {
-      commit('SET_ERROR', error.message);
+      commit('SET_ERROR', errorHandler(error));
       throw error;
     } finally {
       commit('SET_LOADING', false);
@@ -188,12 +174,28 @@ const actions = {
   // 獲取類別列表
   async fetchCategories({ commit }) {
     try {
-      const response = await StoreService.getCategories();
+      const response = await api.get('/stores/categories');
       commit('SET_CATEGORIES', response.data);
-      return response;
+      return response.data;
     } catch (error) {
-      commit('SET_ERROR', error.message);
+      commit('SET_ERROR', errorHandler(error));
       throw error;
+    }
+  },
+
+  // 獲取商店詳情
+  async fetchStoreDetails({ commit }, storeId) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const response = await api.get(`/stores/${storeId}`);
+      commit('SET_CURRENT_STORE', response.data);
+      return response.data;
+    } catch (error) {
+      commit('SET_ERROR', errorHandler(error));
+      throw error;
+    } finally {
+      commit('SET_LOADING', false);
     }
   },
 

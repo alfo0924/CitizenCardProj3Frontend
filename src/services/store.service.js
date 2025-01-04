@@ -1,12 +1,11 @@
-import axios from 'axios';
+import api from '@/services/api.config';
 import { errorHandler } from '@/utils/helpers';
 
-const API_URL = process.env.VUE_APP_API_URL + '/api/stores';
-
 class StoreService {
+  // 更新 API path，移除重複的 /api
   async searchStores(params) {
     try {
-      const response = await axios.get(`${API_URL}/search`, { params });
+      const response = await api.get('/stores/search', { params });
       return response.data;
     } catch (error) {
       throw errorHandler(error);
@@ -15,7 +14,7 @@ class StoreService {
 
   async getStoreDetails(id) {
     try {
-      const response = await axios.get(`${API_URL}/${id}`);
+      const response = await api.get(`/stores/${id}`);
       return response.data;
     } catch (error) {
       throw errorHandler(error);
@@ -24,7 +23,7 @@ class StoreService {
 
   async getCategories() {
     try {
-      const response = await axios.get(`${API_URL}/categories`);
+      const response = await api.get('/stores/categories');
       return response.data;
     } catch (error) {
       throw errorHandler(error);
@@ -33,7 +32,7 @@ class StoreService {
 
   async getNearbyStores(params) {
     try {
-      const response = await axios.get(`${API_URL}/nearby`, { params });
+      const response = await api.get('/stores/nearby', { params });
       return response.data;
     } catch (error) {
       throw errorHandler(error);
@@ -42,7 +41,7 @@ class StoreService {
 
   async getPopularStores(params) {
     try {
-      const response = await axios.get(`${API_URL}/popular`, { params });
+      const response = await api.get('/stores/popular', { params });
       return response.data;
     } catch (error) {
       throw errorHandler(error);
@@ -51,25 +50,7 @@ class StoreService {
 
   async reportStore(storeId, reportData) {
     try {
-      const response = await axios.post(`${API_URL}/${storeId}/report`, reportData);
-      return response.data;
-    } catch (error) {
-      throw errorHandler(error);
-    }
-  }
-
-  async getStoreStats(storeId) {
-    try {
-      const response = await axios.get(`${API_URL}/${storeId}/stats`);
-      return response.data;
-    } catch (error) {
-      throw errorHandler(error);
-    }
-  }
-
-  async updateViewCount(storeId) {
-    try {
-      const response = await axios.post(`${API_URL}/${storeId}/view`);
+      const response = await api.post(`/stores/${storeId}/report`, reportData);
       return response.data;
     } catch (error) {
       throw errorHandler(error);
