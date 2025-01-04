@@ -478,15 +478,35 @@ export default {
       }
     };
 
+    // 定義固定的類別列表
+    const STORE_CATEGORIES = [
+      '中式麵食',
+      '中式點心',
+      '中式小吃',
+      '中式料理',
+      '台式甜點',
+      '台式小吃',
+      '台式早午餐',
+      '台式點心',
+      '韓式料理',
+      '日式料理',
+      '日式拉麵',
+      '飲品茶點',
+      '川式料理'
+    ]
+
     // 獲取類別列表
-    const fetchCategories = async () => {
+    const fetchCategories = () => {
       try {
-        const response = await store.dispatch('store/fetchCategories')
-        if (response?.success) {
-          categories.value = response.data
-        }
+        // 使用預定義的類別列表
+        categories.value = STORE_CATEGORIES.map(name => ({
+          id: name,    // 使用類別名稱作為 id
+          name: name   // 類別名稱
+        }))
+        console.log('載入的類別:', categories.value)
       } catch (err) {
-        console.error('Error fetching categories:', err)
+        console.error('載入類別失敗:', err)
+        error.value = '載入類別失敗'
       }
     }
 
@@ -515,7 +535,7 @@ export default {
       }
     }
 
-    // 新增/編輯商店
+    // 編輯商店
     const showAddStoreModal = () => {
       storeForm.value = {
         id: null,
@@ -534,11 +554,14 @@ export default {
       storeForm.value = {
         id: store.id,
         name: store.name,
-        categoryId: store.category, // 修改這裡，使用 category 而不是 categoryId
+        categoryId: store.category,
         address: store.address,
         phone: store.phone,
         email: store.email,
         description: store.description
+      }
+      if (categories.value.length === 0) {
+        fetchCategories();
       }
       editingStore.value = store
       storeModal.show()
@@ -549,22 +572,26 @@ export default {
       try {
         const payload = {
           ...storeForm.value,
-          // 確保資料格式符合後端要求
+          category: storeForm.value.categoryId // 將 categoryId 轉換為 category
         };
+
         const action = editingStore.value
-            ? store.dispatch('store/updateStore', { id: storeForm.value.id, storeData: payload })
+            ? store.dispatch('store/updateStore', {
+              id: storeForm.value.id,
+              storeData: payload
+            })
             : store.dispatch('store/createStore', payload);
 
         const result = await action;
         if (result.success) {
           storeModal.hide();
-          fetchStores(); // 重新加載列表
+          fetchStores();
         } else {
           error.value = '儲存失敗';
         }
       } catch (err) {
         error.value = '儲存失敗';
-        console.error('Error saving store:', err);
+        console.error('儲存商店時發生錯誤:', err);
       } finally {
         saving.value = false;
       }
