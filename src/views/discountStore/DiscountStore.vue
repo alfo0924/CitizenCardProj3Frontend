@@ -75,9 +75,9 @@
       <!-- 底部資訊 -->
       <div class="bottom-info">
         <div class="info-content">
-          <h3 class="info-title">桃園市民卡特約商店優惠合作</h3>
+          <h3 class="info-title">逢甲市民卡特約商店優惠合作</h3>
           <p class="info-desc">想要提升商店的曝光度嗎？</p>
-          <p class="info-desc">免費加入桃園市民卡特約商店計劃發掘商機新視野！</p>
+          <p class="info-desc">免費加入逢甲市民卡特約商店計劃發掘商機新視野！</p>
           <button class="join-btn">
             免費加入特店計畫
           </button>
