@@ -52,7 +52,7 @@ const actions = {
         commit('CLEAR_ERROR')
 
         try {
-            const response = await axios.get('/api/movies', {
+            const response = await axios.get('/movies', {
                 params: {
                     ...params,
                     size: params.size || 12
@@ -225,6 +225,9 @@ const mutations = {
 
     CLEAR_ERROR(state) {
         state.error = null
+    },
+    setMovies(state, movies) {
+        state.movies = movies
     }
 }
 

@@ -211,7 +211,10 @@ export const errorHandler = {
         if (typeof error === 'string') return error
         if (error.response?.data?.message) return error.response.data.message
         if (error.message) return error.message
-        return '發生未知錯誤'
+        if (error.response) {
+            return error.response.data.message || '請求失敗'
+        }
+        return error.message || '發生未知錯誤'
     },
 
     // 記錄錯誤
