@@ -11,6 +11,7 @@ import admin from "@/store/modules/admin";
 
 const vuexStore = createStore({
     state: {
+        history: [],
         isLoading: false,
         error: null,
         notification: null,
@@ -35,6 +36,12 @@ const vuexStore = createStore({
         },
         SET_LAYOUT(state, layout) {
             state.layout = layout
+        },
+        setLayout(state, layout) {
+            state.layout = layout
+        },
+        addToHistory(state, path) {
+            state.history.push(path)
         }
     },
 

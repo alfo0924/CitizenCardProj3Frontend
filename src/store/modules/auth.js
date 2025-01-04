@@ -107,12 +107,18 @@ const actions = {
                 commit('UPDATE_VERIFICATION_TIME')
                 return { success: true }
             }
+            // Token 無效時嘗試更新
+            const refreshResult = await dispatch('refreshToken')
+            if (refreshResult.success) {
+                return { success: true }
+            }
             throw new Error('登入令牌已過期')
         } catch (error) {
             await dispatch('handleAuthError', error)
             return { success: false, message: error.response?.data?.message || error.message }
         }
-    },
+    }
+    ,
 
     async handleAuthError({ commit, dispatch }, error) {
         let errorMessage = '認證失敗'
@@ -277,7 +283,8 @@ const actions = {
         } finally {
             commit('SET_LOADING', false)
         }
-    }
+    },
+
 }
 
 const mutations = {
