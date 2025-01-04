@@ -330,6 +330,57 @@ const actions = {
     }
   },
 
+  // 更新商店
+  async updateStore({ commit }, { id, storeData }) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const response = await StoreService.updateStore(id, storeData);
+      if (response) {
+        commit('UPDATE_STORE_INFO', {
+          storeId: id,
+          updates: storeData
+        });
+        return {
+          success: true,
+          data: response
+        };
+      }
+    } catch (error) {
+      const errorMsg = errorHandler(error);
+      commit('SET_ERROR', errorMsg);
+      return {
+        success: false,
+        error: errorMsg
+      };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
+
+  // 刪除商店
+  async deleteStore({ commit }, storeId) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      await StoreService.deleteStore(storeId);
+      // 從商店列表中移除該商店
+      commit('SET_STORES', state.stores.filter(store => store.id !== storeId));
+      return {
+        success: true
+      };
+    } catch (error) {
+      const errorMsg = errorHandler(error);
+      commit('SET_ERROR', errorMsg);
+      return {
+        success: false,
+        error: errorMsg
+      };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
+
   // 重置商店狀態
   resetStoreState({ commit }) {
     commit('RESET_STATE');
