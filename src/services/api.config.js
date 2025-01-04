@@ -249,6 +249,10 @@ export const endpoints = {
         seats: id => `/schedules/${id}/seats`,
         book: id => `/schedules/${id}/book`
     },
+    seats: {
+        status: scheduleId => `/schedules/${scheduleId}/seats/status`,
+        book: (scheduleId, seatId) => `/schedules/${scheduleId}/seats/${seatId}/book`
+    },
     tickets: {
         list: '/movie-tickets',
         create: '/movie-tickets',
@@ -272,10 +276,10 @@ export const endpoints = {
         withdraw: '/wallet/withdraw',
         transactions: '/wallet/transactions',
         statement: '/wallet/statement',
-        tickets: '/wallet/tickets',  // 新增
-        coupons: '/wallet/coupons',  // 新增
-        ticketDetail: id => `/wallet/tickets/${id}`,  // 新增
-        couponDetail: id => `/wallet/coupons/${id}`   // 新增
+        tickets: '/wallet/tickets',
+        coupons: '/wallet/coupons',
+        ticketDetail: id => `/wallet/tickets/${id}`,
+        couponDetail: id => `/wallet/coupons/${id}`
     },
     stores: {
         list: '/stores',

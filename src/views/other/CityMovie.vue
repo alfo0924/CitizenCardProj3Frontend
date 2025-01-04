@@ -1,15 +1,15 @@
 <!-- MoviePage.vue -->
 <template>
   <div class="movie-page">
-    <div class="nav-spacer"></div>
+    <div class="nav-spacer"/>
     <div class="page-wrapper">
       <div class="content-wrapper">
         <!-- 固定左側選單 -->
         <aside class="fixed-sidebar">
           <div class="movie-list">
-            <div v-for="movie in movies"
+            <div v-for="movie of movies"
                  :key="movie.id"
-                 :class="['movie-item', { active: selectedMovie.id === movie.id }]"
+                 :class="['movie-item', { active: selectedMovie?.id === movie.id }]"
                  @click="selectMovie(movie)">
               {{ movie.title }}
             </div>
@@ -23,38 +23,62 @@
             <div class="sticky-section">
               <div class="movie-details">
                 <h1 class="title">CityMovie 電影資訊</h1>
-                <img :src="selectedMovie.poster_url" :alt="selectedMovie.title" class="main-poster"/>
-                <h2 class="movie-title">{{ selectedMovie.title }}</h2>
+                <img :src="selectedMovie?.poster_url" :alt="selectedMovie?.title" class="main-poster"/>
+                <h2 class="movie-title">{{ selectedMovie?.title }}</h2>
 
                 <!-- 電影資訊區塊 -->
                 <div class="movie-info">
-                  <p><strong>導演：</strong>{{ selectedMovie.director }}</p>
-                  <p><strong>演員：</strong>{{ selectedMovie.cast }}</p>
-                  <p><strong>片長：</strong>{{ selectedMovie.duration }} 分鐘</p>
-                  <p><strong>類型：</strong>{{ selectedMovie.genre }}</p>
+                  <p><strong>導演：</strong>{{ selectedMovie?.director }}</p>
+                  <p><strong>演員：</strong>{{ selectedMovie?.cast }}</p>
+                  <p><strong>片長：</strong>{{ selectedMovie?.duration }} 分鐘</p>
+                  <p><strong>類型：</strong>{{ selectedMovie?.genre }}</p>
                 </div>
 
-                <p class="movie-description">{{ selectedMovie.description }}</p>
+                <p class="movie-description">{{ selectedMovie?.description }}</p>
 
                 <div class="showtimes">
-                  <div v-for="schedule in selectedMovie.showtimes" :key="schedule.date">
-                    <div class="date-header">{{ schedule.date }}</div>
-                    <div class="time-slots">
-                      <button v-for="time in schedule.times"
-                              :key="`${schedule.date}-${time}`"
-                              :class="['time-slot', {
-                                active: selectedShowtime.date === schedule.date &&
-                                       selectedShowtime.time === time
-                              }]"
-                              @click="selectShowtime(schedule.date, time)">
-                        {{ time }}
-                        <span class="seat-icon">🪑</span>
-                      </button>
+                  <template v-if="selectedMovie?.showtimes">
+                    <div v-for="(schedule, index) of selectedMovie.showtimes"
+                         :key="schedule.date"
+                         v-show="expandedShowtimes || index < INITIAL_VISIBLE_ROWS">
+                      <div class="date-header">{{ schedule.date }}</div>
+                      <div class="time-slots">
+                        <button v-for="time of schedule.times"
+                                :key="`${schedule.date}-${time}`"
+                                :class="['time-slot', {
+                                 active: selectedShowtime.date === schedule.date &&
+                                   selectedShowtime.time === time
+                                   }]"
+                                @click="selectShowtime(schedule.date, time, schedule.schedules[time])">
+                          {{ time }}
+                          <span class="seat-icon">🪑</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+
+                    <button
+                        v-if="selectedMovie.showtimes.length > INITIAL_VISIBLE_ROWS"
+                        @click="expandedShowtimes = !expandedShowtimes"
+                        class="expand-button">
+                      {{ expandedShowtimes ? '收合場次' : '展開更多場次' }}
+                    </button>
+                  </template>
                 </div>
 
-                <button @click="showBooking(selectedMovie)" class="movie-button">立即訂票</button>
+                <button
+                    v-if="isAuthenticated"
+                    @click="showBooking(selectedMovie)"
+                    class="movie-button"
+                >
+                  立即訂票
+                </button>
+                <button
+                    v-else
+                    @click="goToLogin"
+                    class="movie-button login-required"
+                >
+                  請先登入
+                </button>
               </div>
             </div>
           </div>
@@ -62,7 +86,7 @@
           <!-- 座位選擇區域 -->
           <div v-if="showBookingSection" class="booking-section">
             <div class="booking-content">
-              <h2 class="booking-title">{{ selectedMovie.title }} - 座位選擇</h2>
+              <h2 class="booking-title">{{ selectedMovie?.title }} - 座位選擇</h2>
               <div class="showtime-info">
                 選擇場次：{{ selectedShowtime.date }} {{ selectedShowtime.time }}
               </div>
@@ -73,22 +97,22 @@
 
               <div class="seat-legend">
                 <div class="legend-item">
-                  <div class="legend-box available"></div>
+                  <div class="legend-box available"/>
                   <span>可選擇</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-box selected"></div>
+                  <div class="legend-box selected"/>
                   <span>已選擇</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-box occupied"></div>
+                  <div class="legend-box occupied"/>
                   <span>已訂位</span>
                 </div>
               </div>
 
               <div class="seats-container">
-                <div v-for="row in rows" :key="row" class="seat-row">
-                  <div v-for="num in 20"
+                <div v-for="row of rows" :key="row" class="seat-row">
+                  <div v-for="num of 20"
                        :key="`${row}${num}`"
                        @click="toggleSeat(selectedMovie.id, row, num)"
                        :class="[
@@ -103,7 +127,7 @@
               <div class="selected-seats">
                 <h3>已選擇的座位：</h3>
                 <div class="selected-seats-list">
-                  <span v-for="seat in getSelectedSeatsForMovie(selectedMovie.id)"
+                  <span v-for="seat of getSelectedSeatsForMovie(selectedMovie?.id)"
                         :key="seat.id"
                         class="selected-seat-tag">
                     {{ seat.seatNumber }}
@@ -124,198 +148,279 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
+import api from '@/services/api.config'
 
+// === State Management ===
+const store = useStore()
+const router = useRouter()
+
+// === Component State ===
 const movies = ref([])
 const showBookingSection = ref(false)
 const selectedMovie = ref(null)
 const selectedShowtime = ref({
   date: '',
-  time: ''
+  time: '',
+  schedule: null
 })
-
-// 座位相關
+const seatStatus = ref([])
+const expandedShowtimes = ref(false)
+const INITIAL_VISIBLE_ROWS = 3
 const rows = Array.from({ length: 10 }, (_, i) => String.fromCharCode(65 + i))
 const movieSeats = reactive({})
 
-// 獲取電影資料
+// === Computed Properties ===
+const isAuthenticated = computed(() => store.getters['auth/isLoggedIn'])
+
+// === Helper Functions ===
+const formatDate = (dateString) => {
+  const date = new Date(dateString)
+  return `${date.getFullYear()} 年 ${String(date.getMonth() + 1).padStart(2, '0')} 月 ${String(date.getDate()).padStart(2, '0')} 日 星期${['日', '一', '二', '三', '四', '五', '六'][date.getDay()]}`
+}
+
+const formatTime = (dateString) => {
+  const date = new Date(dateString)
+  return date.toLocaleTimeString('zh-TW', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+}
+
+// === Navigation Functions ===
+const goToLogin = () => {
+  const returnPath = router.currentRoute.value.fullPath
+  router.push({
+    path: '/login',
+    query: { redirect: returnPath }
+  }).catch(error => {
+    console.error('Navigation error:', error)
+    router.push('/login')
+  })
+}
+
+// === API Functions ===
 const fetchMovies = async () => {
   try {
-    const response = await fetch('http://localhost:8080/api/movies/now-showing')
-    const data = await response.json()
+    const [moviesResponse, schedulesResponse] = await Promise.all([
+      fetch('http://localhost:8080/api/movies/now-showing'),
+      fetch('http://localhost:8080/api/schedules/available')
+    ])
 
-    const processedMovies = data.content
-        .sort((a, b) => a.id - b.id)
-        .map(movie => ({
-          ...movie,
-          showtimes: [
-            {
-              date: "2024 年 12 月 21 日 星期六",
-              times: ["14:00", "17:00", "20:00"]
-            },
-            {
-              date: "2024 年 12 月 22 日 星期日",
-              times: ["13:00", "16:00", "19:00"]
-            }
-          ]
-        }))
+    const moviesData = await moviesResponse.json()
+    const schedulesData = await schedulesResponse.json()
 
-    movies.value = processedMovies
-    selectedMovie.value = processedMovies[0]
+    if (!moviesData.content || !Array.isArray(moviesData.content)) {
+      throw new Error('Invalid movies data format')
+    }
+
+    movies.value = processMoviesData(moviesData.content, schedulesData)
+    selectedMovie.value = movies.value[0]
   } catch (error) {
-    console.error('Error fetching movies:', error)
+    console.error('Error fetching data:', error)
+    store.commit('SET_ERROR', '獲取電影資料失敗')
   }
 }
 
-// 元件掛載時獲取資料
-onMounted(() => {
-  fetchMovies()
-})
+const fetchSeatStatus = async () => {
+  try {
+    const scheduleId = selectedShowtime.value.schedule?.id
+    if (!scheduleId) return
 
-// 選擇電影
+    const response = await api.get(`/seats/${scheduleId}/status`)
+    if (response.data) {
+      seatStatus.value = response.data.map(seat => ({
+        seatNumber: seat.seat_number,
+        isAvailable: seat.available
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching seat status:', error)
+    store.commit('SET_ERROR', '獲取座位狀態失敗')
+  }
+}
+
+// === Data Processing Functions ===
+const processMoviesData = (movies, schedules) => {
+  return movies
+      .sort((a, b) => a.id - b.id)
+      .map(movie => {
+        const movieSchedules = schedules.filter(schedule => schedule.movie_id === movie.id)
+        const groupedSchedules = movieSchedules.reduce((acc, schedule) => {
+          const date = formatDate(schedule.show_time)
+          const time = formatTime(schedule.show_time)
+
+          if (!acc[date]) {
+            acc[date] = {
+              date,
+              times: [],
+              schedules: {}
+            }
+          }
+
+          acc[date].times.push(time)
+          acc[date].schedules[time] = schedule
+          acc[date].times.sort()
+          return acc
+        }, {})
+
+        return {
+          ...movie,
+          showtimes: Object.values(groupedSchedules)
+        }
+      })
+}
+
+// === Booking Functions ===
 const selectMovie = (movie) => {
   selectedMovie.value = movie
-  selectedShowtime.value = { date: '', time: '' }
+  selectedShowtime.value = { date: '', time: '', schedule: null }
   showBookingSection.value = false
-
-  // 找到標題元素
-  const titleElement = document.querySelector('.movie-details .title')
-
-  if (titleElement) {
-    setTimeout(() => {
-      titleElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-
-      // 補償固定導航欄的高度
-      window.scrollBy({
-        top: -500, // 根據實際導航欄高度調整
-        behavior: 'smooth'
-      })
-    }, 100)
-  }
+  expandedShowtimes.value = false
+  scrollToMovieDetails()
 }
 
-// 選擇場次
-const selectShowtime = (date, time) => {
-  selectedShowtime.value = { date, time }
+const selectShowtime = (date, time, schedule) => {
+  selectedShowtime.value = { date, time, schedule }
 }
 
-// 顯示訂票區域
-const showBooking = (movie) => {
+const showBooking = async (movie) => {
   if (!selectedShowtime.value.time) {
     alert('請選擇觀影場次')
     return
   }
-  selectedMovie.value = movie
-  showBookingSection.value = true
 
-  setTimeout(() => {
-    const bookingSection = document.querySelector('.booking-section')
-    bookingSection?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start'
-    })
-  }, 100)
+  if (!isAuthenticated.value) {
+    goToLogin()
+    return
+  }
+
+  try {
+    const verifyResult = await store.dispatch('auth/checkToken')
+    if (!verifyResult.success) {
+      goToLogin()
+      return
+    }
+
+    await fetchSeatStatus()
+    selectedMovie.value = movie
+    showBookingSection.value = true
+    scrollToBookingSection()
+  } catch (error) {
+    console.error('Error verifying token:', error)
+    goToLogin()
+  }
 }
 
-// 座位相關函數
+// === Seat Management Functions ===
 const toggleSeat = (movieId, row, num) => {
   const seatNumber = `${row}${num}`
-  const seatInfo = {
-    id: `${row}-${num}`,
-    seatNumber,
-    row,
-    num
-  }
+  const seatInfo = { id: `${row}-${num}`, seatNumber, row, num }
 
   if (!movieSeats[movieId]) {
     movieSeats[movieId] = []
   }
 
-  const existingIndex = movieSeats[movieId].findIndex(s => s.seatNumber === seatNumber)
-  if (existingIndex === -1) {
-    movieSeats[movieId].push(seatInfo)
-  } else {
-    movieSeats[movieId].splice(existingIndex, 1)
-  }
+  movieSeats[movieId] = [seatInfo] // Only allow one seat selection
 }
 
-const getSelectedSeatsForMovie = (movieId) => {
-  return movieSeats[movieId] || []
-}
+const getSelectedSeatsForMovie = (movieId) => movieSeats[movieId] || []
 
 const getSeatStatus = (movieId, row, num) => {
   const seatNumber = `${row}${num}`
-  if (!movieSeats[movieId]) {
-    return 'available'
+
+  if (movieSeats[movieId]?.some(s => s.seatNumber === seatNumber)) {
+    return 'selected'
   }
-  return movieSeats[movieId].some(s => s.seatNumber === seatNumber) ? 'selected' : 'available'
+
+  const seat = seatStatus.value.find(s => s.seatNumber === seatNumber)
+  return seat?.isAvailable ? 'available' : 'occupied'
 }
 
-// 取消訂票
-const cancelBooking = () => {
-  showBookingSection.value = false
-  selectedShowtime.value = { date: '', time: '' }
-
-  // 滾動回電影資訊
-  const titleElement = document.querySelector('.movie-details .title')
-  if (titleElement) {
-    setTimeout(() => {
-      titleElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-
-      // 補償固定導航欄的高度
-      window.scrollBy({
-        top: -500,
-        behavior: 'smooth'
-      })
-    }, 100)
-  }
-}
-
-// 確認訂票
-const confirmBooking = () => {
+// === Booking Actions ===
+const resetBookingInfo = () => {
   const currentMovieId = selectedMovie.value.id
-  if (!movieSeats[currentMovieId] || movieSeats[currentMovieId].length === 0) {
-    alert('請選擇座位')
+  movieSeats[currentMovieId] = []
+  selectedShowtime.value = { date: '', time: '', schedule: null }
+  showBookingSection.value = false
+  scrollToMovieDetails()
+}
+
+const cancelBooking = () => resetBookingInfo()
+
+const confirmBooking = async () => {
+  if (!isAuthenticated.value) {
+    goToLogin()
     return
   }
 
-  // 顯示訂位資訊
-  console.log('訂位資訊：', {
-    movieId: currentMovieId,
-    movieTitle: selectedMovie.value.title,
-    showtime: selectedShowtime.value,
-    seats: movieSeats[currentMovieId]
-  })
+  try {
+    const verifyResult = await store.dispatch('auth/checkToken')
+    if (!verifyResult.success) {
+      goToLogin()
+      return
+    }
 
-  // 訂位成功處理
-  alert('訂位成功！')
-  movieSeats[currentMovieId] = []
-  selectedShowtime.value = { date: '', time: '' }
-  showBookingSection.value = false
+    const currentMovieId = selectedMovie.value.id
+    const currentSeats = movieSeats[currentMovieId]
 
-  // 滾動回電影資訊
+    if (!currentSeats?.length) {
+      alert('請選擇座位')
+      return
+    }
+
+    if (currentSeats.length > 1) {
+      alert('只能選擇一個座位')
+      return
+    }
+
+    // TODO: Add actual booking API call here
+    console.log('訂位資訊：', {
+      movieId: currentMovieId,
+      movieTitle: selectedMovie.value.title,
+      showtime: selectedShowtime.value,
+      seats: currentSeats,
+      userId: store.getters['auth/userId']
+    })
+
+    alert('訂位成功！')
+    resetBookingInfo()
+  } catch (error) {
+    console.error('訂票失敗：', error)
+    if (error.response?.status === 401) {
+      goToLogin()
+    } else {
+      alert('訂票失敗，請稍後再試')
+    }
+  }
+}
+
+// === Scroll Functions ===
+const scrollToMovieDetails = () => {
   const titleElement = document.querySelector('.movie-details .title')
   if (titleElement) {
     setTimeout(() => {
-      titleElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-
-      // 補償固定導航欄的高度
-      window.scrollBy({
-        top: -500,
-        behavior: 'smooth'
-      })
+      titleElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      window.scrollBy({ top: -500, behavior: 'smooth' })
     }, 100)
   }
 }
+
+const scrollToBookingSection = () => {
+  setTimeout(() => {
+    const bookingSection = document.querySelector('.booking-section')
+    bookingSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, 100)
+}
+
+// === Lifecycle Hooks ===
+onMounted(async () => {
+  await store.dispatch('auth/initAuth')
+  fetchMovies()
+})
 </script>
 
 <style scoped>
@@ -408,7 +513,7 @@ const confirmBooking = () => {
   top: 160px;
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 }
 
@@ -531,7 +636,7 @@ const confirmBooking = () => {
   background: #ffffff;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .booking-title {
@@ -710,6 +815,31 @@ const confirmBooking = () => {
 .cancel-button:hover {
   background-color: #5a6268;
   transform: translateY(-2px);
+}
+
+.expand-button {
+  width: 100%;
+  padding: 8px;
+  margin-top: 12px;
+  background: transparent;
+  border: 1px solid #BA0043;
+  color: #BA0043;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.expand-button:hover {
+  background: rgba(186, 0, 67, 0.1);
+}
+
+/*按鈕樣式*/
+.movie-button.login-required {
+  background-color: #6c757d;
+}
+
+.movie-button.login-required:hover {
+  background-color: #5a6268;
 }
 
 /* RWD 響應式設計 */
