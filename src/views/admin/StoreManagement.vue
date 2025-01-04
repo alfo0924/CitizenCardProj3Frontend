@@ -437,28 +437,46 @@ export default {
 
     // 獲取商店列表
     const fetchStores = async () => {
-      loading.value = true
-      error.value = ''
+      loading.value = true;
+      error.value = '';
       try {
-        const response = await store.dispatch('store/fetchStores', {
-          page: currentPage.value,
+        console.log('Fetching stores with params:', { // 添加此行來調試
+          page: currentPage.value - 1,
           size: itemsPerPage,
+          keyword: searchQuery.value,
           category: selectedCategory.value,
           status: selectedStatus.value,
-          sort: sortBy.value,
-          search: searchQuery.value
-        })
-        if (response?.success) {
-          stores.value = response.data.content
-          totalItems.value = response.data.totalElements
+          sort: sortBy.value === 'newest'
+? 'createdAt,desc'
+              : sortBy.value === 'name' ? 'name,asc' : 'rating,desc'
+        });
+
+        const result = await store.dispatch('store/fetchStores', {
+          page: currentPage.value - 1,
+          size: itemsPerPage,
+          keyword: searchQuery.value,
+          category: selectedCategory.value,
+          status: selectedStatus.value,
+          sort: sortBy.value === 'newest'
+? 'createdAt,desc'
+              : sortBy.value === 'name' ? 'name,asc' : 'rating,desc'
+        });
+
+        console.log('Fetch result:', result); // 添加此行來調試
+
+        if (result.success && result.data) {
+          stores.value = result.data.content;
+          totalItems.value = result.data.totalElements;
+        } else {
+          error.value = result.error || '載入商店資料失敗';
         }
       } catch (err) {
-        error.value = '載入商店資料失敗'
-        console.error('Error fetching stores:', err)
+        console.error('Error in fetchStores:', err); // 添加此行來調試
+        error.value = err.message || '載入商店資料失敗';
       } finally {
-        loading.value = false
+        loading.value = false;
       }
-    }
+    };
 
     // 獲取類別列表
     const fetchCategories = async () => {
@@ -519,20 +537,28 @@ export default {
     }
 
     const saveStore = async () => {
-      saving.value = true
+      saving.value = true;
       try {
-        if (editingStore.value) {
-          await store.dispatch('store/updateStore', storeForm.value)
+        const payload = {
+          ...storeForm.value,
+          // 確保資料格式符合後端要求
+        };
+        const action = editingStore.value
+            ? store.dispatch('store/updateStore', { id: storeForm.value.id, storeData: payload })
+            : store.dispatch('store/createStore', payload);
+
+        const result = await action;
+        if (result.success) {
+          storeModal.hide();
+          fetchStores(); // 重新加載列表
         } else {
-          await store.dispatch('store/createStore', storeForm.value)
+          error.value = '儲存失敗';
         }
-        storeModal.hide()
-        fetchStores()
       } catch (err) {
-        error.value = '儲存失敗'
-        console.error('Error saving store:', err)
+        error.value = '儲存失敗';
+        console.error('Error saving store:', err);
       } finally {
-        saving.value = false
+        saving.value = false;
       }
     }
 

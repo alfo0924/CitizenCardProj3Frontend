@@ -214,6 +214,14 @@ export const errorHandler = {
         if (error.response) {
             return error.response.data.message || '請求失敗'
         }
+        if (error.response) {
+            return error.response.data?.message || error.response.statusText || '請求失敗';
+        } if (error.response?.data?.message) {
+            return error.response.data.message;
+        }
+        if (error.message) {
+            return error.message;
+        }
         return error.message || '發生未知錯誤'
     },
 

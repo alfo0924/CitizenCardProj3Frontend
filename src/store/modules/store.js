@@ -303,6 +303,27 @@ const actions = {
       throw error;
     }
   },
+  async fetchStores({ commit }, params) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const result = await StoreService.fetchStores(params);
+      if (result.success) {
+        commit('SET_STORES', result.data.content);
+        commit('SET_TOTAL_RESULTS', result.data.totalElements);
+        return { success: true, data: result.data };
+      } else {
+        commit('SET_ERROR', result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      const errorMsg = errorHandler.formatError(error);
+      commit('SET_ERROR', errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
 
   // 重置商店狀態
   resetStoreState({ commit }) {

@@ -4,12 +4,14 @@ import router from '@/router'
 export const API_URL = process.env.VUE_APP_API_URL || 'http://localhost:8080'
 // API 實例配置
 const api = axios.create({
-    baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080',
+    baseURL: process.env.VUE_APP_API_URL || 'http://localhost:8080/api',
     timeout: 15000,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-    }
+    },
+    withCredentials: true // 添加這行來支持跨域認證
+
 })
 
 // 常量配置
@@ -88,10 +90,7 @@ api.interceptors.request.use(
 
         // 添加請求時間戳，防止快取
         if (config.method === 'get') {
-            config.params = {
-                ...config.params,
-                _t: Date.now()
-            }
+            config.params = { ...config.params, _t: Date.now() }
         }
 
         return config
@@ -102,50 +101,6 @@ api.interceptors.request.use(
     }
 )
 
-// 響應攔截器
-api.interceptors.response.use(
-    response => {
-        // 處理 token 更新
-        const newToken = response.headers['x-auth-token'] || response.data?.token
-        if (newToken) {
-            TokenManager.setToken(newToken)
-        }
-        return response
-    },
-    async error => {
-        const originalRequest = error.config
-
-        // 處理請求重試
-        if (error.response?.status === 401 && originalRequest.retry > 0) {
-            originalRequest.retry -= 1
-
-            await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY))
-
-            try {
-                const refreshResult = await store.dispatch('auth/refreshToken')
-                if (refreshResult.success) {
-                    return api(originalRequest)
-                }
-            } catch (refreshError) {
-                console.error('Token refresh failed:', refreshError)
-            }
-
-            await handleAuthError()
-            return Promise.reject(error)
-        }
-
-        // 處理錯誤響應
-        if (error.response) {
-            await handleErrorResponse(error.response)
-        } else if (error.request) {
-            handleNetworkError(error)
-        } else {
-            handleUnexpectedError(error)
-        }
-
-        return Promise.reject(error)
-    }
-)
 
 // 處理認證錯誤
 async function handleAuthError() {
