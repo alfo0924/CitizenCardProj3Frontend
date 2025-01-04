@@ -31,6 +31,7 @@
                   placeholder="搜尋電影"
                   v-model="searchKeyword"
                   @input="handleSearch"
+                  :disabled="isLoading"
               >
             </div>
             <div class="col-md-3">
@@ -49,7 +50,7 @@
         </div>
 
         <!-- 電影列表 -->
-        <div class="table-responsive">
+        <div class="table-responsive" v-show="!isLoading">
           <table class="table">
             <thead>
             <tr>
@@ -258,7 +259,7 @@ import Swal from 'sweetalert2'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 import {useRouter} from "vue-router";
-
+import { debounce } from 'lodash'
 
 export default {
   name: 'MovieManagement',
@@ -340,18 +341,35 @@ export default {
       }
       return range
     })
-
+    // 建立防抖後的搜尋函數
+    const debouncedSearch = debounce(() => {
+      fetchMovies()
+    }, 500) // 500ms 的延遲
+    const previousParams = ref(null)
     // 獲取電影列表
     const fetchMovies = async () => {
+      // 構建當前請求的參數
+      const currentParams = {
+        page: currentPage.value - 1,
+        size: 10,
+        status: selectedStatus.value,
+        keyword: searchKeyword.value
+      }
+
+      // 檢查是否與上次請求參數相同
+      if (previousParams.value &&
+          JSON.stringify(previousParams.value) === JSON.stringify(currentParams)) {
+        return // 如果參數相同，不重複請求
+      }
+
       try {
         isLoading.value = true
         error.value = null
-        await store.dispatch('movie/fetchMovies', {
-          page: currentPage.value - 1, // 後端分頁從0開始
-          size: 10,
-          status: selectedStatus.value,
-          keyword: searchKeyword.value
-        })
+
+        // 更新上次請求參數
+        previousParams.value = currentParams
+
+        await store.dispatch('movie/fetchMovies', currentParams)
       } catch (err) {
         console.error('Error fetching movies:', err)
         error.value = '載入電影列表失敗'
@@ -363,7 +381,7 @@ export default {
     // 搜尋處理
     const handleSearch = () => {
       currentPage.value = 1
-      fetchMovies()
+      debouncedSearch()
     }
 
     // 篩選處理

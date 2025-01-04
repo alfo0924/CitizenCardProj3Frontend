@@ -83,7 +83,12 @@ const actions = {
     },
 
     // 獲取電影列表
-    async fetchMovies({ commit }, params) {
+    async fetchMovies({ commit, state }, params) {
+        // 如果已經在載入中，則取消請求
+        if (state.isLoading) {
+            return
+        }
+
         commit('SET_LOADING', true)
         commit('CLEAR_ERROR')
 
@@ -95,7 +100,6 @@ const actions = {
                 }
             })
 
-            // 只保存必要的數據
             const movies = response.data.content.map(movie => ({
                 id: movie.id,
                 title: movie.title,
@@ -108,8 +112,11 @@ const actions = {
                 releaseDate: movie.releaseDate
             }))
 
-            commit('SET_MOVIES', movies)
-            commit('SET_TOTAL_PAGES', response.data.totalPages || 0)
+            // 只有當組件仍在載入狀態時才更新數據
+            if (state.isLoading) {
+                commit('SET_MOVIES', movies)
+                commit('SET_TOTAL_PAGES', response.data.totalPages || 0)
+            }
         } catch (error) {
             console.error('Error fetching movies:', error)
             commit('SET_ERROR', '載入電影列表失敗')
