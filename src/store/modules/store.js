@@ -307,17 +307,22 @@ const actions = {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      const result = await StoreService.fetchStores(params);
-      if (result.success) {
-        commit('SET_STORES', result.data.content);
-        commit('SET_TOTAL_RESULTS', result.data.totalElements);
-        return { success: true, data: result.data };
+      console.log('Fetching stores with params:', params); // 添加除錯日誌
+
+      const response = await StoreService.fetchStores(params);
+      console.log('Store service response:', response); // 添加除錯日誌
+
+      if (response.success) {
+        commit('SET_STORES', response.data.content);
+        commit('SET_TOTAL_RESULTS', response.data.totalElements);
+        return response;
       } else {
-        commit('SET_ERROR', result.error);
-        return { success: false, error: result.error };
+        commit('SET_ERROR', response.error);
+        return response;
       }
     } catch (error) {
-      const errorMsg = errorHandler.formatError(error);
+      console.error('Store action error:', error); // 添加除錯日誌
+      const errorMsg = errorHandler(error);
       commit('SET_ERROR', errorMsg);
       return { success: false, error: errorMsg };
     } finally {

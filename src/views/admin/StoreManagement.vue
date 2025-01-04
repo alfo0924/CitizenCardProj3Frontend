@@ -436,43 +436,43 @@ export default {
     })
 
     // 獲取商店列表
+    // StoreManagement.vue
     const fetchStores = async () => {
       loading.value = true;
       error.value = '';
       try {
-        console.log('Fetching stores with params:', { // 添加此行來調試
+        const params = {
           page: currentPage.value - 1,
           size: itemsPerPage,
-          keyword: searchQuery.value,
-          category: selectedCategory.value,
-          status: selectedStatus.value,
-          sort: sortBy.value === 'newest'
-? 'createdAt,desc'
-              : sortBy.value === 'name' ? 'name,asc' : 'rating,desc'
-        });
+          // 只傳送有值的參數
+          ...(searchQuery.value && { keyword: searchQuery.value }),
+          ...(selectedCategory.value && { category: selectedCategory.value }),
+          ...(selectedStatus.value && { status: selectedStatus.value }),
+          sort: sortBy.value === 'newest' ? 'createdAt,desc'
+              : sortBy.value === 'name' ? 'name,asc'
+                  : 'rating,desc'
+        };
 
-        const result = await store.dispatch('store/fetchStores', {
-          page: currentPage.value - 1,
-          size: itemsPerPage,
-          keyword: searchQuery.value,
-          category: selectedCategory.value,
-          status: selectedStatus.value,
-          sort: sortBy.value === 'newest'
-? 'createdAt,desc'
-              : sortBy.value === 'name' ? 'name,asc' : 'rating,desc'
-        });
+        console.log('準備發送請求，參數為:', params);
 
-        console.log('Fetch result:', result); // 添加此行來調試
+        const result = await store.dispatch('store/fetchStores', params);
+        console.log('獲取到的商店數據:', result);
 
-        if (result.success && result.data) {
+        if (result.success) {
           stores.value = result.data.content;
           totalItems.value = result.data.totalElements;
+
+          // 檢查是否有數據
+          if (stores.value.length === 0) {
+            // 顯示空數據提示
+            error.value = '暫無商店資料';
+          }
         } else {
           error.value = result.error || '載入商店資料失敗';
         }
       } catch (err) {
-        console.error('Error in fetchStores:', err); // 添加此行來調試
-        error.value = err.message || '載入商店資料失敗';
+        console.error('組件錯誤:', err);
+        error.value = '載入商店資料失敗';
       } finally {
         loading.value = false;
       }
@@ -531,7 +531,15 @@ export default {
     }
 
     const editStore = (store) => {
-      storeForm.value = { ...store }
+      storeForm.value = {
+        id: store.id,
+        name: store.name,
+        categoryId: store.category, // 修改這裡，使用 category 而不是 categoryId
+        address: store.address,
+        phone: store.phone,
+        email: store.email,
+        description: store.description
+      }
       editingStore.value = store
       storeModal.show()
     }

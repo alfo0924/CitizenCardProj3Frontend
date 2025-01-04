@@ -100,7 +100,13 @@ api.interceptors.request.use(
         return Promise.reject(error)
     }
 )
-
+api.interceptors.response.use(
+    response => response,
+    error => {
+        console.error('API Error:', error.response || error);
+        return Promise.reject(error);
+    }
+);
 
 // 處理認證錯誤
 async function handleAuthError() {
@@ -227,10 +233,10 @@ export const endpoints = {
         withdraw: '/wallet/withdraw',
         transactions: '/wallet/transactions',
         statement: '/wallet/statement',
-        tickets: '/wallet/tickets',  // 新增
-        coupons: '/wallet/coupons',  // 新增
-        ticketDetail: id => `/wallet/tickets/${id}`,  // 新增
-        couponDetail: id => `/wallet/coupons/${id}`   // 新增
+        tickets: '/wallet/tickets', // 新增
+        coupons: '/wallet/coupons', // 新增
+        ticketDetail: id => `/wallet/tickets/${id}`, // 新增
+        couponDetail: id => `/wallet/coupons/${id}` // 新增
     },
     stores: {
         list: '/stores',

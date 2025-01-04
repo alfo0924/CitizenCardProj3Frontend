@@ -21,38 +21,38 @@ class StoreService {
     }
   }
 
-  async fetchStores(params) {
+  async fetchStores(params = {}) {
     try {
-      // 調整分頁參數格式以匹配後端 API
-      const { page = 0, size = 10, ...restParams } = params;
+      // 移除空值參數
+      const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
+        if (value !== null && value !== undefined && value !== '') {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
 
-      console.log('Fetching stores with params:', { page, size, ...restParams });
+      console.log('清理後的請求參數:', cleanParams);
 
       const response = await api.get('/stores', {
-        params: {
-          page,
-          size,
-          keyword: restParams.keyword || '',
-          category: restParams.category || '',
-          ...restParams
-        }
+        params: cleanParams
       });
 
-      // 確保回傳格式符合前端期望
+      console.log('原始API回應:', response.data);
+
       if (response.status === 200) {
         return {
           success: true,
           data: {
             content: response.data.content || [],
-            totalElements: response.data.totalElements || 0,
-            totalPages: response.data.totalPages || 0
+            totalElements: response.data.total_elements || 0,
+            totalPages: response.data.total_pages || 0
           }
         };
       }
 
-      throw new Error('Invalid response format');
+      throw new Error('回應格式錯誤');
     } catch (error) {
-      console.error('Fetch stores error:', error);
+      console.error('獲取商店列表失敗:', error);
       return {
         success: false,
         error: errorHandler(error)
@@ -60,7 +60,7 @@ class StoreService {
     }
   }
 
-  async getCategories() {
+async getCategories() {
     try {
       const response = await api.get('/stores/categories');
       return {
