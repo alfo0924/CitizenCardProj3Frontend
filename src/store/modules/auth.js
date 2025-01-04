@@ -117,9 +117,7 @@ const actions = {
             await dispatch('handleAuthError', error)
             return { success: false, message: error.response?.data?.message || error.message }
         }
-    }
-    ,
-
+    },
     async handleAuthError({ commit, dispatch }, error) {
         let errorMessage = '認證失敗'
         if (error.response) {
@@ -282,6 +280,19 @@ const actions = {
             return { success: false, message: errorMessage }
         } finally {
             commit('SET_LOADING', false)
+        }
+    },
+    async checkAuthStatus({ dispatch }) {
+        try {
+            const tokenResult = await dispatch('checkToken')
+            if (tokenResult.success) {
+                const profileResult = await dispatch('fetchProfile')
+                return profileResult
+            }
+            return { success: false, message: 'Token verification failed' }
+        } catch (error) {
+            await dispatch('handleAuthError', error)
+            return { success: false, message: error.message }
         }
     },
 

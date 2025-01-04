@@ -40,16 +40,53 @@
           <p>4.陶板屋桃園同德店保有修改、中止或異動本活動之權利。</p>
         </div>
       </div>
+      <!-- GoogleMap & 店家資訊 -->
+      <div class="map-info-section">
+        <h2>店家位置</h2>
+        <div class="map-info-container">
+          <!-- Map -->
+          <div class="map-container">
+            <iframe :src="card.iframeSrc" width="100%" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+          </div>
+          <!-- 店家詳細資訊 -->
+          <div class="detail-info">
+            <div class="info-item">
+              <div class="info-icon">📍</div>
+              <div class="info-content">
+                <h3>位置</h3>
+                <p>{{ card.address }}</p>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-icon">📞</div>
+              <div class="info-content">
+                <h3>聯絡電話</h3>
+                <p>{{ card.phone }}</p>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-icon">🍽️</div>
+              <div class="info-content">
+                <h3>料理類型</h3>
+                <p>{{ card.category }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div v-else class="loading-message">Loading...</div>
   </div>
 </template>
 
 <script>
 import _ from "lodash";
 import storeData from "./StoreInfo.json";
+import { GoogleMap, Marker } from 'vue3-google-map';
 
 export default {
+  components: { GoogleMap, Marker },
   name: "StoreDetail",
   props: {
     id: {
@@ -60,6 +97,15 @@ export default {
   data() {
     return {
       card: null,
+      center: {
+        // lat:緯度, lng:經度
+        lat: 25.12662, lng: 121.45747
+      },
+      markerOptions: {
+        position: {
+          lat: 25.12662, lng: 121.45747
+        },
+      },
     };
   },
   created() {
@@ -167,5 +213,82 @@ export default {
   font-size: 16px;
   color: #888;
   padding: 20px;
+}
+
+.map-info-section {
+  margin-top: 30px;
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.map-info-section h2 {
+  font-size: 22px;
+  margin-bottom: 15px;
+}
+
+.map-info-container {
+  display: flex;
+  gap: 20px;
+}
+
+.map-container {
+  width: 80%;  /* 減少地圖寬度為原來的 4/5 */
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.map-container iframe {
+  width: 100%;
+  height: 450px;
+  border-radius: 8px;
+}
+
+.detail-info {
+  width: 20%;  /* 資訊區塊佔用剩餘的 1/5 寬度 */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.info-icon {
+  font-size: 20px;
+  color: #ff6347;
+  min-width: 24px;
+  text-align: center;
+}
+
+.info-content h3 {
+  font-size: 16px;
+  margin-bottom: 5px;
+  color: #333;
+  font-weight: bold;
+}
+
+.info-content p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+  margin: 0;
+  word-break: break-all;
+}
+
+@media (max-width: 768px) {
+  .map-info-container {
+    flex-direction: column;
+  }
+  
+  .map-container,
+  .detail-info {
+    width: 100%;
+  }
 }
 </style>

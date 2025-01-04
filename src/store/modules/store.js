@@ -303,6 +303,83 @@ const actions = {
       throw error;
     }
   },
+  async fetchStores({ commit }, params) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      console.log('Fetching stores with params:', params); // 添加除錯日誌
+
+      const response = await StoreService.fetchStores(params);
+      console.log('Store service response:', response); // 添加除錯日誌
+
+      if (response.success) {
+        commit('SET_STORES', response.data.content);
+        commit('SET_TOTAL_RESULTS', response.data.totalElements);
+        return response;
+      } else {
+        commit('SET_ERROR', response.error);
+        return response;
+      }
+    } catch (error) {
+      console.error('Store action error:', error); // 添加除錯日誌
+      const errorMsg = errorHandler(error);
+      commit('SET_ERROR', errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
+
+  // 更新商店
+  async updateStore({ commit }, { id, storeData }) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      const response = await StoreService.updateStore(id, storeData);
+      if (response) {
+        commit('UPDATE_STORE_INFO', {
+          storeId: id,
+          updates: storeData
+        });
+        return {
+          success: true,
+          data: response
+        };
+      }
+    } catch (error) {
+      const errorMsg = errorHandler(error);
+      commit('SET_ERROR', errorMsg);
+      return {
+        success: false,
+        error: errorMsg
+      };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
+
+  // 刪除商店
+  async deleteStore({ commit }, storeId) {
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
+    try {
+      await StoreService.deleteStore(storeId);
+      // 從商店列表中移除該商店
+      commit('SET_STORES', state.stores.filter(store => store.id !== storeId));
+      return {
+        success: true
+      };
+    } catch (error) {
+      const errorMsg = errorHandler(error);
+      commit('SET_ERROR', errorMsg);
+      return {
+        success: false,
+        error: errorMsg
+      };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
 
   // 重置商店狀態
   resetStoreState({ commit }) {

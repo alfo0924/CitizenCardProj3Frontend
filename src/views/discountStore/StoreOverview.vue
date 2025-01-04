@@ -3,7 +3,7 @@
     <!-- 優惠列表 -->
     <div class="discounts-content">
       <h2 class="page-title">特店優惠總覽</h2>
-
+      
       <!-- 搜尋和篩選 -->
       <div class="search-filter-container">
         <div class="search-box">
@@ -11,10 +11,44 @@
             <i class="fas fa-search"></i>
           </span>
           <input type="text" placeholder="搜尋" v-model="searchKeyword">
-          <button class="advanced-search-btn">
+          <button class="advanced-search-btn" @click="toggleAdvancedSearch">
             <i class="bi bi-filter-left"></i>
             進階搜尋
           </button>
+        </div>
+        <!-- 進階搜尋區塊 -->
+        <div class="advanced-search-panel" :class="{ 'expanded': isAdvancedSearchOpen }" v-show="isAdvancedSearchOpen">
+          <div class="advanced-search-content">
+            <!-- 店家資料排序方式 -->
+            <div class="form-group">
+              <label>排序方式</label>
+              <select v-model="advancedFilters.sortBy">
+                <option value="default">預設排序</option>
+                <option value="popularityDesc">人氣由高到低</option>
+                <option value="popularityAsc">人氣由低到高</option>
+              </select>
+            </div>
+            <!-- 美食類別篩選 -->
+            <div class="form-group">
+              <label>類別</label>
+              <select v-model="advancedFilters.selectedCategory">
+                <option value="全部">全部</option>
+                <option v-for="(category, index) in advancedFilters.category" :key="index" :value="category">{{ category
+                  }}</option>
+              </select>
+            </div>
+            <!-- 店家地區篩選 -->
+            <div class="form-group">
+              <label>地區</label>
+              <select v-model="advancedFilters.selectedArea">
+                <option value="全部">全部</option>
+                <option v-for="(area, index) in advancedFilters.area" :key="index" :value="area">{{ area }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <button class="reset-btn" @click="resetFilters">重設篩選</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -36,6 +70,7 @@
             <p class="location-info">{{ card.address }}</p>
             <div class="tags">
               <span class="tag">{{ card.category }}</span>
+              <span class="tag">{{ card.area }}</span>
               <span class="tag">{{ card.tag }}</span>
             </div>
           </div>
@@ -82,16 +117,53 @@ export default {
       currentPage: 1,
       pageSize: 15,
       stores: storeData.stores,
+      isAdvancedSearchOpen: false,
+      advancedFilters: {
+        selectedCategory: '全部', // 新增：當前選中的類別
+        selectedArea: '全部',     // 新增：當前選中的區域
+        sortBy: 'default',
+        category: ["川式料理", "中式麵食", "中式小吃", "台式甜點", "韓式料理", "日式料理", "中式點心", "台式早午餐", "飲品茶點", "中式料理"],
+        area: ["西屯區", "北屯區", "南屯區"],
+      }
     };
   },
   computed: {
     filteredCards() {
-      const keyword = this.searchKeyword.toLowerCase();
-      return this.stores.filter(card =>
-        card.name.toLowerCase().includes(keyword) ||
-        card.shortContent.toLowerCase().includes(keyword) ||
-        card.category.toLowerCase().includes(keyword)
+      // 先用關鍵字過濾
+      let filtered = this.stores.filter(card =>
+        card.name.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
+        card.shortContent.toLowerCase().includes(this.searchKeyword.toLowerCase()) ||
+        card.category.toLowerCase().includes(this.searchKeyword.toLowerCase())
       );
+
+      // 根據選擇的類別篩選
+      if (this.advancedFilters.selectedCategory !== '全部') {
+        filtered = filtered.filter(card =>
+          card.category === this.advancedFilters.selectedCategory
+        );
+      }
+
+      // 根據選擇的區域篩選
+      if (this.advancedFilters.selectedArea !== '全部') {
+        filtered = filtered.filter(card =>
+          card.area.includes(this.advancedFilters.selectedArea)
+        );
+      }
+
+      // 根據選擇的排序方式進行排序
+      switch (this.advancedFilters.sortBy) {
+        case 'popularityDesc':
+          filtered = _.orderBy(filtered, ['popularity'], ['desc']);
+          break;
+        case 'popularityAsc':
+          filtered = _.orderBy(filtered, ['popularity'], ['asc']);
+          break;
+        default:
+          // 預設排序，可以保持原本的順序或加入其他預設排序邏輯
+          break;
+      }
+
+      return filtered;
     },
     displayedCards() {
       const start = (this.currentPage - 1) * this.pageSize;
@@ -117,6 +189,17 @@ export default {
       return pages;
     },
   },
+  methods: {
+    toggleAdvancedSearch() {
+      this.isAdvancedSearchOpen = !this.isAdvancedSearchOpen;
+    },
+    resetFilters() {
+      this.advancedFilters.selectedCategory = '全部';
+      this.advancedFilters.selectedArea = '全部';
+      this.advancedFilters.sortBy = 'default';
+      this.searchKeyword = '';
+    },
+  }
 };
 </script>
 
@@ -130,7 +213,6 @@ export default {
   font-size: 2rem;
   font-weight: bold;
   color: rgba(186, 0, 67, 0.9);
-  margin-bottom: 2rem;
 }
 
 .search-filter-container {
@@ -188,11 +270,14 @@ export default {
 }
 
 .store-card {
+  flex: 0 0 calc(33.333% - 1.33rem);
   background: white;
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
 .store-card:hover {
@@ -307,5 +392,119 @@ export default {
     color: inherit;
     cursor: pointer;
   }
+}
+
+.more-btn {
+  display: flex;
+  justify-content: flex-end;
+  margin-left: auto;
+  width: fit-content;
+  padding: 0.75rem 2rem;
+  background: rgba(186, 0, 67, 0.9);
+  color: white;
+  border-radius: 2rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.more-btn:hover {
+  background: rgba(186, 0, 67, 1);
+  transform: scale(1.05);
+}
+
+/** 進階搜尋區塊 */
+.search-filter-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.advanced-search-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.advanced-search-btn:hover {
+  background: #e9e9e9;
+}
+
+.advanced-search-panel {
+  width: 100%;
+  background: white;
+  border-top: 1px solid #ddd;
+  /* 改用上邊框來分隔 */
+  height: 0;
+  /* 初始高度為 0 */
+  overflow: hidden;
+  /* 隱藏溢出內容 */
+  transition: height 0.3s ease;
+  /* 改用高度過渡 */
+  opacity: 0;
+}
+
+.advanced-search-panel.expanded {
+  height: auto;
+  /* 展開時自動適應內容高度 */
+  opacity: 1;
+}
+
+.advanced-search-content {
+  padding: 15px;
+  transform: translateY(-100%);
+  /* 初始位置在上方 */
+  transition: transform 0.3s ease;
+}
+
+.advanced-search-panel.expanded .advanced-search-content {
+  transform: translateY(0);
+  /* 展開時移動到正確位置 */
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/** 重設按鈕樣式 */
+.reset-btn {
+  width: 100%;
+  padding: 8px;
+  background: rgba(186, 0, 67, 0.1);
+  color: rgba(186, 0, 67, 0.9);
+  border: 1px solid rgba(186, 0, 67, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+  background: rgba(186, 0, 67, 0.2);
 }
 </style>

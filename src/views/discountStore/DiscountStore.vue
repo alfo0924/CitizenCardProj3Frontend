@@ -10,18 +10,30 @@
     <div v-else class="discounts-content">
       <h2 class="page-title">特店優惠專區</h2>
 
-      <!-- 搜尋和篩選 -->
-      <div class="search-filter-container">
-        <div class="search-box">
-          <span class="search-icon">
-            <i class="fas fa-search"></i>
-          </span>
-          <input type="text" placeholder="搜尋" v-model="searchKeyword" @input="handleSearch">
-          <button class="advanced-search-btn">
-            <i class="bi bi-filter-left"></i>
-            進階搜尋
+      <!-- 精選店家輪播 -->
+      <div id="carouselExampleIndicators" class="carousel slide mb-4">
+        <div class="carousel-indicators">
+          <button v-for="(slide, index) in stores" :key="slide.id" type="button"
+            data-bs-target="#carouselExampleIndicators" :data-bs-slide-to="index" :class="{ active: index === 0 }"
+            :aria-current="index === 0" :aria-label="'Slide ' + (index + 1)">
           </button>
         </div>
+        <div class="carousel-inner">
+          <div v-for="(slide, index) in stores" :key="slide.id" class="carousel-item" :class="{ active: index === 0 }">
+            <img :src="'/images/discountStore/' + slide.id + '.jpg'" class="d-block w-100" :alt="slide.name">
+          </div>
+        </div>
+        <!-- 控制按鈕 -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
+          data-bs-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
+          data-bs-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
       </div>
 
       <!-- 熱門優惠標題 -->
@@ -43,7 +55,9 @@
                 <p class="location-info">{{ store.address }}</p>
                 <div class="tags">
                   <span class="tag">{{ store.category }}</span>
-                  <span class="tag">{{ store.tag }}</span>
+                  <span class="tag"
+                    style="max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block;">{{
+                      store.tag }}</span>
                 </div>
               </div>
             </router-link>
@@ -61,9 +75,9 @@
       <!-- 底部資訊 -->
       <div class="bottom-info">
         <div class="info-content">
-          <h3 class="info-title">桃園市民卡特約商店優惠合作</h3>
+          <h3 class="info-title">逢甲市民卡特約商店優惠合作</h3>
           <p class="info-desc">想要提升商店的曝光度嗎？</p>
-          <p class="info-desc">免費加入桃園市民卡特約商店計劃發掘商機新視野！</p>
+          <p class="info-desc">免費加入逢甲市民卡特約商店計劃發掘商機新視野！</p>
           <button class="join-btn">
             免費加入特店計畫
           </button>
@@ -181,6 +195,8 @@ export default {
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  text-decoration: none;
+  color: inherit;
 }
 
 .carousel-arrow {
@@ -370,6 +386,96 @@ export default {
 
   .speech-bubble {
     right: 10%;
+  }
+
+  /* Carousel 基本樣式 */
+  .carousel {
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+
+  .carousel-inner {
+    position: relative;
+    width: 100%;
+  }
+
+  .carousel-item {
+    height: 400px;
+  }
+
+  /* 圖片基本設定 */
+  .carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+
+  /* 大螢幕 (>=1200px) */
+  @media (min-width: 1200px) {
+    .carousel-item img {
+      height: 500px;
+      /* 大螢幕較大高度 */
+    }
+  }
+
+  /* 中等螢幕 (>=768px and <1200px) */
+  @media (min-width: 768px) and (max-width: 1199px) {
+    .carousel-item img {
+      height: 400px;
+      /* 中等螢幕適中高度 */
+    }
+  }
+
+  /* 小螢幕 (>=576px and <768px) */
+  @media (min-width: 576px) and (max-width: 767px) {
+    .carousel-item img {
+      height: 300px;
+      /* 小螢幕較小高度 */
+    }
+  }
+
+  /* 超小螢幕 (<576px) */
+  @media (max-width: 575px) {
+    .carousel-item img {
+      height: 200px;
+      /* 手機螢幕最小高度 */
+    }
+
+    /* 在手機版隱藏輪播指示器 */
+    .carousel-indicators {
+      bottom: 0;
+    }
+
+    /* 調整控制按鈕大小 */
+    .carousel-control-prev,
+    .carousel-control-next {
+      width: 10%;
+    }
+
+    .carousel-control-prev-icon,
+    .carousel-control-next-icon {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  /* 可選：添加漸變效果 */
+  .carousel-item {
+    transition: transform 0.6s ease-in-out;
+  }
+
+  /* 可選：添加輪播指示器樣式 */
+  .carousel-indicators [data-bs-target] {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin: 0 5px;
+  }
+
+  /* 可選：添加圖片載入時的背景色 */
+  .carousel-item {
+    background-color: #f8f9fa;
   }
 }
 </style>
