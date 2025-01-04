@@ -746,4 +746,75 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 在小螢幕設備上的表格處理 */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 調整表格內容在小螢幕的顯示 */
+  .table td, .table th {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  /* 海報圖片在小螢幕的大小 */
+  .movie-poster {
+    width: 40px;
+    height: 60px;
+  }
+}
+
+/* 更小的螢幕尺寸 */
+@media (max-width: 576px) {
+  /* 搜尋和篩選區塊在小螢幕上改為單欄 */
+  .filters .col-md-4,
+  .filters .col-md-3 {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  /* 調整按鈕和標題的排列 */
+  .management-content .d-flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .management-content .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  /* Modal 中的表單元素 */
+  .modal-body .row {
+    margin: 0;
+  }
+
+  .modal-body .col-md-6,
+  .modal-body .col-md-4 {
+    padding: 0.5rem;
+  }
+}
+@media (max-width: 576px) {
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.375rem 0.75rem;
+  }
+}
 </style>

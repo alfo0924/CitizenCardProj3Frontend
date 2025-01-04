@@ -1,11 +1,16 @@
 <template>
   <div class="store-management">
     <!-- 頁面標題區 -->
-    <div class="page-header bg-light py-3">
+    <div class="page-header py-3">
       <div class="container">
         <div class="d-flex justify-content-between align-items-center">
-          <h2 class="mb-0">商店管理</h2>
-          <button class="btn btn-primary" @click="showAddStoreModal">
+          <div class="d-flex align-items-center gap-3">
+            <button class="btn btn-outline-secondary" @click="$router.back()">
+              <i class="bi bi-arrow-left"></i> 返回
+            </button>
+            <h2 class="mb-0">商店管理</h2>
+          </div>
+          <button class="btn btn-danger" @click="showAddStoreModal">
             <i class="bi bi-plus-lg"></i> 新增商店
           </button>
         </div>
@@ -14,7 +19,7 @@
 
     <div class="container py-4">
       <!-- 搜尋和篩選區 -->
-      <div class="filter-section bg-white p-3 rounded shadow-sm mb-4">
+      <div class="filter-section  p-3 rounded shadow-sm mb-4">
         <div class="row g-3">
           <!-- 搜尋框 -->
           <div class="col-md-4">
@@ -746,13 +751,13 @@ export default {
 }
 
 .pagination .page-link {
-  color: var(--primary-color);
-  border-color: var(--primary-color);
+  color: var(--danger-color);
+  border-color: var(--danger-color);
 }
 
 .pagination .active .page-link {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
+  background-color: var(--bs-light);
+  border-color: var(--danger-color);
 }
 
 @media (max-width: 768px) {
