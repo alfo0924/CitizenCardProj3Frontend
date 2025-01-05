@@ -27,14 +27,13 @@
               <span class="input-group-text bg-white">
                 <i class="bi bi-search"></i>
               </span>
-              <input type="text" class="form-control" v-model="searchQuery" placeholder="搜尋商店名稱或地址..."
-                @input="handleSearch">
+              <input type="text" class="form-control" v-model="searchQuery" placeholder="搜尋商店名稱或地址...">
             </div>
           </div>
 
           <!-- 類別篩選 -->
           <div class="col-md-3">
-            <select class="form-select" v-model="selectedCategory" @change="handleFilter">
+            <select class="form-select" v-model="selectedCategory">
               <option value="">所有類別</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.name }}
@@ -44,7 +43,7 @@
 
           <!-- 狀態篩選 -->
           <div class="col-md-3">
-            <select class="form-select" v-model="selectedStatus" @change="handleFilter">
+            <select class="form-select" v-model="selectedStatus">
               <option value="">所有狀態</option>
               <option value="active">營業中</option>
               <option value="inactive">已停業</option>
@@ -54,7 +53,7 @@
 
           <!-- 排序方式 -->
           <div class="col-md-2">
-            <select class="form-select" v-model="sortBy" @change="handleSort">
+            <select class="form-select" v-model="sortBy">
               <option value="newest">最新添加</option>
               <option value="name">店名排序</option>
               <option value="rating">評分排序</option>
@@ -75,10 +74,11 @@
           <thead class="table-light">
             <tr>
               <th>商店資訊</th>
-              <th>類別</th>
-              <th>地址</th>
-              <th>聯絡方式</th>
-              <th>狀態</th>
+              <th>區域</th>
+              <th>類別/標籤</th>
+              <th>聯絡資訊</th>
+              <th>優先度</th>
+              <th>活動時間</th>
               <th>操作</th>
             </tr>
           </thead>
@@ -87,36 +87,44 @@
               <!-- 商店資訊 -->
               <td>
                 <div class="d-flex align-items-center">
-                  <img :src="store.imageUrl" class="store-thumbnail me-2" :alt="store.name" @error="handleImageError"
-                    @load="handleImageLoad">
+                  <img :src="store.imgUrl || '/api/images/預設商店圖片.jpg'" class="store-thumbnail me-2" :alt="store.name">
                   <div>
                     <div class="store-name">{{ store.name }}</div>
-                    <div class="store-rating">
-                      <i class="bi bi-star-fill text-warning"></i>
-                      {{ store.rating }} ({{ store.reviewCount }}評價)
-                    </div>
+                    <div class="store-content text-muted small">{{ store.shortContent }}</div>
                   </div>
                 </div>
               </td>
 
-
-              <!-- 類別 -->
+              <!-- 區域 -->
+              <td>{{ store.area }}</td>
+              <!-- 類別和標籤 -->
               <td>
-                <span class="badge bg-secondary">{{ store.category }}</span>
+                <span class="badge bg-primary me-1">{{ store.category }}</span>
+                <span class="badge bg-secondary">{{ store.tag }}</span>
               </td>
-              <!-- 地址 -->
-              <td>{{ store.address }}</td>
-              <!-- 聯絡方式 -->
+              <!-- 聯絡資訊 -->
               <td>
                 <div>{{ store.phone }}</div>
-                <div class="small text-muted">{{ store.email }}</div>
+                <div class="small text-muted">{{ store.address }}</div>
+                <div class="small">
+                  <a v-if="store.website" :href="store.website" target="_blank" class="text-primary">
+                    <i class="bi bi-link-45deg"></i> 網站連結
+                  </a>
+                </div>
               </td>
-              <!-- 狀態 -->
+              <!-- 優先度 -->
               <td>
-                <span :class="['badge', getStatusClass(store.status)]">
-                  {{ getStatusText(store.status) }}
+                <span class="badge" :class="getPriorityClass(store.priority)">
+                  {{ store.priority }}
                 </span>
+                <div class="small" v-if="store.isDonation">
+                  <span class="badge bg-success">贊助商家</span>
+                </div>
               </td>
+
+              <!-- 活動時間 -->
+              <td>{{ store.time }}</td>
+
               <!-- 操作按鈕 -->
               <td>
                 <div class="btn-group">
@@ -348,38 +356,10 @@ export default {
       imgUrl: '',
       popularity: 0
     })
-    const handleImageError = (event) => {
-      console.error('圖片載入失敗:', event.target.src);
-      // 修改為使用正確的預設圖片路徑
-      event.target.src = `/api/images/預設商店圖片.jpg`;
-    };
-    const handleImageLoad = (event) => {
-      console.log('圖片載入成功:', event.target.src);
-    };
 
     const editingStore = ref(null)
     const storeToDelete = ref(null)
-    // 商店圖片處理
-    const handleImageChange = (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
 
-      // 驗證文件類型
-      if (!file.type.startsWith('image/')) {
-        error.value = '請上傳圖片文件';
-        return;
-      }
-
-      // 驗證文件大小 (例如最大 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        error.value = '圖片大小不能超過 5MB';
-        return;
-      }
-
-      // 設置預覽
-      storeForm.value.imageFile = file;
-      storeForm.value.imagePreview = URL.createObjectURL(file);
-    };
     // 計算屬性
     const totalPages = computed(() => {
       return Math.ceil(totalItems.value / itemsPerPage)
@@ -399,7 +379,6 @@ export default {
     })
 
     // 獲取商店列表
-    // StoreManagement.vue
     const fetchStores = async () => {
       loading.value = true;
       error.value = '';
@@ -415,19 +394,27 @@ export default {
               : 'rating,desc'
         };
 
-        console.log('發送請求參數:', params);
-
         const result = await store.dispatch('store/fetchStores', params);
-        console.log('獲取的商店數據:', result);
 
         if (result.success) {
-          stores.value = result.data.content;
-          console.log('處理後的商店數據:', stores.value);
-          totalItems.value = result.data.totalElements;
+          stores.value = result.data.content.map(store => ({
+            id: store.id,
+            name: store.name,
+            area: store.area,
+            category: store.category,
+            tag: store.tag,
+            content: store.content,
+            shortContent: store.shortContent,
+            time: store.time,
+            address: store.address,
+            phone: store.phone,
+            priority: store.priority,
+            website: store.website || '',
+            isDonation: store.isDonation,
+            imgUrl: store.imgUrl || 'https://placehold.co/50x50?text=No+Image',
+          }));
 
-          if (stores.value.length === 0) {
-            error.value = '暫無商店資料';
-          }
+          totalItems.value = result.data.totalElements;
         } else {
           error.value = result.error || '載入商店資料失敗';
         }
@@ -468,22 +455,12 @@ export default {
       }
     }
 
-    // 搜尋處理
-    const handleSearch = debounce(() => {
-      currentPage.value = 1
-      fetchStores()
-    }, 300)
-
-    // 篩選處理
-    const handleFilter = () => {
-      currentPage.value = 1
-      fetchStores()
-    }
-
-    // 排序處理
-    const handleSort = () => {
-      fetchStores()
-    }
+    // 優先度相關方法
+    const getPriorityClass = (priority) => {
+      if (priority >= 8) return 'bg-danger';
+      if (priority >= 5) return 'bg-warning';
+      return 'bg-info';
+    };
 
     // 換頁
     const changePage = (page) => {
@@ -502,7 +479,6 @@ export default {
         address: '',
         phone: '',
         email: '',
-        description: ''
       }
       editingStore.value = null
       storeModal.show()
@@ -516,7 +492,6 @@ export default {
         address: store.address,
         phone: store.phone,
         email: store.email,
-        description: store.description,
         // 保留原有圖片URL
         imageUrl: store.imageUrl,
         website: store.website,
@@ -687,9 +662,6 @@ export default {
       storeToDelete,
       totalPages,
       displayedPages,
-      handleSearch,
-      handleFilter,
-      handleSort,
       changePage,
       showAddStoreModal,
       editStore,
@@ -698,11 +670,10 @@ export default {
       deleteStore,
       getStatusClass,
       getStatusText,
-      handleImageChange,
-      handleImageError,
       STORE_CATEGORIES,
       resetStoreForm,
       isSubmitting: saving,
+      getPriorityClass,
     }
   }
 }
@@ -789,8 +760,29 @@ export default {
     padding: 1rem;
   }
 
-  .table {
-    font-size: 0.875rem;
+  .store-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  .badge {
+    font-weight: normal;
+    padding: 0.4em 0.6em;
+  }
+
+  .table td {
+    vertical-align: middle;
+    max-width: 250px;
+    /* 限制欄位最大寬度 */
+  }
+
+  .table td>div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .store-thumbnail {

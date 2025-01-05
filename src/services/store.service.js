@@ -39,13 +39,15 @@ class StoreService {
       console.log('原始API回應:', response.data);
 
       if (response.status === 200) {
-        // 處理圖片URL，使用 image_url 欄位
         const processedContent = response.data.content.map(store => ({
           ...store,
-          // 根據 store.id 構建圖片URL
-          imageUrl: store.id
-            ? `/api/images/${store.id}.jpg`
-            : `/api/images/預設商店圖片.jpg`
+          // 確保所有需要的欄位都有預設值
+          imgUrl: store.imgUrl || `/api/images/預設商店圖片.jpg`,
+          shortContent: store.shortContent || '暫無描述',
+          priority: store.priority || 0,
+          isDonation: Boolean(store.isDonation),
+          website: store.website || '',
+          time: store.time || '未設定',
         }));
 
         return {
