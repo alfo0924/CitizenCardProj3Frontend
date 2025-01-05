@@ -57,47 +57,56 @@
               <th>海報</th>
               <th>電影名稱</th>
               <th>上映日期</th>
+              <th>下檔日期</th>
               <th>片長</th>
+              <th>導演</th>
+              <th>類型</th>
+              <th>票價</th>
+              <th>評分</th>
               <th>狀態</th>
               <th>操作</th>
             </tr>
             </thead>
             <tbody>
-            <tr v-for="movie in movies" :key="movie.id">
-              <td>
-                <img
-                    :src="movie.posterUrl || require('@/assets/images/default-poster.jpg')"
-                    :alt="movie.title"
-                    class="movie-poster"
-                >
-              </td>
-              <td>{{ movie.title }}</td>
-              <td>{{ formatDate(movie.releaseDate) }}</td>
-              <td>{{ movie.duration }}分鐘</td>
-              <td>
-                  <span
-                      class="badge"
-                      :class="getStatusClass(movie.status)"
-                  >
-                    {{ getStatusText(movie.status) }}
-                  </span>
-              </td>
-              <td>
-                <button
-                    class="btn btn-sm btn-outline-primary me-2"
-                    @click="openMovieModal(movie)"
-                >
-                  編輯
-                </button>
-                <button
-                    class="btn btn-sm btn-outline-danger"
-                    @click="confirmDelete(movie)"
-                >
-                  刪除
-                </button>
-              </td>
-            </tr>
-            </tbody>
+          <tr v-for="movie in movies" :key="movie.id">
+            <td>
+              <img
+                  :src="movie.poster_url || require('@/assets/images/default-poster.jpg')"
+                  :alt="movie.title"
+                  class="movie-poster"
+              >
+            </td>
+            <td>{{ movie.title }}</td>
+            <td>{{ formatDate(movie.release_date) }}</td>
+            <td>{{ formatDate(movie.end_date) }}</td>
+            <td>{{ movie.duration }}分鐘</td>
+            <td>{{ movie.director || '尚未設定' }}</td>
+            <td>{{ movie.genre || '未分類' }}</td>
+            <td>${{ movie.price || 0 }}</td>
+            <td>
+      <span
+          class="badge"
+          :class="getStatusClass(movie.is_showing)"
+      >
+        {{ getStatusText(movie.is_showing) }}
+      </span>
+            </td>
+            <td>
+              <button
+                  class="btn btn-sm btn-outline-primary me-2"
+                  @click="openMovieModal(movie)"
+              >
+                編輯
+              </button>
+              <button
+                  class="btn btn-sm btn-outline-danger"
+                  @click="confirmDelete(movie)"
+              >
+                刪除
+              </button>
+            </td>
+          </tr>
+          </tbody>
           </table>
         </div>
 
@@ -167,30 +176,83 @@
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveMovie">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">電影名稱</label>
+                  <input
+                      type="text"
+                      class="form-control"
+                      v-model="editingMovie.title"
+                      required
+                  >
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">導演</label>
+                  <input
+                      type="text"
+                      class="form-control"
+                      v-model="editingMovie.director"
+                      required
+                  >
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">上映日期</label>
+                  <input
+                      type="date"
+                      class="form-control"
+                      v-model="editingMovie.release_date"
+                      required
+                  >
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">下檔日期</label>
+                  <input
+                      type="date"
+                      class="form-control"
+                      v-model="editingMovie.end_date"
+                      required
+                  >
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">片長（分鐘）</label>
+                  <input
+                      type="number"
+                      class="form-control"
+                      v-model="editingMovie.duration"
+                      required
+                      min="1"
+                  >
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">電影類型</label>
+                  <input
+                      type="text"
+                      class="form-control"
+                      v-model="editingMovie.genre"
+                      required
+                  >
+                </div>
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">票價</label>
+                  <input
+                      type="number"
+                      class="form-control"
+                      v-model="editingMovie.price"
+                      required
+                      min="0"
+                  >
+                </div>
+              </div>
               <div class="mb-3">
-                <label class="form-label">電影名稱</label>
+                <label class="form-label">卡司</label>
                 <input
                     type="text"
                     class="form-control"
-                    v-model="editingMovie.title"
-                    required
-                >
-              </div>
-              <div class="mb-3">
-                <label class="form-label">上映日期</label>
-                <input
-                    type="date"
-                    class="form-control"
-                    v-model="editingMovie.releaseDate"
-                    required
-                >
-              </div>
-              <div class="mb-3">
-                <label class="form-label">片長（分鐘）</label>
-                <input
-                    type="number"
-                    class="form-control"
-                    v-model="editingMovie.duration"
+                    v-model="editingMovie.cast"
                     required
                 >
               </div>
@@ -204,6 +266,14 @@
                 ></textarea>
               </div>
               <div class="mb-3">
+                <label class="form-label">預告片連結</label>
+                <input
+                    type="url"
+                    class="form-control"
+                    v-model="editingMovie.trailerUrl"
+                >
+              </div>
+              <div class="mb-3">
                 <label class="form-label">海報圖片</label>
                 <input
                     type="file"
@@ -211,17 +281,19 @@
                     @change="handleImageUpload"
                     accept="image/*"
                 >
+                <div v-if="editingMovie.posterUrl" class="mt-2">
+                  <img :src="editingMovie.posterUrl" class="preview-poster">
+                </div>
               </div>
               <div class="mb-3">
                 <label class="form-label">狀態</label>
                 <select
                     class="form-select"
-                    v-model="editingMovie.status"
+                    v-model="editingMovie.isShowing"
                     required
                 >
-                  <option value="SHOWING">上映中</option>
-                  <option value="COMING">即將上映</option>
-                  <option value="ENDED">已下檔</option>
+                  <option :value="true">上映中</option>
+                  <option :value="false">未上映</option>
                 </select>
               </div>
               <div class="text-end">
@@ -237,10 +309,10 @@
                     class="btn btn-primary"
                     :disabled="isProcessing"
                 >
-                  <span
-                      v-if="isProcessing"
-                      class="spinner-border spinner-border-sm me-2"
-                  ></span>
+      <span
+          v-if="isProcessing"
+          class="spinner-border spinner-border-sm me-2"
+      ></span>
                   {{ isProcessing ? '處理中...' : '儲存' }}
                 </button>
               </div>
@@ -258,7 +330,7 @@ import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
-import {useRouter} from "vue-router";
+import { useRouter } from "vue-router";
 import { debounce } from 'lodash'
 
 export default {
@@ -279,10 +351,15 @@ export default {
     const currentPage = ref(1)
     const editingMovie = ref({
       title: '',
-      releaseDate: '',
+      release_date: '',
+      end_date: '',
       duration: '',
       description: '',
-      status: 'SHOWING'
+      director: '',
+      genre: '',
+      price: 0,
+      is_showing: true,
+      poster_url: ''
     })
     const goBack = () => {
       router.back()
@@ -348,31 +425,35 @@ export default {
     const previousParams = ref(null)
     // 獲取電影列表
     const fetchMovies = async () => {
-      // 構建當前請求的參數
       const currentParams = {
         page: currentPage.value - 1,
         size: 10,
         status: selectedStatus.value,
-        keyword: searchKeyword.value
+        keyword: searchKeyword.value,
+        sort: 'releaseDate,desc' // 預設按上映日期排序
       }
 
-      // 檢查是否與上次請求參數相同
       if (previousParams.value &&
           JSON.stringify(previousParams.value) === JSON.stringify(currentParams)) {
-        return // 如果參數相同，不重複請求
+        return
       }
 
       try {
         isLoading.value = true
         error.value = null
-
-        // 更新上次請求參數
         previousParams.value = currentParams
 
-        await store.dispatch('movie/fetchMovies', currentParams)
+        const response = await axios.get('http://localhost:8080/api/movies', {
+          params: currentParams
+        })
+
+        // 直接使用後端回傳的資料
+        store.commit('movie/setMovies', response.data.content)
+        store.commit('movie/SET_TOTAL_PAGES', response.data.totalPages)
       } catch (err) {
         console.error('Error fetching movies:', err)
         error.value = '載入電影列表失敗'
+        Swal.fire('錯誤', '載入電影列表失敗', 'error')
       } finally {
         isLoading.value = false
       }
@@ -405,10 +486,15 @@ export default {
       } else {
         editingMovie.value = {
           title: '',
-          releaseDate: '',
+          release_date: '',
+          end_date: '',
           duration: '',
           description: '',
-          status: 'SHOWING'
+          director: '',
+          genre: '',
+          price: 0,
+          is_showing: true,
+          poster_url: ''
         }
       }
       const modal = new Modal(movieModal.value)
@@ -430,7 +516,7 @@ export default {
         isProcessing.value = true
         const formData = new FormData()
 
-        // 將編輯資料加入 FormData
+        // 將編輯資料加入 FormData，使用正確的欄位名稱
         Object.keys(editingMovie.value).forEach(key => {
           if (key !== 'posterFile') {
             formData.append(key, editingMovie.value[key])
@@ -456,7 +542,7 @@ export default {
         await fetchMovies()
       } catch (err) {
         console.error('Error saving movie:', err)
-        Swal.fire('錯誤', '儲存電影資料失敗', 'error')
+        Swal.fire('錯誤', err.response?.data?.message || '儲存電影資料失敗', 'error')
       } finally {
         isProcessing.value = false
       }
@@ -486,35 +572,42 @@ export default {
     }
 
     // 獲取狀態樣式
-    const getStatusClass = (status) => {
-      switch (status) {
-        case 'SHOWING':
-          return 'bg-success'
-        case 'COMING':
-          return 'bg-primary'
-        case 'ENDED':
-          return 'bg-secondary'
-        default:
-          return 'bg-secondary'
-      }
+    // const getStatusClass = (status) => {
+    //   switch (status) {
+    //     case 'SHOWING':
+    //       return 'bg-success'
+    //     case 'COMING':
+    //       return 'bg-primary'
+    //     case 'ENDED':
+    //       return 'bg-secondary'
+    //     default:
+    //       return 'bg-secondary'
+    //   }
+    // }
+    const getStatusClass = (isShowing) => {
+      return isShowing ? 'bg-success' : 'bg-secondary'
     }
 
     // 獲取狀態文字
-    const getStatusText = (status) => {
-      switch (status) {
-        case 'SHOWING':
-          return '上映中'
-        case 'COMING':
-          return '即將上映'
-        case 'ENDED':
-          return '已下檔'
-        default:
-          return '未知'
-      }
+    // const getStatusText = (status) => {
+    //   switch (status) {
+    //     case 'SHOWING':
+    //       return '上映中'
+    //     case 'COMING':
+    //       return '即將上映'
+    //     case 'ENDED':
+    //       return '已下檔'
+    //     default:
+    //       return '未知'
+    //   }
+    // }
+    const getStatusText = (isShowing) => {
+      return isShowing ? '上映中' : '未上映'
     }
 
     // 格式化日期
     const formatDate = (date) => {
+      if (!date) return '未設定'
       return new Date(date).toLocaleDateString('zh-TW')
     }
 
@@ -633,6 +726,95 @@ export default {
   .badge {
     padding: 0.35rem 0.5rem;
     font-size: 0.75rem;
+  }
+}
+.preview-poster {
+  max-width: 200px;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table th {
+  white-space: nowrap;
+}
+
+.table td {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 在小螢幕設備上的表格處理 */
+@media (max-width: 768px) {
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 調整表格內容在小螢幕的顯示 */
+  .table td, .table th {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  /* 海報圖片在小螢幕的大小 */
+  .movie-poster {
+    width: 40px;
+    height: 60px;
+  }
+}
+
+/* 更小的螢幕尺寸 */
+@media (max-width: 576px) {
+  /* 搜尋和篩選區塊在小螢幕上改為單欄 */
+  .filters .col-md-4,
+  .filters .col-md-3 {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  /* 調整按鈕和標題的排列 */
+  .management-content .d-flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .management-content .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+@media (max-width: 768px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  /* Modal 中的表單元素 */
+  .modal-body .row {
+    margin: 0;
+  }
+
+  .modal-body .col-md-6,
+  .modal-body .col-md-4 {
+    padding: 0.5rem;
+  }
+}
+@media (max-width: 576px) {
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+  }
+
+  .pagination .page-link {
+    padding: 0.375rem 0.75rem;
   }
 }
 </style>

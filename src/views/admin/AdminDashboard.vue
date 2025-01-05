@@ -310,7 +310,7 @@ export default {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: var(--primary-color);
+  background: var(--danger-color);
   color: white;
   display: flex;
   align-items: center;

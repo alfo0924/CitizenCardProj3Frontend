@@ -69,44 +69,49 @@ const TokenManager = {
 // 請求攔截器
 api.interceptors.request.use(
     async config => {
-        // 添加重試配置
-        config.retry = CONFIG.MAX_RETRIES
-        config.retryDelay = CONFIG.RETRY_DELAY
+        // 如果是刷新 token 的請求，直接發送不進行驗證
+        if (config.url === '/auth/refresh-token') {
+            return config
+        }
 
         // 檢查 token 是否即將過期
         if (TokenManager.isTokenExpiringSoon()) {
             try {
-                await store.dispatch('auth/refreshToken')
+                const refreshResult = await store.dispatch('auth/refreshToken')
+                if (!refreshResult.success) {
+                    await store.dispatch('auth/forceLogout')
+                    throw new Error('Token 刷新失敗')
+                }
             } catch (error) {
-                console.warn('Token refresh failed:', error)
+                console.error('Token refresh failed:', error)
+                throw error
             }
         }
 
-        // 添加認證 token
         const token = TokenManager.getToken()
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
 
-        // 添加請求時間戳，防止快取
-        if (config.method === 'get') {
-            config.params = { ...config.params, _t: Date.now() }
-        }
-
         return config
     },
-    error => {
-        console.error('Request error:', error)
+    error => Promise.reject(error)
+)
+
+api.interceptors.response.use(
+    response => response,
+    async error => {
+        // 如果是刷新 token 的請求失敗，直接返回錯誤
+        if (error.config.url === '/auth/refresh-token') {
+            return Promise.reject(error)
+        }
+
+        if (error.response?.status === 401) {
+            await store.dispatch('auth/handleAuthError', error)
+        }
         return Promise.reject(error)
     }
 )
-api.interceptors.response.use(
-    response => response,
-    error => {
-        console.error('API Error:', error.response || error);
-        return Promise.reject(error);
-    }
-);
 
 // 處理認證錯誤
 async function handleAuthError() {
