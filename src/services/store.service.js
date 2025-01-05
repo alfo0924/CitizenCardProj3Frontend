@@ -128,40 +128,76 @@ async getCategories() {
 
   async createStore(storeData) {
     try {
-      // 如果有圖片文件
+      // 如果有圖片檔案，先上傳圖片
       if (storeData.imageFile) {
-        const imageResponse = await this.uploadImage(storeData.imageFile);
-        storeData.imageUrl = imageResponse.imageUrl;
+        const formData = new FormData();
+        formData.append('file', storeData.imageFile);
+
+        const imageResponse = await api.post('/stores/upload-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        storeData.imageUrl = imageResponse.data.imageUrl;
       }
 
       const response = await api.post('/stores', storeData);
-      return response.data;
+      return {
+        success: true,
+        data: response.data
+      };
     } catch (error) {
-      throw errorHandler(error);
+      console.error('創建商店失敗:', error);
+      return {
+        success: false,
+        error: errorHandler(error)
+      };
     }
   }
 
   async updateStore(id, storeData) {
     try {
-      // 如果有图片文件
+      // 如果有新的圖片檔案，先上傳圖片
       if (storeData.imageFile) {
-        const imageResponse = await this.uploadImage(storeData.imageFile);
-        storeData.imageUrl = imageResponse.imageUrl;
+        const formData = new FormData();
+        formData.append('file', storeData.imageFile);
+
+        const imageResponse = await api.post('/stores/upload-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        storeData.imageUrl = imageResponse.data.imageUrl;
       }
 
       const response = await api.put(`/stores/${id}`, storeData);
-      return response.data;
+      return {
+        success: true,
+        data: response.data
+      };
     } catch (error) {
-      throw errorHandler(error);
+      console.error('更新商店失敗:', error);
+      return {
+        success: false,
+        error: errorHandler(error)
+      };
     }
   }
 
   async deleteStore(id) {
     try {
-      const response = await api.delete(`/stores/${id}`);
-      return response.data;
+      await api.delete(`/stores/${id}`);
+      return {
+        success: true
+      };
     } catch (error) {
-      throw errorHandler(error);
+      console.error('刪除商店失敗:', error);
+      return {
+        success: false,
+        error: errorHandler(error)
+      };
     }
   }
 }

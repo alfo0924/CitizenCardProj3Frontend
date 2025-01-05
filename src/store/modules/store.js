@@ -326,30 +326,47 @@ const actions = {
       commit('SET_LOADING', false);
     }
   },
-
+  async createStore({ commit }, storeData) {
+    commit('SET_LOADING', true);
+    try {
+      const result = await StoreService.createStore(storeData);
+      if (result.success) {
+        return { success: true, data: result.data };
+      } else {
+        commit('SET_ERROR', result.error);
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      const errorMsg = errorHandler(error);
+      commit('SET_ERROR', errorMsg);
+      return { success: false, error: errorMsg };
+    } finally {
+      commit('SET_LOADING', false);
+    }
+  },
   // 更新商店
   async updateStore({ commit }, { id, storeData }) {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      const response = await StoreService.updateStore(id, storeData);
-      if (response) {
+      console.log('Updating store:', id, storeData);
+      const result = await StoreService.updateStore(id, storeData);
+
+      if (result.success) {
         commit('UPDATE_STORE_INFO', {
           storeId: id,
-          updates: storeData
+          updates: result.data
         });
-        return {
-          success: true,
-          data: response
-        };
+        return { success: true, data: result.data };
+      } else {
+        const errorMsg = result.error || '更新失敗';
+        commit('SET_ERROR', errorMsg);
+        return { success: false, error: errorMsg };
       }
     } catch (error) {
-      const errorMsg = errorHandler(error);
+      const errorMsg = error.response?.data?.message || '更新失敗';
       commit('SET_ERROR', errorMsg);
-      return {
-        success: false,
-        error: errorMsg
-      };
+      return { success: false, error: errorMsg };
     } finally {
       commit('SET_LOADING', false);
     }
@@ -358,21 +375,20 @@ const actions = {
   // 刪除商店
   async deleteStore({ commit }, storeId) {
     commit('SET_LOADING', true);
-    commit('SET_ERROR', null);
     try {
-      await StoreService.deleteStore(storeId);
-      // 從商店列表中移除該商店
-      commit('SET_STORES', state.stores.filter(store => store.id !== storeId));
-      return {
-        success: true
-      };
+      const result = await StoreService.deleteStore(storeId);
+      if (result.success) {
+        // 從商店列表中移除該商店
+        commit('SET_STORES', state.stores.filter(store => store.id !== storeId));
+        return { success: true };
+      } else {
+        commit('SET_ERROR', result.error);
+        return { success: false, error: result.error };
+      }
     } catch (error) {
       const errorMsg = errorHandler(error);
       commit('SET_ERROR', errorMsg);
-      return {
-        success: false,
-        error: errorMsg
-      };
+      return { success: false, error: errorMsg };
     } finally {
       commit('SET_LOADING', false);
     }
