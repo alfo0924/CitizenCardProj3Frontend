@@ -17,7 +17,8 @@ const state = {
     isTokenVerified: false,
     lastVerification: localStorage.getItem(STORAGE_KEYS.LAST_VERIFICATION) || null,
     isInitialized: false,
-    refreshInterval: null
+    refreshInterval: null,
+    isRefreshing: false
 }
 
 const getters = {
@@ -119,21 +120,49 @@ const actions = {
         }
     },
     async handleAuthError({ commit, dispatch }, error) {
-        let errorMessage = '認證失敗'
-        if (error.response) {
-            switch (error.response.status) {
-                case 401:
-                    errorMessage = '登入已過期，請重新登入'
-                    await dispatch('forceLogout')
-                    break
-                case 403:
-                    errorMessage = '無權限訪問'
-                    break
-                default:
-                    errorMessage = error.response.data?.message || '發生錯誤，請稍後再試'
+        try {
+            // 如果是刷新 token 的請求失敗，直接登出
+            if (error.config.url === '/auth/refresh-token') {
+                await dispatch('forceLogout')
+                commit('SET_ERROR', '登入已過期，請重新登入')
+                return
             }
+
+            const refreshResult = await dispatch('refreshToken')
+            if (!refreshResult.success) {
+                await dispatch('forceLogout')
+                commit('SET_ERROR', '登入已過期，請重新登入')
+            }
+        } catch (err) {
+            await dispatch('forceLogout')
+            commit('SET_ERROR', '認證失敗，請重新登入')
         }
-        commit('SET_ERROR', errorMessage)
+    },
+    async refreshToken({ commit, state }) {
+        if (state.isRefreshing) {
+            return { success: false }
+        }
+
+        try {
+            commit('SET_REFRESHING', true)
+            const response = await api.post('/auth/refresh-token')
+
+            if (response.data?.token) {
+                const token = response.data.token
+                localStorage.setItem('token', token)
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+                commit('SET_TOKEN', token)
+                commit('SET_TOKEN_VERIFIED', true)
+                commit('UPDATE_VERIFICATION_TIME')
+                return { success: true }
+            }
+            return { success: false }
+        } catch (error) {
+            console.error('Refresh token failed:', error)
+            return { success: false }
+        } finally {
+            commit('SET_REFRESHING', false)
+        }
     },
 
     async forceLogout({ commit, state }) {
@@ -344,6 +373,9 @@ const mutations = {
     },
     CLEAR_ERROR(state) {
         state.error = null
+    },
+    SET_REFRESHING(state, status) {
+        state.isRefreshing = status
     }
 }
 

@@ -23,7 +23,6 @@ class StoreService {
 
   async fetchStores(params = {}) {
     try {
-      // 移除空值參數
       const cleanParams = Object.entries(params).reduce((acc, [key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
           acc[key] = value;
@@ -40,10 +39,19 @@ class StoreService {
       console.log('原始API回應:', response.data);
 
       if (response.status === 200) {
+        // 處理圖片URL，使用 image_url 欄位
+        const processedContent = response.data.content.map(store => ({
+          ...store,
+          // 根據 store.id 構建圖片URL
+          imageUrl: store.id
+              ? `/api/images/${store.id}.jpg`
+              : `/api/images/預設商店圖片.jpg`
+        }));
+
         return {
           success: true,
           data: {
-            content: response.data.content || [],
+            content: processedContent,
             totalElements: response.data.total_elements || 0,
             totalPages: response.data.total_pages || 0
           }
@@ -84,6 +92,22 @@ async getCategories() {
     }
   }
 
+  async uploadImage(file) {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await api.post('/stores/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw errorHandler(error);
+    }
+  }
+
   async getPopularStores(params) {
     try {
       const response = await api.get('/stores/popular', { params });
@@ -104,6 +128,12 @@ async getCategories() {
 
   async createStore(storeData) {
     try {
+      // 如果有圖片文件
+      if (storeData.imageFile) {
+        const imageResponse = await this.uploadImage(storeData.imageFile);
+        storeData.imageUrl = imageResponse.imageUrl;
+      }
+
       const response = await api.post('/stores', storeData);
       return response.data;
     } catch (error) {
@@ -113,6 +143,12 @@ async getCategories() {
 
   async updateStore(id, storeData) {
     try {
+      // 如果有图片文件
+      if (storeData.imageFile) {
+        const imageResponse = await this.uploadImage(storeData.imageFile);
+        storeData.imageUrl = imageResponse.imageUrl;
+      }
+
       const response = await api.put(`/stores/${id}`, storeData);
       return response.data;
     } catch (error) {

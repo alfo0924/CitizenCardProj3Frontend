@@ -307,12 +307,10 @@ const actions = {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
     try {
-      console.log('Fetching stores with params:', params); // 添加除錯日誌
-
       const response = await StoreService.fetchStores(params);
-      console.log('Store service response:', response); // 添加除錯日誌
 
-      if (response.success) {
+      if(response.success && response.data.content) {
+        // 直接使用 StoreService 處理過的資料
         commit('SET_STORES', response.data.content);
         commit('SET_TOTAL_RESULTS', response.data.totalElements);
         return response;
@@ -321,7 +319,6 @@ const actions = {
         return response;
       }
     } catch (error) {
-      console.error('Store action error:', error); // 添加除錯日誌
       const errorMsg = errorHandler(error);
       commit('SET_ERROR', errorMsg);
       return { success: false, error: errorMsg };
