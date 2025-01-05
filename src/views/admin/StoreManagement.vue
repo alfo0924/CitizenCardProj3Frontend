@@ -114,9 +114,11 @@
             <td>
               <div class="d-flex align-items-center">
                 <img
-                    :src="store.imageUrl || require('@/assets/images/default-store.jpg')"
+                    :src="store.imageUrl"
                     class="store-thumbnail me-2"
                     :alt="store.name"
+                    @error="handleImageError"
+                    @load="handleImageLoad"
                 >
                 <div>
                   <div class="store-name">{{ store.name }}</div>
@@ -127,6 +129,8 @@
                 </div>
               </div>
             </td>
+
+
             <!-- 類別 -->
             <td>
               <span class="badge bg-secondary">{{ store.category }}</span>
@@ -256,7 +260,26 @@
                       v-model="storeForm.name"
                       required
                   >
+                </div><div class="col-12 mb-3">
+                <label class="form-label">商店圖片</label>
+                <div class="d-flex align-items-center gap-3">
+                  <img
+                      :src="storeForm.imagePreview || storeForm.imageUrl || '/images/預設商店圖片.jpg'"
+                      class="store-image-preview"
+                      alt="商店圖片預覽"
+                  >
+                  <div>
+                    <input
+                        type="file"
+                        class="form-control"
+                        accept="image/*"
+                        @change="handleImageChange"
+                        ref="imageInput"
+                    >
+                    <small class="text-muted">建議上傳 500x500 像素的圖片</small>
+                  </div>
                 </div>
+              </div>
                 <div class="col-md-6">
                   <label class="form-label">商店類別</label>
                   <select
@@ -419,9 +442,37 @@ export default {
       email: '',
       description: ''
     })
+    const handleImageError = (event) => {
+      console.error('圖片載入失敗:', event.target.src);
+      // 修改為使用正確的預設圖片路徑
+      event.target.src = `/api/images/預設商店圖片.jpg`;
+    };
+    const handleImageLoad = (event) => {
+      console.log('圖片載入成功:', event.target.src);
+    };
+
     const editingStore = ref(null)
     const storeToDelete = ref(null)
+    const handleImageChange = (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
 
+      // 驗證文件類型
+      if (!file.type.startsWith('image/')) {
+        error.value = '請上傳圖片文件';
+        return;
+      }
+
+      // 驗證文件大小 (例如最大 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        error.value = '圖片大小不能超過 5MB';
+        return;
+      }
+
+      // 設置預覽
+      storeForm.value.imageFile = file;
+      storeForm.value.imagePreview = URL.createObjectURL(file);
+    };
     // 計算屬性
     const totalPages = computed(() => {
       return Math.ceil(totalItems.value / itemsPerPage)
@@ -449,7 +500,6 @@ export default {
         const params = {
           page: currentPage.value - 1,
           size: itemsPerPage,
-          // 只傳送有值的參數
           ...(searchQuery.value && { keyword: searchQuery.value }),
           ...(selectedCategory.value && { category: selectedCategory.value }),
           ...(selectedStatus.value && { status: selectedStatus.value }),
@@ -458,18 +508,17 @@ export default {
                   : 'rating,desc'
         };
 
-        console.log('準備發送請求，參數為:', params);
+        console.log('發送請求參數:', params);
 
         const result = await store.dispatch('store/fetchStores', params);
-        console.log('獲取到的商店數據:', result);
+        console.log('獲取的商店數據:', result);
 
         if (result.success) {
           stores.value = result.data.content;
+          console.log('處理後的商店數據:', stores.value);
           totalItems.value = result.data.totalElements;
 
-          // 檢查是否有數據
           if (stores.value.length === 0) {
-            // 顯示空數據提示
             error.value = '暫無商店資料';
           }
         } else {
@@ -575,17 +624,17 @@ export default {
     const saveStore = async () => {
       saving.value = true;
       try {
-        const payload = {
+        const formData = {
           ...storeForm.value,
-          category: storeForm.value.categoryId // 將 categoryId 轉換為 category
+          imageFile: storeForm.value.imageFile
         };
 
         const action = editingStore.value
             ? store.dispatch('store/updateStore', {
               id: storeForm.value.id,
-              storeData: payload
+              storeData: formData
             })
-            : store.dispatch('store/createStore', payload);
+            : store.dispatch('store/createStore', formData);
 
         const result = await action;
         if (result.success) {
@@ -600,8 +649,7 @@ export default {
       } finally {
         saving.value = false;
       }
-    }
-
+    };
     // 刪除商店
     const confirmDelete = (store) => {
       storeToDelete.value = store
@@ -678,7 +726,9 @@ export default {
       confirmDelete,
       deleteStore,
       getStatusClass,
-      getStatusText
+      getStatusText,
+      handleImageChange,
+      handleImageError
     }
   }
 }
@@ -781,5 +831,18 @@ export default {
   .btn-group .btn i {
     font-size: 0.875rem;
   }
+}
+.store-image-preview {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.store-thumbnail {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
 }
 </style>
