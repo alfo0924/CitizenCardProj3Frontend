@@ -79,6 +79,7 @@
                 >
                   請先登入
                 </button>
+                <p class="seat-limit-notice">市民同場次限訂一個座位</p>
               </div>
             </div>
           </div>
@@ -97,15 +98,15 @@
 
               <div class="seat-legend">
                 <div class="legend-item">
-                  <div class="legend-box available"/>
+                  <div class="seat available"></div>
                   <span>可選擇</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-box selected"/>
+                  <div class="seat selected"></div>
                   <span>已選擇</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-box occupied"/>
+                  <div class="seat booked"></div>
                   <span>已訂位</span>
                 </div>
               </div>
@@ -230,11 +231,17 @@ const fetchSeatStatus = async () => {
     const scheduleId = selectedShowtime.value.schedule?.id
     if (!scheduleId) return
 
-    const response = await api.get(`/seats/${scheduleId}/status`)
-    if (response.data) {
-      seatStatus.value = response.data.map(seat => ({
+    const [statusResponse, soldResponse] = await Promise.all([
+      api.get(`/seats/${scheduleId}/status`),
+      api.get(`/seats/${scheduleId}/sold`)
+    ])
+
+    const soldSeats = new Set(soldResponse.data)
+
+    if (statusResponse.data) {
+      seatStatus.value = statusResponse.data.map(seat => ({
         seatNumber: seat.seat_number,
-        isAvailable: seat.available
+        isAvailable: seat.available && !soldSeats.has(seat.seat_number)
       }))
     }
   } catch (error) {
@@ -242,7 +249,6 @@ const fetchSeatStatus = async () => {
     store.commit('SET_ERROR', '獲取座位狀態失敗')
   }
 }
-
 // === Data Processing Functions ===
 const processMoviesData = (movies, schedules) => {
   return movies
@@ -318,13 +324,17 @@ const showBooking = async (movie) => {
 // === Seat Management Functions ===
 const toggleSeat = (movieId, row, num) => {
   const seatNumber = `${row}${num}`
-  const seatInfo = { id: `${row}-${num}`, seatNumber, row, num }
 
+  const seat = seatStatus.value.find(s => s.seatNumber === seatNumber)
+  if (!seat?.isAvailable) {
+    return
+  }
+
+  const seatInfo = { id: `${row}-${num}`, seatNumber, row, num }
   if (!movieSeats[movieId]) {
     movieSeats[movieId] = []
   }
-
-  movieSeats[movieId] = [seatInfo] // Only allow one seat selection
+  movieSeats[movieId] = [seatInfo]
 }
 
 const getSelectedSeatsForMovie = (movieId) => movieSeats[movieId] || []
@@ -1031,5 +1041,16 @@ onMounted(async () => {
     height: 36px;
     font-size: 14px;
   }
+}
+
+.movie-button.login-required:hover {
+  background-color: #5a6268;
+}
+
+.seat-limit-notice {
+  text-align: center;
+  color: #666;
+  margin-top: 10px;
+  font-size: 0.9rem;
 }
 </style>
