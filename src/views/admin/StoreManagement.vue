@@ -453,6 +453,7 @@ export default {
 
     const editingStore = ref(null)
     const storeToDelete = ref(null)
+    // 商店圖片處理
     const handleImageChange = (event) => {
       const file = event.target.files[0];
       if (!file) return;
@@ -608,26 +609,50 @@ export default {
       storeForm.value = {
         id: store.id,
         name: store.name,
-        categoryId: store.category,
+        categoryId: store.category, // 使用 category 作為 categoryId
         address: store.address,
         phone: store.phone,
         email: store.email,
-        description: store.description
-      }
+        description: store.description,
+        // 保留原有圖片URL
+        imageUrl: store.imageUrl,
+        website: store.website,
+        openingHours: store.openingHours,
+        discountInfo: store.discountInfo,
+        latitude: store.latitude,
+        longitude: store.longitude
+      };
+
       if (categories.value.length === 0) {
         fetchCategories();
       }
-      editingStore.value = store
-      storeModal.show()
-    }
+      editingStore.value = store;
+      storeModal.show();
+    };
 
+    // 保存商店
     const saveStore = async () => {
       saving.value = true;
+      error.value = '';
+
       try {
+        // 驗證必要欄位
+        const requiredFields = ['name', 'categoryId', 'address', 'phone', 'email'];
+        const missingFields = requiredFields.filter(field => !storeForm.value[field]);
+
+        if (missingFields.length > 0) {
+          error.value = `請填寫完整資料：${missingFields.join(', ')}`;
+          return;
+        }
+
         const formData = {
           ...storeForm.value,
-          imageFile: storeForm.value.imageFile
+          imageFile: storeForm.value.imageFile,
+          // 確保 category 欄位正確
+          category: storeForm.value.categoryId
         };
+
+        console.log('準備儲存的數據:', formData);
 
         const action = editingStore.value
             ? store.dispatch('store/updateStore', {
@@ -637,15 +662,29 @@ export default {
             : store.dispatch('store/createStore', formData);
 
         const result = await action;
+        console.log('保存結果:', result);
+
         if (result.success) {
           storeModal.hide();
-          fetchStores();
+          await fetchStores();
+          // 清空表單
+          storeForm.value = {
+            id: null,
+            name: '',
+            categoryId: '',
+            address: '',
+            phone: '',
+            email: '',
+            description: '',
+            imageFile: null,
+            imagePreview: null
+          };
         } else {
-          error.value = '儲存失敗';
+          error.value = result.error || '儲存失敗';
         }
       } catch (err) {
-        error.value = '儲存失敗';
         console.error('儲存商店時發生錯誤:', err);
+        error.value = '儲存失敗: ' + (err.message || '未知錯誤');
       } finally {
         saving.value = false;
       }
@@ -657,20 +696,30 @@ export default {
     }
 
     const deleteStore = async () => {
-      if (!storeToDelete.value) return
-      deleting.value = true
+      if (!storeToDelete.value) return;
+
+      deleting.value = true;
       try {
-        await store.dispatch('store/deleteStore', storeToDelete.value.id)
-        deleteModal.hide()
-        fetchStores()
+        const result = await store.dispatch('store/deleteStore', storeToDelete.value.id);
+
+        if (result.success) {
+          // 關閉 Modal
+          const modal = Modal.getInstance(document.getElementById('deleteModal'));
+          modal.hide();
+
+          // 重新載入商店列表
+          await fetchStores();
+        } else {
+          error.value = result.error || '刪除失敗';
+        }
       } catch (err) {
-        error.value = '刪除失敗'
-        console.error('Error deleting store:', err)
+        console.error('刪除商店時發生錯誤:', err);
+        error.value = '刪除失敗';
       } finally {
-        deleting.value = false
-        storeToDelete.value = null
+        deleting.value = false;
+        storeToDelete.value = null;
       }
-    }
+    };
 
     // 狀態相關方法
     const getStatusClass = (status) => {
