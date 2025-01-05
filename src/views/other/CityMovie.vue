@@ -289,8 +289,20 @@ const selectMovie = (movie) => {
   scrollToMovieDetails()
 }
 
-const selectShowtime = (date, time, schedule) => {
-  selectedShowtime.value = { date, time, schedule }
+const selectShowtime = async (date, time, schedule) => {
+  try {
+    if (isAuthenticated.value) {
+      const checkResponse = await api.get(`/movietickets/check/${schedule.id}`)
+      if (checkResponse.data.hasBooked) {
+        alert('您已在此場次訂位，每位市民同場次限訂一個座位')
+        return
+      }
+    }
+    selectedShowtime.value = { date, time, schedule }
+  } catch (error) {
+    console.error('Error:', error)
+    selectedShowtime.value = { date, time, schedule }
+  }
 }
 
 const showBooking = async (movie) => {
@@ -387,24 +399,35 @@ const confirmBooking = async () => {
       return
     }
 
-    // TODO: Add actual booking API call here
-    console.log('訂位資訊：', {
+    if (!selectedShowtime.value.schedule?.id) {
+      alert('請選擇場次')
+      return
+    }
+
+    store.commit('SET_LOADING', true)
+
+    const response = await api.post('/movietickets/create', {
       movieId: currentMovieId,
-      movieTitle: selectedMovie.value.title,
-      showtime: selectedShowtime.value,
-      seats: currentSeats,
-      userId: store.getters['auth/userId']
+      scheduleId: selectedShowtime.value.schedule.id,
+      seatNumber: currentSeats[0].seatNumber
     })
 
-    alert('訂位成功！')
-    resetBookingInfo()
+    if (response.data) {
+      alert('訂位成功！')
+      resetBookingInfo()
+    }
   } catch (error) {
     console.error('訂票失敗：', error)
     if (error.response?.status === 401) {
       goToLogin()
+    } else if (error.response?.status === 409) {
+      alert('該座位已被預訂，請重新選擇')
+      await fetchSeatStatus()
     } else {
       alert('訂票失敗，請稍後再試')
     }
+  } finally {
+    store.commit('SET_LOADING', false)
   }
 }
 
