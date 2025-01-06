@@ -246,7 +246,7 @@
 
                 <div class="col-12">
                   <label class="form-label">網站</label>
-                  <input type="url" class="form-control" v-model="storeForm.website">
+                  <input type="text" class="form-control" v-model="storeForm.website">
                 </div>
 
                 <div class="col-12">
@@ -261,9 +261,15 @@
                 </div>
 
                 <div class="col-12">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" v-model="storeForm.is_donation" id="is_donation">
-                    <label class="form-check-label" for="is_donation">是否為贊助商家</label>
+                  <label class="form-label">是否為贊助商家</label>
+                  <div class="btn-group w-100" role="group" aria-label="贊助商家選擇">
+                    <input type="radio" class="btn-check" name="isDonation" id="donation_yes" :value="true"
+                      v-model="storeForm.is_donation" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="donation_yes">是</label>
+
+                    <input type="radio" class="btn-check" name="isDonation" id="donation_no" :value="false"
+                      v-model="storeForm.is_donation" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="donation_no">否</label>
                   </div>
                 </div>
               </div>
@@ -516,10 +522,20 @@ export default {
       storeForm.value = {
         id: null,
         name: '',
-        categoryId: '',
+        category: '',
+        area: '',
+        content: '',
+        tag: '',
+        short_content: '',
         address: '',
         phone: '',
-        email: '',
+        time: '',
+        priority: 0,
+        popularity: 0,
+        website: '',
+        iframe_src: '',
+        is_donation: false,
+        img_url: ''
       }
       editingStore.value = null
       storeModal.show()
@@ -883,5 +899,10 @@ export default {
   height: 50px;
   object-fit: cover;
   border-radius: 4px;
+}
+
+.btn-check:checked+.btn-outline-primary {
+  background-color: #0d6efd;
+  color: white;
 }
 </style>

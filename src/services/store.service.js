@@ -42,10 +42,10 @@ class StoreService {
         const processedContent = response.data.content.map(store => ({
           ...store,
           // 確保所有需要的欄位都有預設值
-          imgUrl: store.imgUrl || `/api/images/預設商店圖片.jpg`,
-          shortContent: store.shortContent || '暫無描述',
+          img_url: store.img_url || `/api/images/預設商店圖片.jpg`,
+          short_content: store.short_content || '暫無描述',
           priority: store.priority || 0,
-          isDonation: Boolean(store.isDonation),
+          is_donation: Boolean(store.is_donation),
           website: store.website || '',
           time: store.time || '未設定',
         }));
@@ -137,14 +137,15 @@ class StoreService {
         tag: storeData.tag?.trim(),
         content: storeData.content?.trim(),
         category: storeData.category?.trim(),
-        shortContent: storeData.shortContent?.trim(),
+        short_content: storeData.short_content?.trim(),
         time: storeData.time?.trim(),
         address: storeData.address?.trim(),
         phone: storeData.phone?.trim(),
         priority: Number(storeData.priority) || 0,
         website: storeData.website?.trim() || '',
-        iframeSrc: storeData.iframeSrc?.trim(),
-        isDonation: Boolean(storeData.isDonation)
+        iframe_src: storeData.iframe_src?.trim(),
+        is_donation: Boolean(storeData.is_donation),
+        img_url: storeData.img_url?.trim(),
       };
 
       console.log('發送到後端的數據:', requestData); // 添加日誌
@@ -176,15 +177,15 @@ class StoreService {
         category: storeData.category,
         tag: storeData.tag,
         content: storeData.content,
-        shortContent: storeData.shortContent,
+        short_content: storeData.short_content,
         time: storeData.time,
         address: storeData.address,
         phone: storeData.phone,
         priority: parseInt(storeData.priority) || 0,
         website: storeData.website || '',
-        iframeSrc: storeData.iframeSrc,
-        isDonation: Boolean(storeData.isDonation),
-        imgUrl: storeData.imgUrl || ''
+        iframe_src: storeData.iframe_src,
+        is_donation: Boolean(storeData.is_donation),
+        img_url: storeData.img_url || ''
       };
 
       // 發送更新請求
