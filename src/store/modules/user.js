@@ -10,8 +10,10 @@ const state = {
 
 const getters = {
     userProfile: state => state.profile,
-    isLoading: state => state.isLoading,
-    error: state => state.error
+    isLoading: state => state.loading,
+    error: state => state.error,
+    users: state => state.users,
+    totalPages: state => state.totalPages
 }
 
 const actions = {
@@ -35,14 +37,7 @@ const actions = {
         try {
             commit('SET_LOADING', true)
             commit('CLEAR_ERROR')
-            const response = await api.put('/api/users/profile', {
-                name: profileData.name,
-                phone: profileData.phone,
-                birthday: profileData.birthday,
-                gender: profileData.gender,
-                address: profileData.address,
-                avatar: profileData.avatar
-            })
+            const response = await api.put('/api/users/profile', profileData)
             commit('SET_PROFILE', response.data)
             return { success: true, data: response.data }
         } catch (error) {
@@ -53,37 +48,46 @@ const actions = {
             commit('SET_LOADING', false)
         }
     },
+
     async fetchUsers({ commit }, { page = 1, size = 10, search, role, status } = {}) {
         try {
-            commit('SET_LOADING', true);
+            commit('SET_LOADING', true)
             const response = await api.get('/api/users/list', {
                 params: {
-                    page: page - 1,  // 後端是從0開始計算，前端要減1
+                    page: page - 1,
                     size,
                     search,
                     role: role || undefined,
-                    status: status === 'ACTIVE' ? true : (status === 'INACTIVE' ? false : undefined)
+                    active: status === 'ACTIVE' ? true : (status === 'INACTIVE' ? false : undefined)
                 }
-            });
+            })
 
             if (response.data) {
-                commit('SET_USERS', response.data.content);
+                commit('SET_USERS', response.data.content)
                 commit('SET_PAGINATION', {
                     totalPages: response.data.totalPages,
                     currentPage: page,
                     totalItems: response.data.totalElements
-                });
+                })
             }
+            return { success: true, data: response.data }
         } catch (error) {
-            commit('SET_ERROR', error.message);
+            const message = error.response?.data?.message || '獲取用戶列表失敗'
+            commit('SET_ERROR', message)
+            return { success: false, message }
         } finally {
-            commit('SET_LOADING', false);
+            commit('SET_LOADING', false)
         }
     },
 
     async createUser({ dispatch }, userData) {
         try {
-            await api.post('/users', userData)
+            await api.post('/api/users', {
+                name: userData.name,
+                email: userData.email,
+                role: userData.role,
+                active: userData.status === 'ACTIVE'
+            })
             await dispatch('fetchUsers')
             return { success: true }
         } catch (error) {
@@ -94,29 +98,41 @@ const actions = {
 
     async updateUser({ dispatch }, { id, ...userData }) {
         try {
-            const response = await api.put(`/api/users/${id}`, {  // 修改為正確的API路徑
+            await api.put(`/api/users/${id}`, {
                 name: userData.name,
                 email: userData.email,
-                role: userData.role.replace('ROLE_', ''),  // 移除角色前綴
-                active: userData.status === 'ACTIVE'
-            });
-            await dispatch('fetchUsers');
-            return { success: true, data: response.data };
+                role: userData.role,
+                active: userData.active
+            })
+            await dispatch('fetchUsers')
+            return { success: true }
         } catch (error) {
-            console.error('更新用戶失敗:', error);
-            throw error;
+            console.error('更新用戶失敗:', error)
+            throw error
+        }
+    },
+
+    async updateUserStatus({ dispatch }, { id, active }) {
+        try {
+            await api.put(`/api/users/${id}/status`, null, {
+                params: { active }
+            })
+            await dispatch('fetchUsers')
+            return { success: true }
+        } catch (error) {
+            console.error('更新用戶狀態失敗:', error)
+            throw error
         }
     }
-
 }
 
 const mutations = {
-
     SET_USERS(state, users) {
         state.users = users.map(user => ({
             ...user,
-            createdAt: user.created_at
-        }));
+            status: user.active ? 'ACTIVE' : 'INACTIVE',
+            createdAt: user.createdAt || user.created_at
+        }))
     },
     SET_PAGINATION(state, { totalPages, currentPage, totalItems }) {
         state.totalPages = totalPages
@@ -134,8 +150,7 @@ const mutations = {
     },
     CLEAR_ERROR(state) {
         state.error = null
-    },
-
+    }
 }
 
 export default {
