@@ -21,12 +21,12 @@
             <i class="fas fa-arrow-left me-1"></i>返回
           </button>
           <h2>會員管理</h2>
-          <button
-              class="btn btn-primary"
-              @click="openUserModal()"
-          >
-            <i class="fas fa-plus me-2"></i>新增會員
-          </button>
+<!--          <button-->
+<!--              class="btn btn-primary"-->
+<!--              @click="openUserModal()"-->
+<!--          >-->
+<!--            <i class="fas fa-plus me-2"></i>新增會員-->
+<!--          </button>-->
         </div>
 
         <!-- 搜尋和篩選 -->

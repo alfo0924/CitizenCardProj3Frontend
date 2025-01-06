@@ -1,6 +1,6 @@
 import StoreService from '@/services/store.service';
 import api from "@/services/api.config";
-import {errorHandler} from "@/utils/helpers";
+import { errorHandler } from "@/utils/helpers";
 
 // 初始狀態
 const initialState = {
@@ -309,7 +309,7 @@ const actions = {
     try {
       const response = await StoreService.fetchStores(params);
 
-      if(response.success && response.data.content) {
+      if (response.success && response.data.content) {
         // 直接使用 StoreService 處理過的資料
         commit('SET_STORES', response.data.content);
         commit('SET_TOTAL_RESULTS', response.data.totalElements);
@@ -327,21 +327,15 @@ const actions = {
     }
   },
   async createStore({ commit }, storeData) {
-    commit('SET_LOADING', true);
     try {
-      const result = await StoreService.createStore(storeData);
-      if (result.success) {
-        return { success: true, data: result.data };
-      } else {
-        commit('SET_ERROR', result.error);
-        return { success: false, error: result.error };
-      }
+      const response = await StoreService.createStore(storeData);
+      return response; // 直接返回 StoreService 的回應
     } catch (error) {
-      const errorMsg = errorHandler(error);
-      commit('SET_ERROR', errorMsg);
-      return { success: false, error: errorMsg };
-    } finally {
-      commit('SET_LOADING', false);
+      console.error('Store action error:', error);
+      return {
+        success: false,
+        error: '創建商店失敗，請稍後再試'
+      };
     }
   },
   // 更新商店
