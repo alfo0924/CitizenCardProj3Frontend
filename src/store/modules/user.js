@@ -1,10 +1,14 @@
 import api from '@/services/api.config'
 
 const state = {
-    profile: null,
-    isLoading: false,
+    users: [],
+    totalPages: 0,
+    currentPage: 1,
+    pageSize: 10,
+    loading: false,
     error: null
 }
+
 
 const getters = {
     userProfile: state => state.profile,
@@ -50,25 +54,89 @@ const actions = {
         } finally {
             commit('SET_LOADING', false)
         }
+    },
+    async fetchUsers({ commit }, { page = 1, size = 10, search, role, status } = {}) {
+        try {
+            commit('SET_LOADING', true);
+            const response = await api.get('/api/users/list', {
+                params: {
+                    page: page - 1,
+                    size,
+                    search,
+                    role: role || undefined,
+                    active: status === 'ACTIVE'
+                }
+            });
+
+            commit('SET_USERS', response.data.content);
+            commit('SET_PAGINATION', {
+                totalPages: response.data.totalPages,
+                currentPage: page,
+                totalItems: response.data.totalElements
+            });
+        } catch (error) {
+            commit('SET_ERROR', error.message);
+        } finally {
+            commit('SET_LOADING', false);
+        }
+    },
+
+    async createUser({ dispatch }, userData) {
+        try {
+            await api.post('/api/users', userData)
+            await dispatch('fetchUsers', { page: 1, size: 10 })
+            return { success: true }
+        } catch (error) {
+            console.error('Error creating user:', error)
+            throw error
+        }
+    },
+
+    async updateUser({ dispatch }, { id, ...userData }) {
+        try {
+            await api.put(`/api/users/${id}`, userData)
+            await dispatch('fetchUsers', { page: 1, size: 10 })
+            return { success: true }
+        } catch (error) {
+            console.error('Error updating user:', error)
+            throw error
+        }
+    },
+
+    async deleteUser({ dispatch }, id) {
+        try {
+            await api.delete(`/api/users/${id}`)
+            await dispatch('fetchUsers', { page: 1, size: 10 })
+            return { success: true }
+        } catch (error) {
+            console.error('Error deleting user:', error)
+            throw error
+        }
     }
+
 }
 
 const mutations = {
-    SET_PROFILE(state, profile) {
-        state.profile = profile
+
+    SET_USERS(state, users) {
+        state.users = users
     },
-    SET_LOADING(state, status) {
-        state.isLoading = status
+    SET_PAGINATION(state, { totalPages }) {
+        state.totalPages = totalPages
+    },
+    SET_LOADING(state, loading) {
+        state.loading = loading
     },
     SET_ERROR(state, error) {
         state.error = error
     },
+    SET_PROFILE(state, profile) {
+        state.profile = profile
+    },
     CLEAR_ERROR(state) {
         state.error = null
     },
-    CLEAR_PROFILE(state) {
-        state.profile = null
-    }
+
 }
 
 export default {
