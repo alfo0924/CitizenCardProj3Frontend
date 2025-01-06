@@ -149,15 +149,15 @@ const apiService = {
                 method,
                 url: normalizedUrl,
                 ...options,
-                validateStatus: status => status < 500
+                headers: {
+                    'Accept': 'application/json',
+                    ...(options.headers || {})
+                }
             }
 
             // 特殊處理 multipart/form-data
             if (options.data instanceof FormData) {
-                config.headers = {
-                    ...config.headers,
-                    'Content-Type': 'multipart/form-data'
-                }
+                config.headers['Content-Type'] = 'multipart/form-data'
             }
 
             // Debug 信息
@@ -190,20 +190,31 @@ const apiService = {
     },
 
     post(url, data = {}, config = {}) {
-        return this.request('post', url, { ...config, data })
+        const isFormData = data instanceof FormData
+        return this.request('post', url, {
+            ...config,
+            headers: {
+                'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
+                ...config.headers
+            },
+            data
+        })
     },
 
     put(url, data = {}, config = {}) {
+        const isFormData = data instanceof FormData;
         const defaultConfig = {
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': isFormData ? 'multipart/form-data' : 'application/json',
+                'Accept': 'application/json'
             }
-        }
+        };
+
         return this.request('put', url, {
             ...defaultConfig,
             ...config,
-            data
-        })
+            data: isFormData ? data : data
+        });
     },
 
     patch(url, data = {}, config = {}) {
@@ -218,7 +229,10 @@ const apiService = {
         return this.request('post', url, {
             ...config,
             data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' }
+            headers: {
+                'Content-Type': 'multipart/form-data',
+                ...config.headers
+            }
         })
     },
 
@@ -227,74 +241,6 @@ const apiService = {
             ...config,
             responseType: 'blob'
         })
-    }
-}
-
-// API 端點配置
-export const endpoints = {
-    auth: {
-        login: '/auth/login',
-        register: '/auth/register',
-        logout: '/auth/logout',
-        profile: '/auth/profile',
-        verifyToken: '/auth/verify-token',
-        refreshToken: '/auth/refresh-token'
-    },
-    users: {
-        profile: '/users/profile',
-        update: '/users/profile',
-        changePassword: '/users/change-password',
-        updateAvatar: '/users/avatar'
-    },
-    movies: {
-        list: '/movies',
-        detail: id => `/movies/${id}`,
-        schedules: id => `/movies/${id}/schedules`,
-        search: '/movies/search',
-        upcoming: '/movies/upcoming',
-        popular: '/movies/popular'
-    },
-    schedules: {
-        list: '/schedules',
-        detail: id => `/schedules/${id}`,
-        seats: id => `/schedules/${id}/seats`,
-        book: id => `/schedules/${id}/book`
-    },
-    tickets: {
-        list: '/movie-tickets',
-        create: '/movie-tickets',
-        detail: id => `/movie-tickets/${id}`,
-        cancel: id => `/movie-tickets/${id}/cancel`,
-        qrcode: id => `/movie-tickets/${id}/qrcode`,
-        validate: id => `/movie-tickets/${id}/validate`
-    },
-    discounts: {
-        list: '/discount-coupons',
-        detail: id => `/discount-coupons/${id}`,
-        use: id => `/discount-coupons/${id}/use`,
-        qrcode: id => `/discount-coupons/${id}/qrcode`,
-        validate: id => `/discount-coupons/${id}/validate`,
-        available: '/discount-coupons/available'
-    },
-    wallet: {
-        info: '/wallet',
-        balance: '/wallet/balance',
-        deposit: '/wallet/deposit',
-        withdraw: '/wallet/withdraw',
-        transactions: '/wallet/transactions',
-        statement: '/wallet/statement',
-        tickets: '/wallet/tickets',
-        coupons: '/wallet/coupons',
-        ticketDetail: id => `/wallet/tickets/${id}`,
-        couponDetail: id => `/wallet/coupons/${id}`
-    },
-    stores: {
-        list: '/stores',
-        detail: id => `/stores/${id}`,
-        search: '/stores/search',
-        nearby: '/stores/nearby',
-        categories: '/stores/categories',
-        promotions: id => `/stores/${id}/promotions`
     }
 }
 

@@ -423,7 +423,6 @@ export default {
         isLoading.value = false
       }
     }
-
     const handleSearch = () => {
       currentPage.value = 1
       debouncedSearch()
@@ -484,6 +483,27 @@ export default {
       try {
         isProcessing.value = true
 
+        // 驗證必要欄位
+        const requiredFields = ['title', 'director', 'release_date', 'end_date', 'duration', 'genre']
+        const missingFields = requiredFields.filter(field => !editingMovie.value[field])
+
+        if (missingFields.length > 0) {
+          throw new Error(`請填寫以下必要欄位: ${missingFields.join(', ')}`)
+        }
+
+        // 驗證票價
+        const price = parseInt(editingMovie.value.price)
+        if (price < 0) {
+          throw new Error('票價不能小於0')
+        }
+
+        // 驗證日期
+        const releaseDate = new Date(editingMovie.value.release_date)
+        const endDate = new Date(editingMovie.value.end_date)
+        if (endDate < releaseDate) {
+          throw new Error('下檔日期不能早於上映日期')
+        }
+
         const movieData = {
           title: editingMovie.value.title?.trim(),
           description: editingMovie.value.description?.trim(),
@@ -492,40 +512,65 @@ export default {
           duration: parseInt(editingMovie.value.duration),
           genre: editingMovie.value.genre?.trim(),
           rating: editingMovie.value.rating || 'G',
-          price: parseInt(editingMovie.value.price),
-          releaseDate: editingMovie.value.release_date ?
-              new Date(editingMovie.value.release_date).toISOString() : null,
-          endDate: editingMovie.value.end_date ?
-              new Date(editingMovie.value.end_date).toISOString() : null,
+          price: price,
+          releaseDate: releaseDate.toISOString(),
+          endDate: endDate.toISOString(),
           isShowing: Boolean(editingMovie.value.isShowing)
         }
 
-        const formData = new FormData()
-        Object.entries(movieData).forEach(([key, value]) => {
-          if (value != null) {
-            formData.append(key, value.toString())
-          }
-        })
-
-        if (editingMovie.value.posterFile) {
-          formData.append('poster', editingMovie.value.posterFile)
-        }
-
-        const config = {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-
         let response
-        if (editingMovie.value.id) {
-          response = await apiService.put(
-              `/movies/${editingMovie.value.id}`,
-              formData,
-              config
-          )
+        if (editingMovie.value.posterFile) {
+          const formData = new FormData()
+          Object.entries(movieData).forEach(([key, value]) => {
+            if (value != null) {
+              formData.append(key, value.toString())
+            }
+          })
+          formData.append('poster', editingMovie.value.posterFile)
+
+          if (editingMovie.value.id) {
+            response = await apiService.put(
+                `/movies/${editingMovie.value.id}`,
+                formData,
+                {
+                  headers: {
+                    'Content-Type': 'multipart/form-data'
+                  }
+                }
+            )
+          } else {
+            response = await apiService.post(
+                '/movies',
+                formData,
+                {
+                  headers: {
+                    'Content-Type': 'multipart/form-data'
+                  }
+                }
+            )
+          }
         } else {
-          response = await apiService.post('/movies', formData, config)
+          if (editingMovie.value.id) {
+            response = await apiService.put(
+                `/movies/${editingMovie.value.id}`,
+                movieData,
+                {
+                  headers: {
+                    'Content-Type': 'application/json'
+                  }
+                }
+            )
+          } else {
+            response = await apiService.post(
+                '/movies',
+                movieData,
+                {
+                  headers: {
+                    'Content-Type': 'application/json'
+                  }
+                }
+            )
+          }
         }
 
         if (response?.data) {
@@ -539,10 +584,7 @@ export default {
         }
       } catch (err) {
         console.error('Error saving movie:', err)
-        let errorMessage = '儲存電影資料失敗'
-        if (err.response?.data?.message) {
-          errorMessage = err.response.data.message
-        }
+        const errorMessage = err.message || err.response?.data?.message || '儲存電影資料失敗'
         await Swal.fire('錯誤', errorMessage, 'error')
       } finally {
         isProcessing.value = false
