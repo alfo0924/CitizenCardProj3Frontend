@@ -81,22 +81,6 @@ const actions = {
         }
     },
 
-    async updateUser({ dispatch }, { id, ...userData }) {
-        try {
-            const response = await api.put(`/users/${id}`, {
-                name: userData.name,
-                email: userData.email,
-                role: `ROLE_${userData.role}`, // 確保添加 ROLE_ 前綴
-                active: userData.status === 'ACTIVE'
-            });
-            await dispatch('fetchUsers');
-            return { success: true, data: response.data };
-        } catch (error) {
-            console.error('更新用戶失敗:', error);
-            throw error;
-        }
-    },
-
     async createUser({ dispatch }, userData) {
         try {
             await api.post('/users', userData)
@@ -108,16 +92,19 @@ const actions = {
         }
     },
 
-    async updateUserStatus({ dispatch }, { id, active }) {
+    async updateUser({ dispatch }, { id, ...userData }) {
         try {
-            await api.put(`/users/${id}/status`, null, {
-                params: { active }
-            })
-            await dispatch('fetchUsers')
-            return { success: true }
+            const response = await api.put(`/api/users/${id}`, {  // 修改為正確的API路徑
+                name: userData.name,
+                email: userData.email,
+                role: userData.role.replace('ROLE_', ''),  // 移除角色前綴
+                active: userData.status === 'ACTIVE'
+            });
+            await dispatch('fetchUsers');
+            return { success: true, data: response.data };
         } catch (error) {
-            console.error('更新用戶狀態失敗:', error)
-            throw error
+            console.error('更新用戶失敗:', error);
+            throw error;
         }
     }
 
