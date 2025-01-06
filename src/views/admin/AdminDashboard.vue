@@ -28,23 +28,55 @@
         </div>
 
         <!-- 統計數據卡片 -->
+        <!-- 統計數據卡片部分修改 -->
         <div class="row g-4 mb-4">
-          <div class="col-md-4" v-for="(stat, index) in statsCards" :key="index">
+          <div class="col-md-4">
             <div class="stat-card">
               <div class="stat-icon">
-                <i :class="stat.icon"></i>
+                <i class="fas fa-users"></i>
               </div>
               <div class="stat-info">
-                <h3>{{ stat.title }}</h3>
-                <div class="stat-value">{{ stat.value }}</div>
-                <div class="stat-change" :class="{'positive': stat.change > 0}">
-                  <i :class="stat.change > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-                  {{ stat.change }} 新增
+                <h3>總會員數</h3>
+                <div class="stat-value">{{ stats.totalUsers }}</div>
+                <div class="stat-change" :class="{'positive': stats.newUsers > 0}">
+                  <i :class="stats.newUsers > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                  {{ stats.newUsers }} 新增
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-store"></i>
+              </div>
+              <div class="stat-info">
+                <h3>特約商店</h3>
+                <div class="stat-value">{{ stats.totalStores }}</div>
+                <div class="stat-change" :class="{'positive': stats.newStores > 0}">
+                  <i :class="stats.newStores > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                  {{ stats.newStores }} 新增
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-film"></i>
+              </div>
+              <div class="stat-info">
+                <h3>上映電影</h3>
+                <div class="stat-value">{{ stats.activeMovies }}</div>
+                <div class="stat-change" :class="{'positive': stats.newMovies > 0}">
+                  <i :class="stats.newMovies > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                  {{ stats.newMovies }} 新增
                 </div>
               </div>
             </div>
           </div>
         </div>
+
 
         <!-- 圖表區塊 -->
         <div class="row g-4">
@@ -88,10 +120,19 @@ export default {
     const stats = ref({
       totalUsers: 0,
       newUsers: 0,
+      activeUsers: 0,
       totalStores: 0,
       newStores: 0,
       activeMovies: 0,
-      newMovies: 0
+      newMovies: 0,
+      totalBalance: 0,
+      averageBalance: 0,
+      totalTickets: 0,
+      validTickets: 0,
+      ticketsSoldToday: 0,
+      totalCoupons: 0,
+      activeCoupons: 0,
+      couponsUsedToday: 0
     })
 
     const managementItems = [
@@ -115,47 +156,67 @@ export default {
       }
     ]
 
-    const statsCards = computed(() => [
-      {
-        icon: 'fas fa-users',
-        title: '總會員數',
-        value: stats.value.totalUsers,
-        change: stats.value.newUsers
-      },
-      {
-        icon: 'fas fa-store',
-        title: '特約商店',
-        value: stats.value.totalStores,
-        change: stats.value.newStores
-      },
-      {
-        icon: 'fas fa-film',
-        title: '上映電影',
-        value: stats.value.activeMovies,
-        change: stats.value.newMovies
-      }
-    ])
+    const statsCards = computed(() => {
+      const dashboardStats = store.state.admin.dashboardStats
+      return [
+        {
+          icon: 'fas fa-users',
+          title: '總會員數',
+          value: dashboardStats.totalUsers,
+          change: dashboardStats.newUsers
+        },
+        {
+          icon: 'fas fa-store',
+          title: '特約商店',
+          value: dashboardStats.totalStores,
+          change: dashboardStats.newStores
+        },
+        {
+          icon: 'fas fa-film',
+          title: '上映電影',
+          value: dashboardStats.activeMovies,
+          change: dashboardStats.newMovies
+        }
+      ]
+    })
 
     const validateDashboardData = (data) => {
       if (!data || typeof data !== 'object') {
         throw new Error('無效的資料格式')
       }
+
       return {
-        totalUsers: Number(data.totalUsers) || 0,
-        newUsers: Number(data.newUsers) || 0,
-        totalStores: Number(data.totalStores) || 0,
-        newStores: Number(data.newStores) || 0,
-        activeMovies: Number(data.activeMovies) || 0,
-        newMovies: Number(data.newMovies) || 0,
+        totalUsers: parseInt(data.totalUsers) || 0,
+        newUsers: parseInt(data.newUsers) || 0,
+        totalStores: parseInt(data.totalStores) || 0,
+        newStores: parseInt(data.newStores) || 0,
+        activeMovies: parseInt(data.activeMovies) || 0,
+        newMovies: parseInt(data.newMovies) || 0,
         userRoleDistribution: data.userRoleDistribution || {},
         storeCategoryDistribution: data.storeCategoryDistribution || {}
       }
     }
 
+
     const initCharts = (userRoleData, storeCategoryData) => {
       try {
         if (userChart) userChart.destroy()
         if (storeChart) storeChart.destroy()
+
+        const chartOptions = {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: {
+                  size: 12
+                }
+              }
+            }
+          }
+        }
 
         if (userChartRef.value && userRoleData) {
           const userCtx = userChartRef.value.getContext('2d')
@@ -168,15 +229,7 @@ export default {
                 backgroundColor: ['#4CAF50', '#2196F3', '#FFC107', '#9C27B0']
               }]
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                }
-              }
-            }
+            options: chartOptions
           })
         }
 
@@ -191,15 +244,7 @@ export default {
                 backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF']
               }]
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                }
-              }
-            }
+            options: chartOptions
           })
         }
       } catch (err) {
@@ -213,24 +258,29 @@ export default {
         isLoading.value = true
         error.value = null
 
-        const token = localStorage.getItem('token')
-        if (!token) {
-          throw new Error('請先登入')
-        }
+        const result = await store.dispatch('admin/fetchDashboardData')
+        if (result.success && result.data) {
+          stats.value = {
+            totalUsers: result.data.totalUsers,
+            newUsers: result.data.newUsers,
+            activeUsers: result.data.activeUsers,
+            totalStores: result.data.totalStores,
+            newStores: result.data.newStores,
+            activeMovies: result.data.activeMovies,
+            newMovies: result.data.newMovies,
+            totalBalance: result.data.totalBalance,
+            averageBalance: result.data.averageBalance,
+            totalTickets: result.data.totalTickets,
+            validTickets: result.data.validTickets,
+            ticketsSoldToday: result.data.ticketsSoldToday,
+            totalCoupons: result.data.totalCoupons,
+            activeCoupons: result.data.activeCoupons,
+            couponsUsedToday: result.data.couponsUsedToday
+          }
 
-        const response = await store.dispatch('admin/fetchDashboardData')
-        if (!response?.success) {
-          throw new Error(response?.error || '獲取儀表板數據失敗')
-        }
-
-        const validatedData = validateDashboardData(response.data)
-        stats.value = validatedData
-
-        if (validatedData.userRoleDistribution && validatedData.storeCategoryDistribution) {
-          initCharts(
-              validatedData.userRoleDistribution,
-              validatedData.storeCategoryDistribution
-          )
+          if (result.data.userRoleDistribution && result.data.storeCategoryDistribution) {
+            initCharts(result.data.userRoleDistribution, result.data.storeCategoryDistribution)
+          }
         }
       } catch (err) {
         error.value = err.message

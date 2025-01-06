@@ -28,35 +28,36 @@ const state = {
 }
 
 const mutations = {
-    SET_DASHBOARD_STATS(state, stats) {
+    SET_DASHBOARD_STATS(state, data) {
         state.dashboardStats = {
-            totalUsers: parseInt(stats?.totalUsers) || 0,
-            newUsers: parseInt(stats?.newUsers) || 0,
-            totalStores: parseInt(stats?.totalStores) || 0,
-            newStores: parseInt(stats?.newStores) || 0,
-            activeMovies: parseInt(stats?.activeMovies) || 0,
-            newMovies: parseInt(stats?.newMovies) || 0
+            totalUsers: parseInt(data.totalUsers) || 0,
+            newUsers: parseInt(data.newUsers) || 0,
+            totalStores: parseInt(data.totalStores) || 0,
+            newStores: parseInt(data.newStores) || 0,
+            activeMovies: parseInt(data.activeMovies) || 0,
+            newMovies: parseInt(data.newMovies) || 0
         }
+        // 直接設置分佈數據
+        state.userRoleDistribution = data.userRoleDistribution || {}
+        state.storeCategoryDistribution = data.storeCategoryDistribution || {}
     },
-    SET_USER_DATA(state, { labels, data }) {
+    SET_USER_DATA(state, distribution) {
+        if (!distribution) return
+        // 修改：直接使用分佈數據
+        state.userRoleDistribution = distribution
         state.userData = {
-            labels: Array.isArray(labels) ? labels : [],
-            data: Array.isArray(data) ? data : []
+            labels: Object.keys(distribution),
+            data: Object.values(distribution)
         }
-        state.userRoleDistribution = labels.reduce((acc, label, index) => {
-            acc[label] = data[index]
-            return acc
-        }, {})
     },
-    SET_STORE_DATA(state, { labels, data }) {
+    SET_STORE_DATA(state, distribution) {
+        if (!distribution) return
+        // 修改：直接使用分佈數據
+        state.storeCategoryDistribution = distribution
         state.storeData = {
-            labels: Array.isArray(labels) ? labels : [],
-            data: Array.isArray(data) ? data : []
+            labels: Object.keys(distribution),
+            data: Object.values(distribution)
         }
-        state.storeCategoryDistribution = labels.reduce((acc, label, index) => {
-            acc[label] = data[index]
-            return acc
-        }, {})
     },
     SET_LOADING(state, status) {
         state.isLoading = Boolean(status)
@@ -123,49 +124,22 @@ const actions = {
 
     async fetchDashboardData({ commit }) {
         commit('SET_LOADING', true)
-        commit('CLEAR_DASHBOARD_DATA')
-
         try {
             const response = await adminService.getDashboardData()
             if (!response?.success || !response?.data) {
                 throw new Error(response?.error || '獲取數據失敗')
             }
 
-            const validatedData = validateDashboardData(response.data)
+            // 修改：直接使用 response.data
+            const data = response.data
+            commit('SET_DASHBOARD_STATS', data)
+            commit('SET_USER_DATA', data.userRoleDistribution)
+            commit('SET_STORE_DATA', data.storeCategoryDistribution)
 
-            // 設置基本統計數據
-            commit('SET_DASHBOARD_STATS', {
-                totalUsers: validatedData.totalUsers,
-                newUsers: validatedData.newUsers,
-                totalStores: validatedData.totalStores,
-                newStores: validatedData.newStores,
-                activeMovies: validatedData.activeMovies,
-                newMovies: validatedData.newMovies
-            })
-
-            // 設置用戶角色分佈數據
-            if (Object.keys(validatedData.userRoleDistribution).length > 0) {
-                commit('SET_USER_DATA', {
-                    labels: Object.keys(validatedData.userRoleDistribution),
-                    data: Object.values(validatedData.userRoleDistribution)
-                })
-            }
-
-            // 設置商店類別分佈數據
-            if (Object.keys(validatedData.storeCategoryDistribution).length > 0) {
-                commit('SET_STORE_DATA', {
-                    labels: Object.keys(validatedData.storeCategoryDistribution),
-                    data: Object.values(validatedData.storeCategoryDistribution)
-                })
-            }
-
-            commit('SET_ERROR', null)
-            return { success: true, data: validatedData }
+            return response
         } catch (error) {
-            const errorMessage = error?.message || '載入儀表板數據失敗'
-            commit('SET_ERROR', errorMessage)
-            console.error('Dashboard data fetch error:', error)
-            return { success: false, error: errorMessage }
+            commit('SET_ERROR', error.message)
+            return { success: false, error: error.message }
         } finally {
             commit('SET_LOADING', false)
         }

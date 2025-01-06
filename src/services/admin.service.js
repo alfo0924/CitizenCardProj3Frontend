@@ -92,25 +92,33 @@ class AdminService {
         }
     }
 
-    // 获取仪表板数据
     async getDashboardData() {
         try {
-            this.checkAuthentication()
-            const response = await this.api.get('/api/system/dashboard')
-            const validatedData = this.validateResponse(response)
+            // 移除多餘的/api前綴
+            const response = await this.api.get('/system/dashboard', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+
+            // 添加數據驗證
+            if (!response?.data) {
+                throw new Error('無效的響應數據')
+            }
 
             return {
                 success: true,
-                data: this.formatDashboardData(validatedData)
+                data: response.data
             }
         } catch (error) {
-            console.error('Dashboard data fetch failed:', error)
+            console.error('獲取儀表板數據失敗:', error)
             return {
                 success: false,
-                error: error.error || '獲取儀表板數據失敗'
+                error: error.response?.data?.message || '系統錯誤'
             }
         }
     }
+
 
     // 格式化仪表板数据
     formatDashboardData(data) {
@@ -234,19 +242,31 @@ class AdminService {
     }
 
     // Dashboard数据获取的包装方法
-    async fetchDashboardData() {
+    async fetchDashboardData({ commit }) {
+        commit('SET_LOADING', true)
         try {
-            const dashboardResponse = await this.getDashboardData()
-            if (!dashboardResponse.success) {
-                throw new Error(dashboardResponse.error)
+            const response = await adminService.getDashboardData()
+            if (!response.success) {
+                throw new Error(response.error || '獲取數據失敗')
             }
-            return dashboardResponse
+
+            const { data } = response
+            commit('SET_DASHBOARD_STATS', data)
+
+            if (data.userRoleDistribution) {
+                commit('SET_USER_DATA', data.userRoleDistribution)
+            }
+
+            if (data.storeCategoryDistribution) {
+                commit('SET_STORE_DATA', data.storeCategoryDistribution)
+            }
+
+            return response
         } catch (error) {
-            console.error('Dashboard data fetch failed:', error)
-            return {
-                success: false,
-                error: error.message || '獲取儀表板數據失敗'
-            }
+            commit('SET_ERROR', error.message)
+            throw error
+        } finally {
+            commit('SET_LOADING', false)
         }
     }
 }
