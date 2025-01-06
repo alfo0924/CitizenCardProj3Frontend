@@ -107,45 +107,40 @@
         <!-- 分頁 -->
         <nav v-if="totalPages > 1" class="mt-4">
           <ul class="pagination justify-content-center">
-            <li
-                class="page-item"
-                :class="{ disabled: currentPage === 1 }"
-            >
-              <button
-                  class="page-link"
-                  @click="changePage(currentPage - 1)"
-                  :disabled="currentPage === 1"
-              >
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button class="page-link" @click="changePage(currentPage - 1)"
+                      :disabled="currentPage === 1">
                 <i class="fas fa-chevron-left"></i>
               </button>
             </li>
-            <li
-                v-for="page in displayedPages"
+
+            <li v-for="page in displayedPages"
                 :key="page"
                 class="page-item"
-                :class="{ active: currentPage === page }"
-            >
-              <button
-                  class="page-link"
-                  @click="changePage(page)"
-              >
+                :class="{
+          active: currentPage === page,
+          disabled: page === '...'
+        }">
+              <button v-if="page === '...'"
+                      class="page-link"
+                      disabled>...</button>
+              <button v-else
+                      class="page-link"
+                      @click="changePage(page)">
                 {{ page }}
               </button>
             </li>
-            <li
-                class="page-item"
-                :class="{ disabled: currentPage === totalPages }"
-            >
-              <button
-                  class="page-link"
-                  @click="changePage(currentPage + 1)"
-                  :disabled="currentPage === totalPages"
-              >
+
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button class="page-link"
+                      @click="changePage(currentPage + 1)"
+                      :disabled="currentPage === totalPages">
                 <i class="fas fa-chevron-right"></i>
               </button>
             </li>
           </ul>
         </nav>
+
       </div>
     </div>
 
@@ -261,7 +256,7 @@ export default {
     const selectedRole = ref('')
     const selectedStatus = ref('')
     const currentPage = ref(1)
-    const pageSize = ref(10)
+    const pageSize = ref(100)
 
     const editingUser = ref({
       name: '',
@@ -273,17 +268,35 @@ export default {
     const users = computed(() => store.state.user.users)
     const totalPages = computed(() => store.state.user.totalPages)
     const displayedPages = computed(() => {
-      const range = []
-      const delta = 2
-      for (
-          let i = Math.max(1, currentPage.value - delta);
-          i <= Math.min(totalPages.value, currentPage.value + delta);
-          i++
-      ) {
-        range.push(i)
+      const range = [];
+      const delta = 2;
+      const left = Math.max(1, currentPage.value - delta);
+      const right = Math.min(totalPages.value, currentPage.value + delta);
+
+      // 添加第一頁
+      if (left > 1) {
+        range.push(1);
+        if (left > 2) {
+          range.push('...');
+        }
       }
-      return range
-    })
+
+      // 添加中間頁碼
+      for (let i = left; i <= right; i++) {
+        range.push(i);
+      }
+
+      // 添加最後一頁
+      if (right < totalPages.value) {
+        if (right < totalPages.value - 1) {
+          range.push('...');
+        }
+        range.push(totalPages.value);
+      }
+
+      return range;
+    });
+
 
     const fetchUsers = async () => {
       try {
@@ -320,11 +333,12 @@ export default {
     }
 
     const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        fetchUsers()
+      if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+        currentPage.value = page;
+        fetchUsers();
       }
     }
+
 
     const openUserModal = (user = null) => {
       if (user) {
@@ -438,8 +452,17 @@ export default {
     }
 
     const formatDateTime = (datetime) => {
-      return new Date(datetime).toLocaleString('zh-TW')
+      if (!datetime) return '';
+      return new Date(datetime).toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     }
+
 
     onMounted(async () => {
       await store.dispatch('user/fetchUsers', {

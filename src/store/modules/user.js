@@ -53,24 +53,31 @@ const actions = {
             commit('SET_LOADING', false)
         }
     },
-    async fetchUsers({ commit }, params) {
+    async fetchUsers({ commit }, { page = 1, size = 10, search, role, status } = {}) {
         try {
-            commit('SET_LOADING', true)
-            const response = await api.get('/api/users/list', { params })
-            if (response.data?.content) {
-                commit('SET_USERS', response.data.content)
+            commit('SET_LOADING', true);
+            const response = await api.get('/api/users/list', {
+                params: {
+                    page: page - 1,  // 後端是從0開始計算，前端要減1
+                    size,
+                    search,
+                    role: role || undefined,
+                    status: status === 'ACTIVE' ? true : (status === 'INACTIVE' ? false : undefined)
+                }
+            });
+
+            if (response.data) {
+                commit('SET_USERS', response.data.content);
                 commit('SET_PAGINATION', {
                     totalPages: response.data.totalPages,
-                    currentPage: params.page,
+                    currentPage: page,
                     totalItems: response.data.totalElements
-                })
+                });
             }
-            return response
         } catch (error) {
-            commit('SET_ERROR', error.message)
-            throw error
+            commit('SET_ERROR', error.message);
         } finally {
-            commit('SET_LOADING', false)
+            commit('SET_LOADING', false);
         }
     },
 
@@ -112,7 +119,10 @@ const actions = {
 const mutations = {
 
     SET_USERS(state, users) {
-        state.users = users || []
+        state.users = users.map(user => ({
+            ...user,
+            createdAt: user.created_at
+        }));
     },
     SET_PAGINATION(state, { totalPages, currentPage, totalItems }) {
         state.totalPages = totalPages
