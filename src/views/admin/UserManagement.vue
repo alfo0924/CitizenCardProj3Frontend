@@ -15,12 +15,12 @@
       <div v-else class="management-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <h2>會員管理</h2>
-          <button
-              class="btn btn-primary"
-              @click="openUserModal()"
-          >
-            <i class="fas fa-plus me-2"></i>新增會員
-          </button>
+<!--          <button-->
+<!--              class="btn btn-primary"-->
+<!--              @click="openUserModal()"-->
+<!--          >-->
+<!--            <i class="fas fa-plus me-2"></i>新增會員-->
+<!--          </button>-->
         </div>
 
         <!-- 搜尋和篩選 -->
