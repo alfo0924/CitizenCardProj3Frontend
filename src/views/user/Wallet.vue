@@ -11,22 +11,8 @@
         <!-- 標題區域 -->
         <h1 class="page-title mb-4">我的票券</h1>
 
-        <!-- 票券類型切換 -->
-        <ul class="nav nav-tabs mb-4">
-          <li class="nav-item">
-            <a class="nav-link"
-               :class="{ active: activeTab === 'movie' }"
-               @click="switchTab('movie')">電影票</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link"
-               :class="{ active: activeTab === 'discount' }"
-               @click="switchTab('discount')">優惠券</a>
-          </li>
-        </ul>
-
         <!-- 電影票列表 -->
-        <div v-if="activeTab === 'movie'" class="ticket-list">
+        <div class="ticket-list">
           <div v-if="!movieTickets.length" class="text-center py-5">
             <i class="fas fa-ticket-alt fa-3x mb-3 text-muted"></i>
             <p class="text-muted">目前沒有電影票</p>
@@ -35,73 +21,33 @@
           <div v-else class="row g-4">
             <div v-for="ticket in movieTickets"
                  :key="ticket.id"
-                 class="col-md-6">
+                 class="col-md-3">
               <div class="ticket-card">
                 <div class="ticket-header">
-                  <h5>{{ ticket.movieTitle }}</h5>
+                  <h5>{{ ticket.movie_title }}</h5>
                   <span :class="getStatusClass(ticket.status)">
                     {{ getStatusText(ticket.status) }}
                   </span>
                 </div>
                 <div class="ticket-body">
-                  <p><i class="fas fa-calendar"></i> {{ formatDateTime(ticket.showTime) }}</p>
-                  <p><i class="fas fa-map-marker-alt"></i> {{ ticket.hall }}</p>
-                  <p><i class="fas fa-chair"></i> {{ ticket.seatNumber }}</p>
+                  <p><i class="fas fa-map-marker-alt"></i>逢甲市電影院</p>
+                  <p><i class="fas fa-calendar"></i> {{ formatDateTime(ticket.show_time) }}</p>
+                  <p><i class="fa-solid fa-film"></i> {{ ticket.hall }}</p>
+                  <p><i class="fas fa-chair"></i> {{ ticket.seat_number }}</p>
                 </div>
                 <div class="ticket-footer">
-                  <button class="btn btn-outline-primary"
-                          @click="showTicketDetail(ticket)"
-                          :disabled="ticket.status === 'USED'">
-                    查看詳情
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 分頁控制 -->
-          <div v-if="movieTickets.length" class="d-flex justify-content-center mt-4">
-            <button class="btn btn-outline-primary me-2"
-                    :disabled="currentPage <= 0"
-                    @click="changePage(currentPage - 1)">
-              上一頁
-            </button>
-            <button class="btn btn-outline-primary"
-                    :disabled="!hasNextPage"
-                    @click="changePage(currentPage + 1)">
-              下一頁
-            </button>
-          </div>
-        </div>
-
-        <!-- 優惠券列表 -->
-        <div v-if="activeTab === 'discount'" class="coupon-list">
-          <div v-if="!discountCoupons.length" class="text-center py-5">
-            <i class="fas fa-tag fa-3x mb-3 text-muted"></i>
-            <p class="text-muted">目前沒有優惠券</p>
-          </div>
-
-          <div v-else class="row g-4">
-            <div v-for="coupon in discountCoupons"
-                 :key="coupon.id"
-                 class="col-md-6">
-              <div class="coupon-card">
-                <div class="coupon-header">
-                  <h5>{{ coupon.title }}</h5>
-                  <span :class="getStatusClass(coupon.status)">
-                    {{ getStatusText(coupon.status) }}
-                  </span>
-                </div>
-                <div class="coupon-body">
-                  <p>{{ coupon.description }}</p>
-                  <p><i class="fas fa-clock"></i> 有效期限：{{ formatDate(coupon.expiryDate) }}</p>
-                </div>
-                <div class="coupon-footer">
-                  <button class="btn btn-outline-primary"
-                          @click="showCouponDetail(coupon)"
-                          :disabled="coupon.status === 'USED' || coupon.status === 'EXPIRED'">
-                    使用優惠券
-                  </button>
+                  <div class="ticket-footer d-flex justify-content-between align-items-center">
+                    <button class="btn btn-outline-primary"
+                            @click="showQRCode(ticket)"
+                            :disabled="ticket.status !== 'VALID'">
+                      QR Code
+                    </button>
+                    <button class="btn btn-outline-danger"
+                            @click="cancelTicket(ticket.id)"
+                            :disabled="ticket.status !== 'VALID'">
+                      取消訂票
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -110,217 +56,181 @@
       </div>
     </div>
   </div>
+
+  <div v-if="showQRCodeModal" class="modal-backdrop show"></div>
+  <div v-if="showQRCodeModal"
+       class="modal d-block"
+       tabindex="-1"
+       role="dialog"
+       aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-title">
+            <p class="mb-0">{{ ticket.movie_title }} {{ formatDateTime(ticket.show_time) }} {{ ticket.hall }} {{ ticket.seat_number }}</p>
+          </div>
+          <button type="button"
+                  class="btn-close"
+                  @click="closeQRCodeModal"
+                  aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img :src="qrCodeData.qrCodeImage"
+               alt="QR Code"
+               class="img-fluid">
+        </div>
+      </div>
+    </div>
+  </div>
+
 </template>
 
-<script>
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
-import { apiService, endpoints } from '@/services/api.config'
+import { apiService } from '@/services/api.config'
 
-export default {
-  name: 'Wallet',
+const store = useStore()
+const router = useRouter()
+const activeTab = ref('movie')
+const isLoading = ref(false)
+const error = ref(null)
+const movieTickets = ref([])
+const discountCoupons = ref([])
+const currentPage = ref(0)
+const pageSize = ref(10)
+const hasNextPage = ref(false)
+const showQRCodeModal = ref(false)
+const qrCodeData = ref({
+  qrCodeImage: '',
+  qrCodeData: '',
+  ticketId: null
+})
 
-  components: {
-    LoadingSpinner,
-    AlertMessage
-  },
-
-  setup() {
-    const store = useStore()
-    const router = useRouter()
-    const activeTab = ref('movie')
-    const isLoading = ref(false)
-    const error = ref(null)
-    const movieTickets = ref([])
-    const discountCoupons = ref([])
-    const currentPage = ref(0)
-    const pageSize = ref(10)
-    const hasNextPage = ref(false)
-
-    const fetchTickets = async (page = 0) => {
-      try {
-        isLoading.value = true
-        error.value = null
-
-        const endpoint = activeTab.value === 'movie' ?
-            endpoints.wallet.tickets :
-            endpoints.wallet.coupons
-
-        const sortField = activeTab.value === 'movie' ? 'createdAt' : 'expiryDate'
-        const sortDirection = activeTab.value === 'movie' ? 'DESC' : 'ASC'
-
-        const response = await apiService.get(endpoint, {
-          params: {
-            page,
-            size: pageSize.value,
-            sort: `${sortField},${sortDirection}`
-          }
-        })
-
-        if (response?.data?.content) {
-          if (activeTab.value === 'movie') {
-            movieTickets.value = response.data.content.map(ticket => ({
-              ...ticket,
-              showTime: ticket.showTime ? new Date(ticket.showTime) : null
-            }))
-          } else {
-            discountCoupons.value = response.data.content.map(coupon => ({
-              ...coupon,
-              expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate) : null
-            }))
-          }
-          hasNextPage.value = !response.data.last
-          currentPage.value = page
-        }
-      } catch (err) {
-        console.error('獲取票券失敗:', err)
-        error.value = '獲取票券資料失敗，請稍後再試'
-        store.dispatch('setNotification', {
-          type: 'error',
-          message: '獲取票券資料失敗',
-          duration: 3000
-        })
-      } finally {
-        isLoading.value = false
-      }
+// 獲取票券列表
+const fetchTickets = async (page) => {
+  if (page < 0) return
+  try {
+    currentPage.value = page
+    isLoading.value = true
+    const response = await apiService.get('/movietickets/user')
+    if (response?.data) {
+      movieTickets.value = response.data
+      hasNextPage.value = movieTickets.value.length === pageSize.value
     }
-
-    const switchTab = async (tab) => {
-      try {
-        activeTab.value = tab
-        currentPage.value = 0
-        await fetchTickets(0)
-      } catch (err) {
-        console.error('切換標籤失敗:', err)
-      }
-    }
-
-    const changePage = async (page) => {
-      if (page < 0) return
-      try {
-        await fetchTickets(page)
-      } catch (err) {
-        console.error('切換頁面失敗:', err)
-      }
-    }
-
-    const formatDateTime = (datetime) => {
-      if (!datetime) return ''
-      try {
-        const date = datetime instanceof Date ? datetime : new Date(datetime)
-        return new Intl.DateTimeFormat('zh-TW', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).format(date)
-      } catch (err) {
-        console.error('日期格式化失敗:', err)
-        return datetime
-      }
-    }
-
-    const formatDate = (date) => {
-      if (!date) return ''
-      try {
-        const dateObj = date instanceof Date ? date : new Date(date)
-        return new Intl.DateTimeFormat('zh-TW', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        }).format(dateObj)
-      } catch (err) {
-        console.error('日期格式化失敗:', err)
-        return date
-      }
-    }
-
-    const getStatusClass = (status) => {
-      const classes = {
-        'VALID': 'status-valid',
-        'USED': 'status-used',
-        'EXPIRED': 'status-expired',
-        'CANCELLED': 'status-cancelled'
-      }
-      return classes[status] || 'status-default'
-    }
-
-    const getStatusText = (status) => {
-      const texts = {
-        'VALID': '可使用',
-        'USED': '已使用',
-        'EXPIRED': '已過期',
-        'CANCELLED': '已取消'
-      }
-      return texts[status] || '未知狀態'
-    }
-
-    const showTicketDetail = async (ticket) => {
-      if (!ticket?.id) return
-      try {
-        const response = await apiService.get(endpoints.wallet.ticketDetail(ticket.id))
-        if (response?.data) {
-          store.dispatch('wallet/setCurrentTicket', response.data)
-          router.push({
-            name: 'ticket-detail',
-            params: { id: ticket.id }
-          })
-        }
-      } catch (err) {
-        store.dispatch('setNotification', {
-          type: 'error',
-          message: '獲取票券詳情失敗',
-          duration: 3000
-        })
-      }
-    }
-
-    const showCouponDetail = async (coupon) => {
-      if (!coupon?.id) return
-      try {
-        const response = await apiService.get(endpoints.wallet.couponDetail(coupon.id))
-        if (response?.data) {
-          store.dispatch('wallet/setCurrentCoupon', response.data)
-          router.push({
-            name: 'coupon-detail',
-            params: { id: coupon.id }
-          })
-        }
-      } catch (err) {
-        store.dispatch('setNotification', {
-          type: 'error',
-          message: '獲取優惠券詳情失敗',
-          duration: 3000
-        })
-      }
-    }
-
-    onMounted(fetchTickets)
-
-    return {
-      activeTab,
-      isLoading,
-      error,
-      movieTickets,
-      discountCoupons,
-      currentPage,
-      hasNextPage,
-      formatDateTime,
-      formatDate,
-      getStatusClass,
-      getStatusText,
-      showTicketDetail,
-      showCouponDetail,
-      switchTab,
-      changePage
-    }
+  } catch (err) {
+    console.error('獲取票券失敗:', err)
+    error.value = '獲取票券失敗'
+  } finally {
+    isLoading.value = false
   }
 }
+
+// 取消訂票
+const cancelTicket = async (ticketId) => {
+  if (!ticketId) return
+  try {
+    // 確認視窗
+    if (!confirm('確定要取消此張電影票嗎？')) {
+      return
+    }
+
+    const response = await apiService.post(`/movietickets/cancel/${ticketId}`)
+
+    if (response?.data) {
+      // 重新取得票券列表
+      await fetchTickets(currentPage.value)
+      // 顯示成功訊息
+      store.dispatch('setNotification', {
+        type: 'success',
+        message: '已成功取消訂票',
+        duration: 3000
+      })
+    }
+  } catch (err) {
+    console.error('取消訂票失敗:', err)
+    // 顯示錯誤訊息
+    store.dispatch('setNotification', {
+      type: 'error',
+      message: '取消訂票失敗',
+      duration: 3000
+    })
+  }
+}
+
+const getStatusClass = (status) => {
+  const classes = {
+    'VALID': 'status-valid',
+    'USED': 'status-used',
+    'EXPIRED': 'status-expired',
+    'CANCELLED': 'status-cancelled'
+  }
+  return classes[status] || 'status-default'
+}
+
+const getStatusText = (status) => {
+  const texts = {
+    'VALID': '可使用',
+    'USED': '已使用',
+    'EXPIRED': '已過期',
+    'CANCELLED': '已取消'
+  }
+  return texts[status] || '未知狀態'
+}
+
+const ticket = ref(null) // 新增此狀態
+
+const showQRCode = async (ticketData) => {
+  if (!ticketData?.id) return
+  try {
+    ticket.value = ticketData // 保存當前票券資訊
+    const response = await apiService.get(`/demo/qrcode/show/${ticketData.id}`)
+    if (response?.data) {
+      qrCodeData.value = response.data
+      showQRCodeModal.value = true
+    }
+  } catch (err) {
+    console.error('獲取 QR Code 失敗:', err)
+    store.dispatch('setNotification', {
+      type: 'error',
+      message: '獲取 QR Code 失敗',
+      duration: 3000
+    })
+  }
+}
+
+const closeQRCodeModal = () => {
+  showQRCodeModal.value = false
+  qrCodeData.value = {
+    qrCodeImage: '',
+    qrCodeData: '',
+    ticketId: null
+  }
+  ticket.value = null
+}
+
+const formatDateTime = (datetime) => {
+  if (!datetime) return ''
+  try {
+    const date = datetime instanceof Date ? datetime : new Date(datetime)
+    return new Intl.DateTimeFormat('zh-TW', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(date)
+  } catch (err) {
+    console.error('日期格式化失敗:', err)
+    return datetime
+  }
+}
+
+onMounted(() => fetchTickets(0))
 </script>
 
 <style scoped>
