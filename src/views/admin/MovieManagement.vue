@@ -483,7 +483,7 @@ export default {
       try {
         isProcessing.value = true
 
-        // 驗證必要欄位
+        // 1. 驗證必要欄位
         const requiredFields = ['title', 'director', 'release_date', 'end_date', 'duration', 'genre']
         const missingFields = requiredFields.filter(field => !editingMovie.value[field])
 
@@ -491,19 +491,21 @@ export default {
           throw new Error(`請填寫以下必要欄位: ${missingFields.join(', ')}`)
         }
 
-        // 驗證票價
-        const price = parseInt(editingMovie.value.price)
-        if (price < 0) {
-          throw new Error('票價不能小於0')
-        }
-
-        // 驗證日期
+        // 2. 驗證日期格式和邏輯
         const releaseDate = new Date(editingMovie.value.release_date)
         const endDate = new Date(editingMovie.value.end_date)
+
+        if (isNaN(releaseDate.getTime())) {
+          throw new Error('上映日期格式不正確')
+        }
+        if (isNaN(endDate.getTime())) {
+          throw new Error('下檔日期格式不正確')
+        }
         if (endDate < releaseDate) {
           throw new Error('下檔日期不能早於上映日期')
         }
 
+        // 3. 準備請求數據
         const movieData = {
           title: editingMovie.value.title?.trim(),
           description: editingMovie.value.description?.trim(),
@@ -511,15 +513,15 @@ export default {
           cast: editingMovie.value.cast?.trim(),
           duration: parseInt(editingMovie.value.duration),
           genre: editingMovie.value.genre?.trim(),
-          rating: editingMovie.value.rating || 'G',
-          price: price,
-          releaseDate: releaseDate.toISOString(),
-          endDate: endDate.toISOString(),
+          price: parseInt(editingMovie.value.price) || 0,
+          releaseDate: releaseDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
           isShowing: Boolean(editingMovie.value.isShowing)
         }
 
         let response
         if (editingMovie.value.posterFile) {
+          // 4. 處理包含文件的請求
           const formData = new FormData()
           Object.entries(movieData).forEach(([key, value]) => {
             if (value != null) {
@@ -528,57 +530,30 @@ export default {
           })
           formData.append('poster', editingMovie.value.posterFile)
 
-          if (editingMovie.value.id) {
-            response = await apiService.put(
-                `/movies/${editingMovie.value.id}`,
-                formData,
-                {
-                  headers: {
-                    'Content-Type': 'multipart/form-data'
-                  }
+          response = await apiService.put(
+              `/movies/${editingMovie.value.id}`,
+              formData,
+              {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
                 }
-            )
-          } else {
-            response = await apiService.post(
-                '/movies',
-                formData,
-                {
-                  headers: {
-                    'Content-Type': 'multipart/form-data'
-                  }
-                }
-            )
-          }
+              }
+          )
         } else {
-          if (editingMovie.value.id) {
-            response = await apiService.put(
-                `/movies/${editingMovie.value.id}`,
-                movieData,
-                {
-                  headers: {
-                    'Content-Type': 'application/json'
-                  }
+          // 5. 處理純JSON請求
+          response = await apiService.put(
+              `/movies/${editingMovie.value.id}`,
+              movieData,
+              {
+                headers: {
+                  'Content-Type': 'application/json'
                 }
-            )
-          } else {
-            response = await apiService.post(
-                '/movies',
-                movieData,
-                {
-                  headers: {
-                    'Content-Type': 'application/json'
-                  }
-                }
-            )
-          }
+              }
+          )
         }
 
         if (response?.data) {
-          await Swal.fire(
-              '成功',
-              editingMovie.value.id ? '電影資料已更新' : '已新增電影',
-              'success'
-          )
+          await Swal.fire('成功', '電影資料已更新', 'success')
           await fetchMovies()
           closeModal()
         }
@@ -590,6 +565,7 @@ export default {
         isProcessing.value = false
       }
     }
+
 
     const confirmDelete = (movie) => {
       Swal.fire({
