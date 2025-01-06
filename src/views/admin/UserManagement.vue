@@ -14,6 +14,12 @@
       <!-- 管理介面 -->
       <div v-else class="management-content">
         <div class="d-flex justify-content-between align-items-center mb-4">
+          <button
+              class="btn btn-outline-secondary"
+              @click="goBack"
+          >
+            <i class="fas fa-arrow-left me-1"></i>返回
+          </button>
           <h2>會員管理</h2>
           <button
               class="btn btn-primary"
@@ -239,6 +245,7 @@ import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
+import { useRouter } from 'vue-router'
 
 export default {
   name: 'UserManagement',
@@ -482,6 +489,11 @@ export default {
       });
     });
 
+    const router = useRouter()
+    const goBack = () => {
+      router.back()
+    }
+
     return {
       users: computed(() => store.state.user.users || []),
       totalPages: computed(() => store.state.user.totalPages || 1),
@@ -510,7 +522,8 @@ export default {
       getStatusBadgeClass,
       getStatusText,
       formatDateTime,
-      fetchData
+      fetchData,
+      goBack
     }
   }
 }
