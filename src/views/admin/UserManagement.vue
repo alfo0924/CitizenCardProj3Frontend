@@ -270,9 +270,8 @@ export default {
       status: 'ACTIVE'
     })
 
-    const users = computed(() => store.state.user.users || [])
-    const totalPages = computed(() => store.state.user.totalPages || 1)
-
+    const users = computed(() => store.state.user.users)
+    const totalPages = computed(() => store.state.user.totalPages)
     const displayedPages = computed(() => {
       const range = []
       const delta = 2
@@ -288,8 +287,6 @@ export default {
 
     const fetchUsers = async () => {
       try {
-        isLoading.value = true
-        error.value = null
         await store.dispatch('user/fetchUsers', {
           page: currentPage.value,
           size: pageSize.value,
@@ -298,10 +295,7 @@ export default {
           status: selectedStatus.value
         })
       } catch (err) {
-        error.value = '載入用戶列表失敗'
-        console.error('Error fetching users:', err)
-      } finally {
-        isLoading.value = false
+        console.error('獲取用戶列表失敗:', err)
       }
     }
 
@@ -448,14 +442,18 @@ export default {
     }
 
     onMounted(async () => {
-      await fetchUsers()
-    })
+      await store.dispatch('user/fetchUsers', {
+        page: currentPage.value,
+        size: pageSize.value
+      });
+    });
 
     return {
-      users: computed(() => store.state.user.users),
-      totalPages: computed(() => store.state.user.totalPages),
+      users: computed(() => store.state.user.users || []),
+      totalPages: computed(() => store.state.user.totalPages || 1),
       isLoading: computed(() => store.state.user.loading),
       error: computed(() => store.state.user.error),
+      pageSize,
 
       isProcessing,
 

@@ -3,12 +3,10 @@ import api from '@/services/api.config'
 const state = {
     users: [],
     totalPages: 0,
-    currentPage: 1,
-    pageSize: 10,
     loading: false,
-    error: null
+    error: null,
+    profile: null
 }
-
 
 const getters = {
     userProfile: state => state.profile,
@@ -55,29 +53,24 @@ const actions = {
             commit('SET_LOADING', false)
         }
     },
-    async fetchUsers({ commit }, { page = 1, size = 10, search, role, status } = {}) {
+    async fetchUsers({ commit }, params) {
         try {
-            commit('SET_LOADING', true);
-            const response = await api.get('/api/users/list', {
-                params: {
-                    page: page - 1,
-                    size,
-                    search,
-                    role: role || undefined,
-                    active: status === 'ACTIVE'
-                }
-            });
-
-            commit('SET_USERS', response.data.content);
-            commit('SET_PAGINATION', {
-                totalPages: response.data.totalPages,
-                currentPage: page,
-                totalItems: response.data.totalElements
-            });
+            commit('SET_LOADING', true)
+            const response = await api.get('/api/users/list', { params })
+            if (response.data?.content) {
+                commit('SET_USERS', response.data.content)
+                commit('SET_PAGINATION', {
+                    totalPages: response.data.totalPages,
+                    currentPage: params.page,
+                    totalItems: response.data.totalElements
+                })
+            }
+            return response
         } catch (error) {
-            commit('SET_ERROR', error.message);
+            commit('SET_ERROR', error.message)
+            throw error
         } finally {
-            commit('SET_LOADING', false);
+            commit('SET_LOADING', false)
         }
     },
 
@@ -119,10 +112,12 @@ const actions = {
 const mutations = {
 
     SET_USERS(state, users) {
-        state.users = users
+        state.users = users || []
     },
-    SET_PAGINATION(state, { totalPages }) {
+    SET_PAGINATION(state, { totalPages, currentPage, totalItems }) {
         state.totalPages = totalPages
+        state.currentPage = currentPage
+        state.totalItems = totalItems
     },
     SET_LOADING(state, loading) {
         state.loading = loading
