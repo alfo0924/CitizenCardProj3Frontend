@@ -482,7 +482,12 @@ export default {
     // 開啟編輯Modal
     const openMovieModal = (movie = null) => {
       if (movie) {
-        editingMovie.value = { ...movie }
+        // 複製電影資料並處理日期格式
+        editingMovie.value = {
+          ...movie,
+          release_date: formatDateForInput(movie.release_date),
+          end_date: formatDateForInput(movie.end_date)
+        }
       } else {
         editingMovie.value = {
           title: '',
@@ -516,33 +521,75 @@ export default {
         isProcessing.value = true
         const formData = new FormData()
 
-        // 將編輯資料加入 FormData，使用正確的欄位名稱
+        // 將編輯資料加入 FormData，使用正確的日期格式
         Object.keys(editingMovie.value).forEach(key => {
-          if (key !== 'posterFile') {
+          if (key === 'release_date' || key === 'end_date') {
+            // 確保日期格式正確
+            const dateValue = editingMovie.value[key]
+                ? new Date(editingMovie.value[key]).toISOString().split('T')[0]
+: ''
+            formData.append(key, dateValue)
+          } else if (key !== 'posterFile' && key !== 'posterUrl') {
             formData.append(key, editingMovie.value[key])
           }
         })
 
+        // 處理海報檔案上傳
         if (editingMovie.value.posterFile) {
           formData.append('poster', editingMovie.value.posterFile)
         }
 
+        let response
         if (editingMovie.value.id) {
+          // 更新現有電影
+          response = await axios.put(
+              `http://localhost:8080/api/movies/${editingMovie.value.id}`,
+              formData,
+              {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              }
+          )
           await store.dispatch('movie/updateMovie', {
             id: editingMovie.value.id,
-            data: formData
+            data: response.data
           })
           Swal.fire('成功', '電影資料已更新', 'success')
         } else {
-          await store.dispatch('movie/createMovie', formData)
+          // 新增電影
+          response = await axios.post(
+              'http://localhost:8080/api/movies',
+              formData,
+              {
+                headers: {
+                  'Content-Type': 'multipart/form-data'
+                }
+              }
+          )
+          await store.dispatch('movie/createMovie', response.data)
           Swal.fire('成功', '已新增電影', 'success')
         }
 
-        Modal.getInstance(movieModal.value).hide()
+        // 關閉 Modal
+        const modalInstance = Modal.getInstance(movieModal.value)
+        if (modalInstance) {
+          modalInstance.hide()
+        }
+
+        // 重新載入電影列表
         await fetchMovies()
       } catch (err) {
         console.error('Error saving movie:', err)
-        Swal.fire('錯誤', err.response?.data?.message || '儲存電影資料失敗', 'error')
+        let errorMessage = '儲存電影資料失敗'
+
+        if (err.response?.data?.message) {
+          errorMessage = err.response.data.message
+        } else if (err.message) {
+          errorMessage = err.message
+        }
+
+        Swal.fire('錯誤', errorMessage, 'error')
       } finally {
         isProcessing.value = false
       }
@@ -605,6 +652,13 @@ export default {
       return isShowing ? '上映中' : '未上映'
     }
 
+    // 日期格式化函數
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toISOString().split('T')[0];
+    }
+
     // 格式化日期
     const formatDate = (date) => {
       if (!date) return '未設定'
@@ -638,6 +692,7 @@ export default {
       getStatusText,
       formatDate,
       goBack,
+      formatDateForInput
     }
   }
 }
