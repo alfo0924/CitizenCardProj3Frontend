@@ -1,4 +1,6 @@
 import axios from 'axios'
+import {TokenManager} from "@/services/api.config";
+import MovieService from "@/services/movie.service";
 
 // 初始狀態
 const state = {
@@ -40,46 +42,28 @@ const actions = {
 
     async createMovie({ commit }, movieData) {
         try {
-            const response = await axios.post('/movies', movieData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            })
-            return response.data
+            const response = await MovieService.createMovie(movieData);
+            commit('ADD_MOVIE', response);
+            return response;
         } catch (error) {
-            console.error('Error creating movie:', error)
-            throw error
+            throw error;
         }
     },
-    async updateMovie({ commit, dispatch }, { id, data }) {
+    async updateMovie({ commit }, { id, data }) {
         try {
-            const response = await axios.put(`/movies/${id}`, data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
-            })
-            return response.data
+            const response = await MovieService.updateMovie(id, data);
+            commit('UPDATE_MOVIE', response);
+            return response;
         } catch (error) {
-            if (error.response?.status === 401) {
-                try {
-                    await store.dispatch('auth/handleAuthError', error)
-                    // 重新獲取 token 後重試
-                    return await this.updateMovie({ commit }, { id, data })
-                } catch (authError) {
-                    throw new Error('認證失敗，請重新登入')
-                }
-            }
-            throw error
+            throw error;
         }
     },
     async deleteMovie({ commit }, id) {
         try {
-            await axios.delete(`/movies/${id}`)
-            return true
+            await MovieService.deleteMovie(id);
+            commit('DELETE_MOVIE', id);
         } catch (error) {
-            console.error('Error deleting movie:', error)
-            throw error
+            throw error;
         }
     },
     // 清理數據
@@ -280,6 +264,18 @@ const mutations = {
     },
     setMovies(state, movies) {
         state.movies = movies
+    },
+    ADD_MOVIE(state, movie) {
+        state.movies.unshift(movie);
+    },
+    UPDATE_MOVIE(state, updatedMovie) {
+        const index = state.movies.findIndex(m => m.id === updatedMovie.id);
+        if (index !== -1) {
+            state.movies.splice(index, 1, updatedMovie);
+        }
+    },
+    DELETE_MOVIE(state, movieId) {
+        state.movies = state.movies.filter(m => m.id !== movieId);
     }
 }
 
