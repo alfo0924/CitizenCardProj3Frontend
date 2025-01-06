@@ -66,6 +66,11 @@ const TokenManager = {
 // 請求攔截器
 api.interceptors.request.use(
     async config => {
+        // 處理 URL 格式
+        if (!config.url.startsWith('/') && !config.url.startsWith('http')) {
+            config.url = `/${config.url}`
+        }
+
         if (config.url === '/auth/refresh-token') {
             return config
         }
@@ -105,7 +110,6 @@ api.interceptors.request.use(
     },
     error => Promise.reject(error)
 )
-
 // 響應攔截器
 api.interceptors.response.use(
     response => {
@@ -116,46 +120,117 @@ api.interceptors.response.use(
         return response
     },
     async error => {
-        if (error.config.url === '/auth/refresh-token' ||
-            error.config.url === '/auth/logout') {
-            return Promise.reject(error)
-        }
+        const originalRequest = error.config
 
-        if (error.response?.status === 401) {
-            await store.dispatch('auth/handleAuthError', error)
+        // 如果是 401 錯誤且不是重試請求
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true
+            try {
+                await store.dispatch('auth/refreshToken')
+                return api(originalRequest)
+            } catch (refreshError) {
+                await store.dispatch('auth/handleAuthError', refreshError)
+                return Promise.reject(refreshError)
+            }
         }
 
         return Promise.reject(error)
     }
 )
 
-// 錯誤處理函數
-async function handleErrorResponse(response) {
-    const status = response.status
-    const serverMessage = response.data?.message
-    const errorMessage = serverMessage || ERROR_MESSAGES[status] || '發生未知錯誤，請稍後再試'
+// API服務封裝
+const apiService = {
+    async request(method, url, options = {}) {
+        try {
+            // 確保 url 以斜線開頭
+            const normalizedUrl = url.startsWith('/') ? url : `/${url}`
 
-    store.dispatch('setNotification', {
-        type: 'error',
-        message: errorMessage,
-        duration: 5000
-    })
+            const config = {
+                method,
+                url: normalizedUrl,
+                ...options,
+                validateStatus: status => status < 500
+            }
 
-    switch (status) {
-        case 403:
-            if (!router.currentRoute.value.path.includes('/403')) {
-                router.push('/403')
+            // 特殊處理 multipart/form-data
+            if (options.data instanceof FormData) {
+                config.headers = {
+                    ...config.headers,
+                    'Content-Type': 'multipart/form-data'
+                }
             }
-            break
-        case 500:
-            if (!router.currentRoute.value.path.includes('/500')) {
-                router.push('/500')
+
+            // Debug 信息
+            console.log('Request config:', {
+                method,
+                url: normalizedUrl,
+                headers: config.headers,
+                data: options.data instanceof FormData ?
+                    Object.fromEntries(options.data.entries()) :
+                    options.data
+            })
+
+            const response = await api(config)
+            return response
+        } catch (error) {
+            console.error(`${method.toUpperCase()} ${url} failed:`, error)
+            if (error.response) {
+                console.error('Error response:', {
+                    status: error.response.status,
+                    data: error.response.data,
+                    headers: error.response.headers
+                })
             }
-            break
+            throw error
+        }
+    },
+
+    get(url, config = {}) {
+        return this.request('get', url, config)
+    },
+
+    post(url, data = {}, config = {}) {
+        return this.request('post', url, { ...config, data })
+    },
+
+    put(url, data = {}, config = {}) {
+        const defaultConfig = {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+        return this.request('put', url, {
+            ...defaultConfig,
+            ...config,
+            data
+        })
+    },
+
+    patch(url, data = {}, config = {}) {
+        return this.request('patch', url, { ...config, data })
+    },
+
+    delete(url, config = {}) {
+        return this.request('delete', url, config)
+    },
+
+    async upload(url, formData, config = {}) {
+        return this.request('post', url, {
+            ...config,
+            data: formData,
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+    },
+
+    async download(url, config = {}) {
+        return this.request('get', url, {
+            ...config,
+            responseType: 'blob'
+        })
     }
 }
 
-// API端點配置
+// API 端點配置
 export const endpoints = {
     auth: {
         login: '/auth/login',
@@ -220,50 +295,6 @@ export const endpoints = {
         nearby: '/stores/nearby',
         categories: '/stores/categories',
         promotions: id => `/stores/${id}/promotions`
-    }
-}
-
-// API服務封裝
-const apiService = {
-    async request(method, url, options = {}) {
-        try {
-            const config = {
-                method,
-                url,
-                ...options,
-                validateStatus: status => status < 500
-            }
-            const response = await api(config)
-            return response
-        } catch (error) {
-            console.error(`${method.toUpperCase()} ${url} failed:`, error)
-            throw error
-        }
-    },
-    get(url, config = {}) {
-        return this.request('get', url, config)
-    },
-    post(url, data = {}, config = {}) {
-        return this.request('post', url, { ...config, data })
-    },
-    put(url, data = {}, config = {}) {
-        return this.request('put', url, { ...config, data })
-    },
-    patch(url, data = {}, config = {}) {
-        return this.request('patch', url, { ...config, data })
-    },
-    delete(url, config = {}) {
-        return this.request('delete', url, config)
-    },
-    async upload(url, formData, config = {}) {
-        return this.request('post', url, {
-            ...config,
-            data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' }
-        })
-    },
-    async download(url, config = {}) {
-        return this.request('get', url, { ...config, responseType: 'blob' })
     }
 }
 

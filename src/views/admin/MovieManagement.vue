@@ -330,12 +330,9 @@ import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
-import { useRouter } from "vue-router";
+import { useRouter } from "vue-router"
 import { debounce } from 'lodash'
-
-// import apiService from '@/services/api.config'
 import { apiService } from '@/services/api.config'
-//
 
 export default {
   name: 'MovieManagement',
@@ -347,6 +344,7 @@ export default {
     const store = useStore()
     const router = useRouter()
     const movieModal = ref(null)
+    const modalInstance = ref(null)
     const isLoading = ref(false)
     const error = ref(null)
     const isProcessing = ref(false)
@@ -365,51 +363,17 @@ export default {
       is_showing: true,
       poster_url: ''
     })
+
     const goBack = () => {
       router.back()
     }
-    // 模擬資料
-    const mockMovies = [
-      {
-        id: 1,
-        title: '蜘蛛人：穿越新宇宙',
-        releaseDate: '2024-01-15',
-        duration: 140,
-        description: '邁爾斯踏上了新的冒險旅程...',
-        posterUrl: '/posters/spider.jpg',
-        status: 'SHOWING'
-      },
-      {
-        id: 2,
-        title: '玩具總動員4',
-        releaseDate: '2024-01-20',
-        duration: 120,
-        description: '胡迪踏上尋找新主人的旅程...',
-        posterUrl: '/posters/toy4.jpg',
-        status: 'COMING'
-      },
-      {
-        id: 3,
-        title: '魔物獵人',
-        releaseDate: '2024-01-25',
-        duration: 130,
-        description: '改編自同名遊戲...',
-        posterUrl: '/posters/monster.jpg',
-        status: 'ENDED'
-      }
-    ]
 
-    // 從store獲取數據或使用模擬數據
     const movies = computed(() => {
-      const storeMovies = store.state.movie.movies
-      return storeMovies && storeMovies.length > 0 ? storeMovies : mockMovies
+      return store.state.movie.movies || []
     })
 
-    const totalPages = computed(() =>
-        store.state.movie.totalPages || Math.ceil(mockMovies.length / 10)
-    )
+    const totalPages = computed(() => store.state.movie.totalPages || 1)
 
-    // 分頁顯示
     const displayedPages = computed(() => {
       const range = []
       const delta = 2
@@ -422,19 +386,20 @@ export default {
       }
       return range
     })
-    // 建立防抖後的搜尋函數
+
     const debouncedSearch = debounce(() => {
       fetchMovies()
-    }, 500) // 500ms 的延遲
+    }, 500)
+
     const previousParams = ref(null)
-    // 獲取電影列表
+
     const fetchMovies = async () => {
       const currentParams = {
         page: currentPage.value - 1,
         size: 10,
         status: selectedStatus.value,
         keyword: searchKeyword.value,
-        sort: 'releaseDate,desc' // 預設按上映日期排序
+        sort: 'releaseDate,desc'
       }
 
       if (previousParams.value &&
@@ -447,35 +412,28 @@ export default {
         error.value = null
         previousParams.value = currentParams
 
-        const response = await axios.get('http://localhost:8080/api/movies', {
-          params: currentParams
-        })
-
-        // 直接使用後端回傳的資料
+        const response = await apiService.get('/movies', { params: currentParams })
         store.commit('movie/setMovies', response.data.content)
         store.commit('movie/SET_TOTAL_PAGES', response.data.totalPages)
       } catch (err) {
         console.error('Error fetching movies:', err)
         error.value = '載入電影列表失敗'
-        Swal.fire('錯誤', '載入電影列表失敗', 'error')
+        await Swal.fire('錯誤', '載入電影列表失敗', 'error')
       } finally {
         isLoading.value = false
       }
     }
 
-    // 搜尋處理
     const handleSearch = () => {
       currentPage.value = 1
       debouncedSearch()
     }
 
-    // 篩選處理
     const filterMovies = () => {
       currentPage.value = 1
       fetchMovies()
     }
 
-    // 換頁
     const changePage = (page) => {
       if (page >= 1 && page <= totalPages.value) {
         currentPage.value = page
@@ -483,10 +441,8 @@ export default {
       }
     }
 
-    // 開啟編輯Modal
     const openMovieModal = (movie = null) => {
       if (movie) {
-        // 複製電影資料並處理日期格式
         editingMovie.value = {
           ...movie,
           release_date: formatDateForInput(movie.release_date),
@@ -506,11 +462,16 @@ export default {
           poster_url: ''
         }
       }
-      const modal = new Modal(movieModal.value)
-      modal.show()
+      modalInstance.value = new Modal(movieModal.value)
+      modalInstance.value.show()
     }
 
-    // 處理圖片上傳
+    const closeModal = () => {
+      if (modalInstance.value) {
+        modalInstance.value.hide()
+      }
+    }
+
     const handleImageUpload = (event) => {
       const file = event.target.files[0]
       if (file) {
@@ -519,154 +480,75 @@ export default {
       }
     }
 
-    const validateFormData = (formData) => {
-      const requiredFields = ['title', 'release_date', 'end_date', 'duration', 'director', 'genre', 'price', 'is_showing']
-      const missingFields = []
-
-      requiredFields.forEach(field => {
-        if (!formData.get(field)) {
-          missingFields.push(field)
-        }
-      })
-
-      if (missingFields.length > 0) {
-        throw new Error(`缺少必要欄位: ${missingFields.join(', ')}`)
-      }
-    }
-
-    // 儲存電影
     const saveMovie = async () => {
-      const formData = new FormData()
-
       try {
         isProcessing.value = true
 
-        // 準備基本數據並進行格式轉換
         const movieData = {
-          title: editingMovie.value.title,
-          description: editingMovie.value.description,
-          director: editingMovie.value.director,
-          cast: editingMovie.value.cast,
+          title: editingMovie.value.title?.trim(),
+          description: editingMovie.value.description?.trim(),
+          director: editingMovie.value.director?.trim(),
+          cast: editingMovie.value.cast?.trim(),
           duration: parseInt(editingMovie.value.duration),
-          genre: editingMovie.value.genre,
-          rating: editingMovie.value.rating || 'G', // 設置默認分級
+          genre: editingMovie.value.genre?.trim(),
+          rating: editingMovie.value.rating || 'G',
           price: parseInt(editingMovie.value.price),
-          isShowing: editingMovie.value.isShowing,
-          // 轉換日期格式為 ISO 字符串
           releaseDate: editingMovie.value.release_date ?
-              new Date(editingMovie.value.release_date + 'T00:00:00').toISOString() : null,
+              new Date(editingMovie.value.release_date).toISOString() : null,
           endDate: editingMovie.value.end_date ?
-              new Date(editingMovie.value.end_date + 'T00:00:00').toISOString() : null,
-          trailerUrl: editingMovie.value.trailerUrl || ''
+              new Date(editingMovie.value.end_date).toISOString() : null,
+          isShowing: Boolean(editingMovie.value.isShowing)
         }
 
-        // 驗證必填字段
-        const requiredFields = {
-          title: '電影名稱',
-          director: '導演',
-          cast: '卡司',
-          duration: '片長',
-          genre: '類型',
-          price: '票價',
-          releaseDate: '上映日期',
-          endDate: '下檔日期'
-        }
-
-        const missingFields = Object.entries(requiredFields)
-            .filter(([key]) => !movieData[key])
-            .map(([, label]) => label)
-
-        if (missingFields.length > 0) {
-          throw new Error(`請填寫以下必要欄位：${missingFields.join('、')}`)
-        }
-
-        // 將數據添加到 FormData
-        Object.keys(movieData).forEach(key => {
-          if (movieData[key] !== null && movieData[key] !== undefined) {
-            formData.append(key, movieData[key])
+        const formData = new FormData()
+        Object.entries(movieData).forEach(([key, value]) => {
+          if (value != null) {
+            formData.append(key, value.toString())
           }
         })
 
-        // 處理海報文件上傳
         if (editingMovie.value.posterFile) {
           formData.append('poster', editingMovie.value.posterFile)
         }
 
-        // 記錄請求內容（用於調試）
-        console.log('準備發送的請求資料：', {
-          id: editingMovie.value.id,
-          formData: Object.fromEntries(formData.entries())
-        })
+        const config = {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
 
         let response
         if (editingMovie.value.id) {
-          // 更新現有電影
           response = await apiService.put(
               `/movies/${editingMovie.value.id}`,
               formData,
-              {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              }
+              config
           )
-          // 更新 store
-          await store.dispatch('movie/updateMovie', {
-            id: editingMovie.value.id,
-            data: response.data
-          })
-          Swal.fire('成功', '電影資料已更新', 'success')
         } else {
-          // 創建新電影
-          response = await apiService.post(
-              '/movies',
-              formData,
-              {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              }
+          response = await apiService.post('/movies', formData, config)
+        }
+
+        if (response?.data) {
+          await Swal.fire(
+              '成功',
+              editingMovie.value.id ? '電影資料已更新' : '已新增電影',
+              'success'
           )
-          await store.dispatch('movie/createMovie', response.data)
-          Swal.fire('成功', '已新增電影', 'success')
+          await fetchMovies()
+          closeModal()
         }
-
-        // 關閉 Modal
-        const modalInstance = Modal.getInstance(movieModal.value)
-        if (modalInstance) {
-          modalInstance.hide()
-        }
-
-        // 重新載入電影列表
-        await fetchMovies()
-
       } catch (err) {
         console.error('Error saving movie:', err)
-
         let errorMessage = '儲存電影資料失敗'
         if (err.response?.data?.message) {
           errorMessage = err.response.data.message
-        } else if (err.message) {
-          errorMessage = err.message
         }
-
-        console.error('詳細錯誤資訊:', {
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          headers: err.response?.headers,
-          data: err.response?.data,
-          formDataContent: Object.fromEntries(formData.entries())
-        })
-
-        Swal.fire('錯誤', errorMessage, 'error')
+        await Swal.fire('錯誤', errorMessage, 'error')
       } finally {
         isProcessing.value = false
       }
     }
 
-    //
-
-    // 確認刪除
     const confirmDelete = (movie) => {
       Swal.fire({
         title: '確定要刪除嗎？',
@@ -678,59 +560,31 @@ export default {
       }).then(async (result) => {
         if (result.isConfirmed) {
           try {
-            await store.dispatch('movie/deleteMovie', movie.id)
+            await apiService.delete(`/movies/${movie.id}`)
             await fetchMovies()
-            Swal.fire('已刪除', '電影已成功刪除', 'success')
+            await Swal.fire('已刪除', '電影已成功刪除', 'success')
           } catch (err) {
-            error.value = '刪除電影失敗'
             console.error('Error deleting movie:', err)
+            await Swal.fire('錯誤', '刪除電影失敗', 'error')
           }
         }
       })
     }
 
-    // 獲取狀態樣式
-    // const getStatusClass = (status) => {
-    //   switch (status) {
-    //     case 'SHOWING':
-    //       return 'bg-success'
-    //     case 'COMING':
-    //       return 'bg-primary'
-    //     case 'ENDED':
-    //       return 'bg-secondary'
-    //     default:
-    //       return 'bg-secondary'
-    //   }
-    // }
     const getStatusClass = (isShowing) => {
       return isShowing ? 'bg-success' : 'bg-secondary'
     }
 
-    // 獲取狀態文字
-    // const getStatusText = (status) => {
-    //   switch (status) {
-    //     case 'SHOWING':
-    //       return '上映中'
-    //     case 'COMING':
-    //       return '即將上映'
-    //     case 'ENDED':
-    //       return '已下檔'
-    //     default:
-    //       return '未知'
-    //   }
-    // }
     const getStatusText = (isShowing) => {
       return isShowing ? '上映中' : '未上映'
     }
 
-    // 日期格式化函數
     const formatDateForInput = (dateString) => {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toISOString().split('T')[0];
+      if (!dateString) return ''
+      const date = new Date(dateString)
+      return date.toISOString().split('T')[0]
     }
 
-    // 格式化日期
     const formatDate = (date) => {
       if (!date) return '未設定'
       return new Date(date).toLocaleDateString('zh-TW')
@@ -763,10 +617,12 @@ export default {
       getStatusText,
       formatDate,
       goBack,
-      formatDateForInput
+      formatDateForInput,
+      closeModal
     }
   }
 }
+
 </script>
 <style scoped>
 .movie-management {
