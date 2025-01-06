@@ -55,7 +55,6 @@
           <div class="col-md-2">
             <select class="form-select" v-model="sortBy">
               <option value="newest">最新添加</option>
-              <option value="popularity">人氣度</option>
               <option value="priority">優先權</option>
               <option value="donation">贊助店家</option>
               <option value="name">店名排序</option>
@@ -335,8 +334,101 @@ export default {
     const stores = ref([])
     const totalItems = ref(0)
     const itemsPerPage = 10
+    const allStores = ref([])
     let storeModal = null
     let deleteModal = null
+
+    // 篩選後的商店列表
+    const filteredStores = computed(() => {
+      let result = [...allStores.value]
+
+      // 搜尋過濾
+      if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase()
+        result = result.filter(store =>
+          store.name.toLowerCase().includes(query) ||
+          store.address.toLowerCase().includes(query)
+        )
+      }
+
+      // 類別過濾
+      if (selectedCategoryType.value) {
+        result = result.filter(store =>
+          store.category === selectedCategoryType.value
+        )
+      }
+
+      // 區域過濾
+      if (selectedArea.value) {
+        result = result.filter(store =>
+          store.area === selectedArea.value
+        )
+      }
+
+      // 排序
+      result.sort((a, b) => {
+        switch (sortBy.value) {
+          case 'priority':
+            return b.priority - a.priority
+          case 'donation':
+            return (b.is_donation ? 1 : 0) - (a.is_donation ? 1 : 0)
+          case 'name':
+            return a.name.localeCompare(b.name)
+          default: // newest
+            return b.id - a.id
+        }
+      })
+
+      return result
+    })
+
+    // 分頁後的商店列表
+    const paginatedStores = computed(() => {
+      const start = (currentPage.value - 1) * itemsPerPage
+      const end = start + itemsPerPage
+      return filteredStores.value.slice(start, end)
+    })
+
+    // 總頁數
+    const totalPages = computed(() => {
+      return Math.ceil(filteredStores.value.length / itemsPerPage)
+    })
+
+    // 獲取商店列表
+    const fetchStores = async () => {
+      loading.value = true
+      error.value = ''
+      try {
+        const result = await store.dispatch('store/fetchStores', {
+          // 只保留分頁參數，移除其他篩選參數
+          page: 0,  // 獲取所有數據
+          size: 1000 // 設置較大的數值以獲取所有數據
+        })
+
+        if (result.success) {
+          allStores.value = result.data.content
+        } else {
+          error.value = result.error || '載入商店資料失敗'
+        }
+      } catch (err) {
+        console.error('組件錯誤:', err)
+        error.value = '載入商店資料失敗'
+      } finally {
+        loading.value = false
+      }
+    }
+
+    // 分頁相關方法
+    const changePage = (page) => {
+      if (page >= 1 && page <= totalPages.value) {
+        currentPage.value = page
+      }
+    }
+
+    // 監聽篩選條件變化
+    watch([searchQuery, selectedCategoryType, selectedArea, sortBy], () => {
+      currentPage.value = 1 // 重置頁碼
+    })
 
     // 表單數據
     const storeForm = ref({
@@ -361,11 +453,6 @@ export default {
     const editingStore = ref(null)
     const storeToDelete = ref(null)
 
-    // 計算屬性
-    const totalPages = computed(() => {
-      return Math.ceil(totalItems.value / itemsPerPage)
-    })
-
     const displayedPages = computed(() => {
       const delta = 2
       const range = []
@@ -379,48 +466,9 @@ export default {
       return range
     })
 
-    // 獲取商店列表
-    const fetchStores = async () => {
-      loading.value = true;
-      error.value = '';
-      try {
-        const params = {
-          page: currentPage.value - 1,
-          size: itemsPerPage,
-          ...(searchQuery.value && { keyword: searchQuery.value }),
-          ...(selectedArea.value && { area: selectedArea.value }),
-          ...(selectedCategoryType.value && { category: selectedCategoryType.value }),
-          sort: getSortOption(sortBy.value)
-        };
-
-        // 移除所有空值參數
-        Object.keys(params).forEach(key => {
-          if (params[key] === '' || params[key] === null || params[key] === undefined) {
-            delete params[key];
-          }
-        });
-
-        const result = await store.dispatch('store/fetchStores', params);
-
-        if (result.success) {
-          stores.value = result.data.content;
-          totalItems.value = result.data.totalElements;
-        } else {
-          error.value = result.error || '載入商店資料失敗';
-        }
-      } catch (err) {
-        console.error('組件錯誤:', err);
-        error.value = '載入商店資料失敗';
-      } finally {
-        loading.value = false;
-      }
-    };
-
     // 排序方法
     const getSortOption = (sortType) => {
       switch (sortType) {
-        case 'popularity':
-          return 'popularity,desc';
         case 'priority':
           return 'priority,desc';
         case 'donation':
@@ -462,14 +510,6 @@ export default {
       if (priority >= 5) return 'bg-warning';
       return 'bg-info';
     };
-
-    // 換頁
-    const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        fetchStores()
-      }
-    }
 
     // 編輯商店
     const showAddStoreModal = () => {
@@ -683,7 +723,7 @@ export default {
       searchQuery,
       selectedStatus,
       currentPage,
-      stores,
+      stores: paginatedStores, // 使用計算後的分頁數據
       storeForm,
       editingStore,
       storeToDelete,
@@ -705,8 +745,7 @@ export default {
       categories,
       selectedArea,
       selectedCategoryType,
-      sortBy,
-      getSortOption,
+      sortBy
     }
   }
 }
