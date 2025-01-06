@@ -335,7 +335,7 @@ import { debounce } from 'lodash'
 
 // import apiService from '@/services/api.config'
 import { apiService } from '@/services/api.config'
-
+//
 
 export default {
   name: 'MovieManagement',
@@ -536,30 +536,63 @@ export default {
 
     // 儲存電影
     const saveMovie = async () => {
-      // 將 formData 移到這裡，確保在錯誤處理中也能訪問
       const formData = new FormData()
 
       try {
         isProcessing.value = true
 
-        // 將編輯資料加入 FormData
-        Object.keys(editingMovie.value).forEach(key => {
-          if (key === 'release_date' || key === 'end_date') {
-            const dateValue = editingMovie.value[key]
-                ? new Date(editingMovie.value[key]).toISOString().split('T')[0]
-                : ''
-            formData.append(key, dateValue)
-          } else if (key !== 'posterFile' && key !== 'posterUrl') {
-            formData.append(key, editingMovie.value[key])
+        // 準備基本數據並進行格式轉換
+        const movieData = {
+          title: editingMovie.value.title,
+          description: editingMovie.value.description,
+          director: editingMovie.value.director,
+          cast: editingMovie.value.cast,
+          duration: parseInt(editingMovie.value.duration),
+          genre: editingMovie.value.genre,
+          rating: editingMovie.value.rating || 'G', // 設置默認分級
+          price: parseInt(editingMovie.value.price),
+          isShowing: editingMovie.value.isShowing,
+          // 轉換日期格式為 ISO 字符串
+          releaseDate: editingMovie.value.release_date ?
+              new Date(editingMovie.value.release_date + 'T00:00:00').toISOString() : null,
+          endDate: editingMovie.value.end_date ?
+              new Date(editingMovie.value.end_date + 'T00:00:00').toISOString() : null,
+          trailerUrl: editingMovie.value.trailerUrl || ''
+        }
+
+        // 驗證必填字段
+        const requiredFields = {
+          title: '電影名稱',
+          director: '導演',
+          cast: '卡司',
+          duration: '片長',
+          genre: '類型',
+          price: '票價',
+          releaseDate: '上映日期',
+          endDate: '下檔日期'
+        }
+
+        const missingFields = Object.entries(requiredFields)
+            .filter(([key]) => !movieData[key])
+            .map(([, label]) => label)
+
+        if (missingFields.length > 0) {
+          throw new Error(`請填寫以下必要欄位：${missingFields.join('、')}`)
+        }
+
+        // 將數據添加到 FormData
+        Object.keys(movieData).forEach(key => {
+          if (movieData[key] !== null && movieData[key] !== undefined) {
+            formData.append(key, movieData[key])
           }
         })
 
-        // 處理海報檔案上傳
+        // 處理海報文件上傳
         if (editingMovie.value.posterFile) {
           formData.append('poster', editingMovie.value.posterFile)
         }
 
-        // 記錄發送的請求內容
+        // 記錄請求內容（用於調試）
         console.log('準備發送的請求資料：', {
           id: editingMovie.value.id,
           formData: Object.fromEntries(formData.entries())
@@ -567,8 +600,9 @@ export default {
 
         let response
         if (editingMovie.value.id) {
+          // 更新現有電影
           response = await apiService.put(
-              `/api/movies/${editingMovie.value.id}`,
+              `/movies/${editingMovie.value.id}`,
               formData,
               {
                 headers: {
@@ -576,14 +610,16 @@ export default {
                 }
               }
           )
+          // 更新 store
           await store.dispatch('movie/updateMovie', {
             id: editingMovie.value.id,
             data: response.data
           })
           Swal.fire('成功', '電影資料已更新', 'success')
         } else {
+          // 創建新電影
           response = await apiService.post(
-              '/movies',// 移除重複的 /api
+              '/movies',
               formData,
               {
                 headers: {
@@ -603,17 +639,17 @@ export default {
 
         // 重新載入電影列表
         await fetchMovies()
+
       } catch (err) {
         console.error('Error saving movie:', err)
-        let errorMessage = '儲存電影資料失敗'
 
+        let errorMessage = '儲存電影資料失敗'
         if (err.response?.data?.message) {
           errorMessage = err.response.data.message
         } else if (err.message) {
           errorMessage = err.message
         }
 
-        // 現在可以安全地訪問 formData
         console.error('詳細錯誤資訊:', {
           status: err.response?.status,
           statusText: err.response?.statusText,
@@ -627,6 +663,8 @@ export default {
         isProcessing.value = false
       }
     }
+
+    //
 
     // 確認刪除
     const confirmDelete = (movie) => {
