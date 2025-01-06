@@ -46,10 +46,10 @@
                         <button v-for="time of schedule.times"
                                 :key="`${schedule.date}-${time}`"
                                 :class="['time-slot', {
-                                  active: selectedShowtime.date === schedule.date &&
-                                         selectedShowtime.time === time
-                                }]"
-                                @click="selectShowtime(schedule.date, time)">
+                                 active: selectedShowtime.date === schedule.date &&
+                                   selectedShowtime.time === time
+                                   }]"
+                                @click="selectShowtime(schedule.date, time, schedule.schedules[time])">
                           {{ time }}
                           <span class="seat-icon">🪑</span>
                         </button>
@@ -79,6 +79,7 @@
                 >
                   請先登入
                 </button>
+                <p class="seat-limit-notice">市民同場次限訂一個座位</p>
               </div>
             </div>
           </div>
@@ -97,15 +98,15 @@
 
               <div class="seat-legend">
                 <div class="legend-item">
-                  <div class="legend-box available"/>
+                  <div class="seat available"></div>
                   <span>可選擇</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-box selected"/>
+                  <div class="seat selected"></div>
                   <span>已選擇</span>
                 </div>
                 <div class="legend-item">
-                  <div class="legend-box occupied"/>
+                  <div class="seat booked"></div>
                   <span>已訂位</span>
                 </div>
               </div>
@@ -153,54 +154,34 @@ import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import api from '@/services/api.config'
 
-// Store 和 Router
+// === State Management ===
 const store = useStore()
 const router = useRouter()
 
-// 基本設定
+// === Component State ===
 const movies = ref([])
 const showBookingSection = ref(false)
 const selectedMovie = ref(null)
 const selectedShowtime = ref({
   date: '',
-  time: ''
+  time: '',
+  schedule: null
 })
-
-// 登入狀態檢查
-const isAuthenticated = computed(() => store.getters['auth/isLoggedIn'])
-
-// 展開/收合相關
+const seatStatus = ref([])
 const expandedShowtimes = ref(false)
 const INITIAL_VISIBLE_ROWS = 3
-
-// 座位相關
 const rows = Array.from({ length: 10 }, (_, i) => String.fromCharCode(65 + i))
 const movieSeats = reactive({})
 
-// 跳轉到登入頁面
-const goToLogin = () => {
-  const returnPath = router.currentRoute.value.fullPath
-  router.push({
-    path: '/login',
-    query: { redirect: returnPath }
-  }).catch((error) => {
-    console.error('Navigation error:', error)
-    router.push('/login')
-  })
-}
+// === Computed Properties ===
+const isAuthenticated = computed(() => store.getters['auth/isLoggedIn'])
 
-// 格式化日期函數
+// === Helper Functions ===
 const formatDate = (dateString) => {
   const date = new Date(dateString)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const weekDay = ['日', '一', '二', '三', '四', '五', '六'][date.getDay()]
-
-  return `${year} 年 ${month} 月 ${day} 日 星期${weekDay}`
+  return `${date.getFullYear()} 年 ${String(date.getMonth() + 1).padStart(2, '0')} 月 ${String(date.getDate()).padStart(2, '0')} 日 星期${['日', '一', '二', '三', '四', '五', '六'][date.getDay()]}`
 }
 
-// 格式化時間函數
 const formatTime = (dateString) => {
   const date = new Date(dateString)
   return date.toLocaleTimeString('zh-TW', {
@@ -210,93 +191,120 @@ const formatTime = (dateString) => {
   })
 }
 
-// 獲取電影資料
+// === Navigation Functions ===
+const goToLogin = () => {
+  const returnPath = router.currentRoute.value.fullPath
+  router.push({
+    path: '/login',
+    query: { redirect: returnPath }
+  }).catch(error => {
+    console.error('Navigation error:', error)
+    router.push('/login')
+  })
+}
+
+// === API Functions ===
 const fetchMovies = async () => {
   try {
-    // 1. 先獲取電影資料
-    const response = await fetch('http://localhost:8080/api/movies/now-showing')
-    const moviesData = await response.json()
+    const [moviesResponse, schedulesResponse] = await Promise.all([
+      fetch('http://localhost:8080/api/movies/now-showing'),
+      fetch('http://localhost:8080/api/schedules/available')
+    ])
 
-    if (!moviesData.content || !Array.isArray(moviesData.content)) {
-      console.error('Invalid movies data format')
-      return
-    }
-
-    // 2. 再獲取場次資料
-    const schedulesResponse = await fetch('http://localhost:8080/api/schedules/available')
+    const moviesData = await moviesResponse.json()
     const schedulesData = await schedulesResponse.json()
 
-    // 3. 處理電影資料並加入場次資訊
-    const processedMovies = moviesData.content
-        .sort((a, b) => a.id - b.id)
-        .map(movie => {
-          // 篩選該電影的場次
-          const movieSchedules = schedulesData.filter(schedule =>
-              schedule.movie_id === movie.id
-          )
+    if (!moviesData.content || !Array.isArray(moviesData.content)) {
+      throw new Error('Invalid movies data format')
+    }
 
-          // 根據日期分組場次
-          const groupedSchedules = movieSchedules.reduce((acc, schedule) => {
-            const date = formatDate(schedule.show_time)
-            const time = formatTime(schedule.show_time)
-
-            if (!acc[date]) {
-              acc[date] = {
-                date,
-                times: []
-              }
-            }
-
-            acc[date].times.push(time)
-            // 排序時間
-            acc[date].times.sort()
-            return acc
-          }, {})
-
-          return {
-            ...movie,
-            showtimes: Object.values(groupedSchedules)
-          }
-        })
-
-    movies.value = processedMovies
-    selectedMovie.value = processedMovies[0]
+    movies.value = processMoviesData(moviesData.content, schedulesData)
+    selectedMovie.value = movies.value[0]
   } catch (error) {
     console.error('Error fetching data:', error)
+    store.commit('SET_ERROR', '獲取電影資料失敗')
   }
 }
 
-// 選擇電影
+const fetchSeatStatus = async () => {
+  try {
+    const scheduleId = selectedShowtime.value.schedule?.id
+    if (!scheduleId) return
+
+    const [statusResponse, soldResponse] = await Promise.all([
+      api.get(`/seats/${scheduleId}/status`),
+      api.get(`/seats/${scheduleId}/sold`)
+    ])
+
+    const soldSeats = new Set(soldResponse.data)
+
+    if (statusResponse.data) {
+      seatStatus.value = statusResponse.data.map(seat => ({
+        seatNumber: seat.seat_number,
+        isAvailable: seat.available && !soldSeats.has(seat.seat_number)
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching seat status:', error)
+    store.commit('SET_ERROR', '獲取座位狀態失敗')
+  }
+}
+// === Data Processing Functions ===
+const processMoviesData = (movies, schedules) => {
+  return movies
+      .sort((a, b) => a.id - b.id)
+      .map(movie => {
+        const movieSchedules = schedules.filter(schedule => schedule.movie_id === movie.id)
+        const groupedSchedules = movieSchedules.reduce((acc, schedule) => {
+          const date = formatDate(schedule.show_time)
+          const time = formatTime(schedule.show_time)
+
+          if (!acc[date]) {
+            acc[date] = {
+              date,
+              times: [],
+              schedules: {}
+            }
+          }
+
+          acc[date].times.push(time)
+          acc[date].schedules[time] = schedule
+          acc[date].times.sort()
+          return acc
+        }, {})
+
+        return {
+          ...movie,
+          showtimes: Object.values(groupedSchedules)
+        }
+      })
+}
+
+// === Booking Functions ===
 const selectMovie = (movie) => {
   selectedMovie.value = movie
-  selectedShowtime.value = { date: '', time: '' }
+  selectedShowtime.value = { date: '', time: '', schedule: null }
   showBookingSection.value = false
-  expandedShowtimes.value = false// 重置展開狀態
+  expandedShowtimes.value = false
+  scrollToMovieDetails()
+}
 
-  // 找到標題元素
-  const titleElement = document.querySelector('.movie-details .title')
-  if (titleElement) {
-    setTimeout(() => {
-      titleElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-
-      // 補償固定導航欄的高度
-      window.scrollBy({
-        top: -500,
-        behavior: 'smooth'
-      })
-    }, 100)
+const selectShowtime = async (date, time, schedule) => {
+  try {
+    if (isAuthenticated.value) {
+      const checkResponse = await api.get(`/movietickets/check/${schedule.id}`)
+      if (checkResponse.data.hasBooked) {
+        alert('您已在此場次訂位，每位市民同場次限訂一個座位')
+        return
+      }
+    }
+    selectedShowtime.value = { date, time, schedule }
+  } catch (error) {
+    console.error('Error:', error)
+    selectedShowtime.value = { date, time, schedule }
   }
 }
 
-// 選擇場次
-const selectShowtime = (date, time) => {
-  selectedShowtime.value = { date, time }
-}
-
-// 顯示訂票區域
 const showBooking = async (movie) => {
   if (!selectedShowtime.value.time) {
     alert('請選擇觀影場次')
@@ -309,92 +317,62 @@ const showBooking = async (movie) => {
   }
 
   try {
-    // 檢查 token 是否有效
     const verifyResult = await store.dispatch('auth/checkToken')
     if (!verifyResult.success) {
       goToLogin()
       return
     }
 
+    await fetchSeatStatus()
     selectedMovie.value = movie
     showBookingSection.value = true
-
-    setTimeout(() => {
-      const bookingSection = document.querySelector('.booking-section')
-      bookingSection?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-    }, 100)
+    scrollToBookingSection()
   } catch (error) {
     console.error('Error verifying token:', error)
     goToLogin()
   }
 }
 
-// 座位相關函數
+// === Seat Management Functions ===
 const toggleSeat = (movieId, row, num) => {
   const seatNumber = `${row}${num}`
-  const seatInfo = {
-    id: `${row}-${num}`,
-    seatNumber,
-    row,
-    num
+
+  const seat = seatStatus.value.find(s => s.seatNumber === seatNumber)
+  if (!seat?.isAvailable) {
+    return
   }
 
+  const seatInfo = { id: `${row}-${num}`, seatNumber, row, num }
   if (!movieSeats[movieId]) {
     movieSeats[movieId] = []
   }
-
-  const existingIndex = movieSeats[movieId].findIndex(s => s.seatNumber === seatNumber)
-  if (existingIndex === -1) {
-    movieSeats[movieId].push(seatInfo)
-  } else {
-    movieSeats[movieId].splice(existingIndex, 1)
-  }
+  movieSeats[movieId] = [seatInfo]
 }
 
-const getSelectedSeatsForMovie = (movieId) => {
-  return movieSeats[movieId] || []
-}
+const getSelectedSeatsForMovie = (movieId) => movieSeats[movieId] || []
 
 const getSeatStatus = (movieId, row, num) => {
   const seatNumber = `${row}${num}`
-  if (!movieSeats[movieId]) {
-    return 'available'
+
+  if (movieSeats[movieId]?.some(s => s.seatNumber === seatNumber)) {
+    return 'selected'
   }
-  return movieSeats[movieId].some(s => s.seatNumber === seatNumber) ? 'selected' : 'available'
+
+  const seat = seatStatus.value.find(s => s.seatNumber === seatNumber)
+  return seat?.isAvailable ? 'available' : 'occupied'
 }
 
-// 重置訂票資訊
+// === Booking Actions ===
 const resetBookingInfo = () => {
   const currentMovieId = selectedMovie.value.id
   movieSeats[currentMovieId] = []
-  selectedShowtime.value = { date: '', time: '' }
+  selectedShowtime.value = { date: '', time: '', schedule: null }
   showBookingSection.value = false
-
-  const titleElement = document.querySelector('.movie-details .title')
-  if (titleElement) {
-    setTimeout(() => {
-      titleElement.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      })
-
-      window.scrollBy({
-        top: -500,
-        behavior: 'smooth'
-      })
-    }, 100)
-  }
+  scrollToMovieDetails()
 }
 
-// 取消訂票
-const cancelBooking = () => {
-  resetBookingInfo()
-}
+const cancelBooking = () => resetBookingInfo()
 
-// 確認訂票
 const confirmBooking = async () => {
   if (!isAuthenticated.value) {
     goToLogin()
@@ -402,7 +380,6 @@ const confirmBooking = async () => {
   }
 
   try {
-    // 檢查 token 是否有效
     const verifyResult = await store.dispatch('auth/checkToken')
     if (!verifyResult.success) {
       goToLogin()
@@ -410,32 +387,69 @@ const confirmBooking = async () => {
     }
 
     const currentMovieId = selectedMovie.value.id
-    if (!movieSeats[currentMovieId] || movieSeats[currentMovieId].length === 0) {
+    const currentSeats = movieSeats[currentMovieId]
+
+    if (!currentSeats?.length) {
       alert('請選擇座位')
       return
     }
 
-    console.log('訂位資訊：', {
+    if (currentSeats.length > 1) {
+      alert('只能選擇一個座位')
+      return
+    }
+
+    if (!selectedShowtime.value.schedule?.id) {
+      alert('請選擇場次')
+      return
+    }
+
+    store.commit('SET_LOADING', true)
+
+    const response = await api.post('/movietickets/create', {
       movieId: currentMovieId,
-      movieTitle: selectedMovie.value.title,
-      showtime: selectedShowtime.value,
-      seats: movieSeats[currentMovieId],
-      userId: store.getters['auth/userId']
+      scheduleId: selectedShowtime.value.schedule.id,
+      seatNumber: currentSeats[0].seatNumber
     })
 
-    alert('訂位成功！')
-    resetBookingInfo()
+    if (response.data) {
+      alert('訂位成功！')
+      resetBookingInfo()
+    }
   } catch (error) {
     console.error('訂票失敗：', error)
     if (error.response?.status === 401) {
       goToLogin()
+    } else if (error.response?.status === 409) {
+      alert('該座位已被預訂，請重新選擇')
+      await fetchSeatStatus()
     } else {
       alert('訂票失敗，請稍後再試')
     }
+  } finally {
+    store.commit('SET_LOADING', false)
   }
 }
 
-// 元件掛載時初始化
+// === Scroll Functions ===
+const scrollToMovieDetails = () => {
+  const titleElement = document.querySelector('.movie-details .title')
+  if (titleElement) {
+    setTimeout(() => {
+      titleElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      window.scrollBy({ top: -500, behavior: 'smooth' })
+    }, 100)
+  }
+}
+
+const scrollToBookingSection = () => {
+  setTimeout(() => {
+    const bookingSection = document.querySelector('.booking-section')
+    bookingSection?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, 100)
+}
+
+// === Lifecycle Hooks ===
 onMounted(async () => {
   await store.dispatch('auth/initAuth')
   fetchMovies()
@@ -532,7 +546,7 @@ onMounted(async () => {
   top: 160px;
   background: #ffffff;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 }
 
@@ -655,7 +669,7 @@ onMounted(async () => {
   background: #ffffff;
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .booking-title {
@@ -1050,5 +1064,16 @@ onMounted(async () => {
     height: 36px;
     font-size: 14px;
   }
+}
+
+.movie-button.login-required:hover {
+  background-color: #5a6268;
+}
+
+.seat-limit-notice {
+  text-align: center;
+  color: #666;
+  margin-top: 10px;
+  font-size: 0.9rem;
 }
 </style>
