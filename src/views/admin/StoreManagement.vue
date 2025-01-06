@@ -593,9 +593,10 @@ export default {
         }
 
         // 電話格式驗證
-        const phonePattern = /^\d{2,3}-\d{3,4}-\d{4}$/;
+        const phonePattern = /^(0\d{1,2}-\d{3,4}-\d{4}|0\d{1,2}\d{7,8}|09\d{2}-\d{3}-\d{3}|09\d{8})$/;
+
         if (!phonePattern.test(storeForm.value.phone)) {
-          throw new Error('請輸入正確的電話格式 (xx-xxxx-xxxx)');
+          throw new Error('請輸入正確的台灣電話號碼格式，例如：02-1234-5678、0912-345-678 或 0912345678');
         }
 
         const formData = {
