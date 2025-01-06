@@ -37,6 +37,9 @@
                 <p class="movie-description">{{ selectedMovie?.description }}</p>
 
                 <div class="showtimes">
+                  <div class="container">
+                    <p class="text-center fs-3">放映地點 : 逢甲市電影院</p>
+                  </div>
                   <template v-if="selectedMovie?.showtimes">
                     <div v-for="(schedule, index) of selectedMovie.showtimes"
                          :key="schedule.date"
@@ -79,7 +82,7 @@
                 >
                   請先登入
                 </button>
-                <p class="seat-limit-notice">市民同場次限訂一個座位</p>
+                <p class="seat-limit-notice">每位市民同場次限訂一個座位</p>
               </div>
             </div>
           </div>
@@ -1072,8 +1075,11 @@ onMounted(async () => {
 
 .seat-limit-notice {
   text-align: center;
-  color: #666;
+  color: red;
   margin-top: 10px;
   font-size: 0.9rem;
+}
+.text-center{
+  color: #a00039;
 }
 </style>
