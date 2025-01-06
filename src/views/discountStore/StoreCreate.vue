@@ -10,6 +10,15 @@
                     <label for="name">商店名稱</label>
                     <input id="name" v-model="formData.name" type="text" class="form-control" required />
                 </div>
+                <div class="form-group">
+                    <label for="area">區域</label>
+                    <select id="area" v-model="formData.area" class="form-select" required>
+                        <option value="">請選擇區域</option>
+                        <option value="西屯區">西屯區</option>
+                        <option value="南屯區">南屯區</option>
+                        <option value="北屯區">北屯區</option>
+                    </select>
+                </div>
 
                 <div class="form-row">
                     <div class="form-group half">
@@ -31,7 +40,8 @@
 
                     <div class="form-group half">
                         <label for="tag">標籤</label>
-                        <input id="tag" v-model="formData.tag" type="text" class="form-control" placeholder="請自行輸入酷酷的標籤" required />
+                        <input id="tag" v-model="formData.tag" type="text" class="form-control" placeholder="請自行輸入酷酷的標籤"
+                            required />
                     </div>
                 </div>
 
@@ -60,7 +70,8 @@
                 <div class="form-row">
                     <div class="form-group half">
                         <label for="phone">電話</label>
-                        <input id="phone" v-model="formData.phone" type="tel" class="form-control" placeholder="xx-xxxx-xxxx" required />
+                        <input id="phone" v-model="formData.phone" type="tel" class="form-control"
+                            placeholder="xx-xxxx-xxxx" required />
                     </div>
 
                     <div class="form-group half">
@@ -72,6 +83,11 @@
                 <div class="form-group">
                     <label for="website">網站</label>
                     <input id="website" v-model="formData.website" type="url" class="form-control" />
+                </div>
+
+                <div class="form-group">
+                    <label for="imgUrl">圖片網址</label>
+                    <input id="imgUrl" v-model="formData.imgUrl" type="text" class="form-control" />
                 </div>
 
                 <div class="form-group">
@@ -104,6 +120,7 @@ export default {
         return {
             formData: {
                 name: '',
+                area: '',
                 category: '',
                 tag: '',
                 content: '',
@@ -112,43 +129,68 @@ export default {
                 address: '',
                 phone: '',
                 priority: 0,
+                popularity: 0,
                 website: '',
                 iframeSrc: '',
-                isDonation: false
+                isDonation: false,
+                imgUrl: '',
             },
-            isSubmitting: false,
-            stores: []  // 用來存儲所有商店數據
+            isSubmitting: false
         }
     },
     methods: {
         async submitForm() {
             this.isSubmitting = true;
             try {
-                // 生成新的 ID (取最大 ID + 1)
-                const newId = this.stores.length > 0
-                    ? Math.max(...this.stores.map(store => store.id)) + 1
-                    : 1;
+                // 驗證必填欄位
+                const requiredFields = {
+                    name: '商店名稱',
+                    area: '區域',
+                    category: '類別',
+                    tag: '標籤',
+                    content: '詳細內容',
+                    shortContent: '簡短內容',
+                    time: '活動時間',
+                    address: '地址',
+                    phone: '電話',
+                    iframeSrc: 'Google Maps 連結'
+                }; // 移除 imgUrl，因為不一定每個店家都需要圖片
 
-                // 創建新的商店對象
-                const newStore = {
-                    id: newId,
-                    ...this.formData
-                };
+                // 檢查必填欄位並同時清理數據
+                const formDataToSubmit = {};
+                for (const [field, label] of Object.entries(requiredFields)) {
+                    const value = this.formData[field]?.trim();
+                    if (!value && value !== 0) {
+                        throw new Error(`請填寫${label}`);
+                    }
+                    formDataToSubmit[field] = value;
+                }
 
-                // 添加到 stores 數組中
-                this.stores.push(newStore);
+                // 電話格式驗證
+                const phonePattern = /^\d{2,3}-\d{3,4}-\d{4}$/;
+                if (!phonePattern.test(formDataToSubmit.phone)) {
+                    throw new Error('請輸入正確的電話格式 (xx-xxxx-xxxx)');
+                }
 
-                // 這裡可以添加將數據保存到後端的 API 調用
-                // await axios.post('/api/stores', newStore);
+                // 添加其他非必填欄位
+                formDataToSubmit.priority = parseInt(this.formData.priority) || 0;
+                formDataToSubmit.popularity = 0;
+                formDataToSubmit.website = this.formData.website?.trim() || '';
+                formDataToSubmit.imgUrl = this.formData.imgUrl?.trim() || '';
+                formDataToSubmit.isDonation = Boolean(this.formData.isDonation);
 
-                // 清空表單
-                this.resetForm();
+                // 發送請求
+                const result = await this.$store.dispatch('store/createStore', formDataToSubmit);
 
-                // 提示成功
-                alert('店家新增成功！');
+                if (result?.success) {
+                    alert('店家新增成功！');
+                    this.resetForm();
+                } else {
+                    throw new Error(result?.error || '提交失敗，請稍後再試');
+                }
             } catch (error) {
-                console.error('提交表單時發生錯誤：', error);
-                alert('提交失敗，請稍後再試');
+                alert(error.message || '系統錯誤，請稍後再試');
+                console.error('提交失敗:', error);
             } finally {
                 this.isSubmitting = false;
             }
@@ -156,6 +198,7 @@ export default {
         resetForm() {
             this.formData = {
                 name: '',
+                area: '',
                 category: '',
                 tag: '',
                 content: '',
@@ -164,9 +207,11 @@ export default {
                 address: '',
                 phone: '',
                 priority: 0,
+                popularity: 0,
                 website: '',
                 iframeSrc: '',
-                isDonation: false
+                isDonation: false,
+                imgUrl: ''
             };
         }
     }
