@@ -2,6 +2,43 @@
 import api from './api.config'
 
 class MovieService {
+    // 新增電影
+    async createMovie(movieData) {
+        try {
+            const response = await api.post('/movies', movieData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw new Error('新增電影失敗');
+        }
+    }
+
+    // 更新電影
+    async updateMovie(id, movieData) {
+        try {
+            const response = await api.put(`/movies/${id}`, movieData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw new Error('更新電影失敗');
+        }
+    }
+
+    // 刪除電影
+    async deleteMovie(id) {
+        try {
+            await api.delete(`/movies/${id}`);
+        } catch (error) {
+            throw new Error('刪除電影失敗');
+        }
+    }
+
     // 獲取電影列表
     async getMovies(params) {
         try {

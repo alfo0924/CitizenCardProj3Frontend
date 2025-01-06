@@ -1,5 +1,6 @@
 import axios from 'axios'
 import {TokenManager} from "@/services/api.config";
+import MovieService from "@/services/movie.service";
 
 // 初始狀態
 const state = {
@@ -41,43 +42,28 @@ const actions = {
 
     async createMovie({ commit }, movieData) {
         try {
-            const response = await axios.post('/movies', movieData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            })
-            return response.data
+            const response = await MovieService.createMovie(movieData);
+            commit('ADD_MOVIE', response);
+            return response;
         } catch (error) {
-            console.error('Error creating movie:', error)
-            throw error
+            throw error;
         }
     },
     async updateMovie({ commit }, { id, data }) {
         try {
-            // 使用 apiService 而不是直接使用 axios
-            const response = await apiService.put(`/movies/${id}`, data, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-            return response.data;
+            const response = await MovieService.updateMovie(id, data);
+            commit('UPDATE_MOVIE', response);
+            return response;
         } catch (error) {
-            if (error.response?.status === 401) {
-                // 使用 TokenManager 處理 token 刷新
-                await TokenManager.refreshToken();
-                // 重試請求
-                return await this.updateMovie({ commit }, { id, data });
-            }
             throw error;
         }
     },
     async deleteMovie({ commit }, id) {
         try {
-            await axios.delete(`/movies/${id}`)
-            return true
+            await MovieService.deleteMovie(id);
+            commit('DELETE_MOVIE', id);
         } catch (error) {
-            console.error('Error deleting movie:', error)
-            throw error
+            throw error;
         }
     },
     // 清理數據
@@ -278,6 +264,18 @@ const mutations = {
     },
     setMovies(state, movies) {
         state.movies = movies
+    },
+    ADD_MOVIE(state, movie) {
+        state.movies.unshift(movie);
+    },
+    UPDATE_MOVIE(state, updatedMovie) {
+        const index = state.movies.findIndex(m => m.id === updatedMovie.id);
+        if (index !== -1) {
+            state.movies.splice(index, 1, updatedMovie);
+        }
+    },
+    DELETE_MOVIE(state, movieId) {
+        state.movies = state.movies.filter(m => m.id !== movieId);
     }
 }
 

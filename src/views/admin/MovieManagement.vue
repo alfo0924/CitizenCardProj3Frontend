@@ -482,106 +482,44 @@ export default {
     const saveMovie = async () => {
       try {
         isProcessing.value = true;
+        const formData = new FormData();
 
-        // 驗證必填欄位
-        const requiredFields = [
-          'title',
-          'director',
-          'cast',
-          'release_date',
-          'end_date',
-          'duration',
-          'genre'
-        ];
-
-        const missingFields = requiredFields.filter(
-            field => !editingMovie.value[field]
-        );
-
-        if (missingFields.length > 0) {
-          throw new Error(`請填寫以下必要欄位: ${missingFields.join(', ')}`);
+        // 基本資料驗證
+        if (!editingMovie.value.title || !editingMovie.value.director) {
+          throw new Error('請填寫必要欄位');
         }
 
-        // 日期格式轉換
-        const releaseDateTime = new Date(editingMovie.value.release_date);
-        const endDateTime = new Date(editingMovie.value.end_date);
+        // 將資料添加到FormData
+        Object.keys(editingMovie.value).forEach(key => {
+          if (editingMovie.value[key] !== null && key !== 'posterFile') {
+            formData.append(key, editingMovie.value[key]);
+          }
+        });
 
-        if (isNaN(releaseDateTime.getTime()) || isNaN(endDateTime.getTime())) {
-          throw new Error('日期格式不正確');
-        }
-
-        // 準備請求數據
-        const movieData = {
-          title: editingMovie.value.title?.trim(),
-          description: editingMovie.value.description?.trim(),
-          director: editingMovie.value.director?.trim(),
-          cast: editingMovie.value.cast?.trim(),
-          duration: parseInt(editingMovie.value.duration),
-          genre: editingMovie.value.genre?.trim(),
-          rating: editingMovie.value.rating || 'G',
-          price: parseInt(editingMovie.value.price) || 0,
-          releaseDate: releaseDateTime.toISOString(),
-          endDate: endDateTime.toISOString(),
-          isShowing: Boolean(editingMovie.value.isShowing)
-        };
-
-        // 驗證業務邏輯
-        if (endDateTime < releaseDateTime) {
-          throw new Error('下檔日期不能早於上映日期');
-        }
-
-        if (movieData.duration <= 0) {
-          throw new Error('片長必須大於0');
+        // 處理海報檔案
+        if (editingMovie.value.posterFile) {
+          formData.append('poster', editingMovie.value.posterFile);
         }
 
         let response;
-        // 處理圖片上傳
-        if (editingMovie.value.posterFile) {
-          const formData = new FormData();
-
-          // 將所有數據添加到 FormData
-          Object.entries(movieData).forEach(([key, value]) => {
-            if (value != null) {
-              formData.append(key, value.toString());
-            }
-          });
-
-          // 添加海報文件
-          formData.append('poster', editingMovie.value.posterFile);
-
-          response = await apiService.put(
-              `/movies/${editingMovie.value.id}`,
-              formData,
-              {
-                headers: {
-                  'Content-Type': 'multipart/form-data'
-                }
-              }
-          );
+        if (editingMovie.value.id) {
+          // 更新電影
+          response = await apiService.put(`/movies/${editingMovie.value.id}`, formData);
         } else {
-          // 不需要上傳圖片時的請求
-          response = await apiService.put(
-              `/movies/${editingMovie.value.id}`,
-              movieData
-          );
+          // 新增電影
+          response = await apiService.post('/movies', formData);
         }
 
-        if (response?.data) {
-          await Swal.fire('成功', '電影資料已更新', 'success');
-          await fetchMovies();
-          closeModal();
-        }
-      } catch (err) {
-        console.error('Error saving movie:', err);
-        const errorMessage = err.message ||
-            err.response?.data?.message ||
-            '儲存電影資料失敗';
-        await Swal.fire('錯誤', errorMessage, 'error');
+        await fetchMovies();
+        closeModal();
+        Swal.fire('成功', '電影資料已儲存', 'success');
+      } catch (error) {
+        console.error('儲存電影失敗:', error);
+        Swal.fire('錯誤', error.message || '儲存失敗', 'error');
       } finally {
         isProcessing.value = false;
       }
     };
-
 
     const confirmDelete = (movie) => {
       Swal.fire({
