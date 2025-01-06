@@ -80,34 +80,22 @@
               <td>{{ user.name }}</td>
               <td>{{ user.email }}</td>
               <td>
-                  <span
-                      class="badge"
-                      :class="getRoleBadgeClass(user.role)"
-                  >
-                    {{ getRoleText(user.role) }}
-                  </span>
+      <span class="badge" :class="getRoleBadgeClass(user.role)">
+        {{ getRoleText(user.role) }}
+      </span>
               </td>
               <td>
-                  <span
-                      class="badge"
-                      :class="getStatusBadgeClass(user.status)"
-                  >
-                    {{ getStatusText(user.status) }}
-                  </span>
+      <span class="badge" :class="getStatusBadgeClass(user.status)">
+        {{ getStatusText(user.status) }}
+      </span>
               </td>
               <td>{{ formatDateTime(user.createdAt) }}</td>
               <td>
-                <button
-                    class="btn btn-sm btn-outline-primary me-2"
-                    @click="openUserModal(user)"
-                >
+                <button class="btn btn-sm btn-outline-primary me-2" @click="openUserModal(user)">
                   編輯
                 </button>
-                <button
-                    class="btn btn-sm"
-                    :class="user.status === 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'"
-                    @click="toggleUserStatus(user)"
-                >
+                <button class="btn btn-sm" :class="user.status === 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'"
+                        @click="toggleUserStatus(user)">
                   {{ user.status === 'ACTIVE' ? '停用' : '啟用' }}
                 </button>
               </td>
@@ -119,45 +107,40 @@
         <!-- 分頁 -->
         <nav v-if="totalPages > 1" class="mt-4">
           <ul class="pagination justify-content-center">
-            <li
-                class="page-item"
-                :class="{ disabled: currentPage === 1 }"
-            >
-              <button
-                  class="page-link"
-                  @click="changePage(currentPage - 1)"
-                  :disabled="currentPage === 1"
-              >
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button class="page-link" @click="changePage(currentPage - 1)"
+                      :disabled="currentPage === 1">
                 <i class="fas fa-chevron-left"></i>
               </button>
             </li>
-            <li
-                v-for="page in displayedPages"
+
+            <li v-for="page in displayedPages"
                 :key="page"
                 class="page-item"
-                :class="{ active: currentPage === page }"
-            >
-              <button
-                  class="page-link"
-                  @click="changePage(page)"
-              >
+                :class="{
+          active: currentPage === page,
+          disabled: page === '...'
+        }">
+              <button v-if="page === '...'"
+                      class="page-link"
+                      disabled>...</button>
+              <button v-else
+                      class="page-link"
+                      @click="changePage(page)">
                 {{ page }}
               </button>
             </li>
-            <li
-                class="page-item"
-                :class="{ disabled: currentPage === totalPages }"
-            >
-              <button
-                  class="page-link"
-                  @click="changePage(currentPage + 1)"
-                  :disabled="currentPage === totalPages"
-              >
+
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button class="page-link"
+                      @click="changePage(currentPage + 1)"
+                      :disabled="currentPage === totalPages">
                 <i class="fas fa-chevron-right"></i>
               </button>
             </li>
           </ul>
         </nav>
+
       </div>
     </div>
 
@@ -249,7 +232,8 @@
     </div>
   </div>
 </template>
-<script>import { ref, computed, onMounted } from 'vue'
+<script>
+import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
 import Swal from 'sweetalert2'
@@ -265,90 +249,66 @@ export default {
   setup() {
     const store = useStore()
     const userModal = ref(null)
-    const isLoading = ref(false)
-    const error = ref(null)
+    const isLoading = computed(() => store.state.user.loading)
+    const error = computed(() => store.state.user.error)
     const isProcessing = ref(false)
     const searchKeyword = ref('')
     const selectedRole = ref('')
     const selectedStatus = ref('')
     const currentPage = ref(1)
+    const pageSize = ref(100)
+
     const editingUser = ref({
       name: '',
       email: '',
-      role: 'USER',
+      role: 'ROLE_USER',
       status: 'ACTIVE'
     })
 
-    // 模擬用戶數據
-    const mockUsers = [
-      {
-        id: 1,
-        name: '王大明',
-        email: 'wang.dm@gmail.com',
-        role: 'USER',
-        status: 'ACTIVE',
-        createdAt: '2024-01-01T10:30:00'
-      },
-      {
-        id: 2,
-        name: '李小華',
-        email: 'lee.sh@gmail.com',
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        createdAt: '2024-01-02T11:15:00'
-      },
-      {
-        id: 3,
-        name: '張美玲',
-        email: 'chang.ml@gmail.com',
-        role: 'USER',
-        status: 'INACTIVE',
-        createdAt: '2024-01-03T12:45:00'
-      }
-    ]
-
-    // 從store獲取數據或使用模擬數據
-    const users = computed(() => {
-      const storeUsers = store.state.user.users
-      return storeUsers && storeUsers.length > 0 ? storeUsers : mockUsers
-    })
-
-    const totalPages = computed(() => store.state.user.totalPages || Math.ceil(mockUsers.length / 10))
-
+    const users = computed(() => store.state.user.users)
+    const totalPages = computed(() => store.state.user.totalPages)
     const displayedPages = computed(() => {
-      const range = []
-      const delta = 2
-      for (
-          let i = Math.max(1, currentPage.value - delta);
-          i <= Math.min(totalPages.value, currentPage.value + delta);
-          i++
-      ) {
-        range.push(i)
+      const range = [];
+      const delta = 2;
+      const left = Math.max(1, currentPage.value - delta);
+      const right = Math.min(totalPages.value, currentPage.value + delta);
+
+      // 添加第一頁
+      if (left > 1) {
+        range.push(1);
+        if (left > 2) {
+          range.push('...');
+        }
       }
-      return range
-    })
+
+      // 添加中間頁碼
+      for (let i = left; i <= right; i++) {
+        range.push(i);
+      }
+
+      // 添加最後一頁
+      if (right < totalPages.value) {
+        if (right < totalPages.value - 1) {
+          range.push('...');
+        }
+        range.push(totalPages.value);
+      }
+
+      return range;
+    });
+
 
     const fetchUsers = async () => {
       try {
-        isLoading.value = true
-        error.value = null
-        const response = await store.dispatch('user/fetchUsers', {
+        await store.dispatch('user/fetchUsers', {
           page: currentPage.value,
+          size: pageSize.value,
+          search: searchKeyword.value,
           role: selectedRole.value,
-          status: selectedStatus.value,
-          keyword: searchKeyword.value
+          status: selectedStatus.value
         })
-
-        if (!response || !response.success) {
-          console.log('使用模擬數據')
-          store.commit('user/setUsers', mockUsers)
-        }
       } catch (err) {
-        console.error('Error fetching users:', err)
-        error.value = '載入用戶列表失敗'
-        store.commit('user/setUsers', mockUsers)
-      } finally {
-        isLoading.value = false
+        console.error('獲取用戶列表失敗:', err)
       }
     }
 
@@ -357,21 +317,38 @@ export default {
       fetchUsers()
     }
 
+    const fetchData = async () => {
+      await store.dispatch('user/fetchUsers', {
+        page: currentPage.value,
+        size: pageSize.value,
+        search: searchKeyword.value,
+        role: selectedRole.value,
+        status: selectedStatus.value
+      });
+    };
+
     const filterUsers = () => {
       currentPage.value = 1
       fetchUsers()
     }
 
     const changePage = (page) => {
-      if (page >= 1 && page <= totalPages.value) {
-        currentPage.value = page
-        fetchUsers()
+      if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+        currentPage.value = page;
+        fetchUsers();
       }
     }
 
+
     const openUserModal = (user = null) => {
       if (user) {
-        editingUser.value = { ...user }
+        editingUser.value = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role.replace('ROLE_', ''), // 移除 ROLE_ 前綴
+          status: user.active ? 'ACTIVE' : 'INACTIVE'
+        }
       } else {
         editingUser.value = {
           name: '',
@@ -384,29 +361,62 @@ export default {
       modal.show()
     }
 
+
+    // UserManagement.vue
     const saveUser = async () => {
       try {
         isProcessing.value = true
-        if (editingUser.value.id) {
-          await store.dispatch('user/updateUser', editingUser.value)
-        } else {
-          await store.dispatch('user/createUser', editingUser.value)
+        const userData = {
+          name: editingUser.value.name,
+          email: editingUser.value.email,
+          role: editingUser.value.role.replace('ROLE_', ''), // 移除 ROLE_ 前綴
+          active: editingUser.value.status === 'ACTIVE'
         }
-        Modal.getInstance(userModal.value).hide()
+
+        if (editingUser.value.id) {
+          await store.dispatch('user/updateUser', {
+            id: editingUser.value.id,
+            ...userData
+          })
+        } else {
+          await store.dispatch('user/createUser', userData)
+        }
+
+        const modal = Modal.getInstance(userModal.value)
+        if (modal) {
+          modal.hide()
+        }
+
         await fetchUsers()
+
+        // 使用 SweetAlert2 顯示成功訊息
+        Swal.fire({
+          icon: 'success',
+          title: '成功',
+          text: `用戶已${editingUser.value.id ? '更新' : '創建'}成功`,
+          confirmButtonText: '確定'
+        })
       } catch (err) {
-        error.value = '儲存用戶失敗'
-        console.error('Error saving user:', err)
+        console.error('儲存用戶失敗:', err)
+        // 使用 SweetAlert2 顯示錯誤訊息
+        Swal.fire({
+          icon: 'error',
+          title: '錯誤',
+          text: err.response?.data?.message || '儲存用戶時發生錯誤',
+          confirmButtonText: '確定'
+        })
       } finally {
         isProcessing.value = false
       }
     }
 
+
     const toggleUserStatus = async (user) => {
-      const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+      const newStatus = user.active ? 'INACTIVE' : 'ACTIVE'
       const actionText = newStatus === 'ACTIVE' ? '啟用' : '停用'
+
       try {
-        await Swal.fire({
+        const result = await Swal.fire({
           title: `確定要${actionText}此用戶嗎？`,
           text: `即將${actionText}用戶「${user.name}」`,
           icon: 'warning',
@@ -414,81 +424,78 @@ export default {
           confirmButtonText: `確定${actionText}`,
           cancelButtonText: '取消'
         })
-        await store.dispatch('user/updateUser', { ...user, status: newStatus })
-        await fetchUsers()
-        Swal.fire(
-            `已${actionText}`,
-            `用戶已成功${actionText}`,
-            'success'
-        )
+
+        if (result.isConfirmed) {
+          await store.dispatch('user/updateUserStatus', {
+            id: user.id,
+            active: newStatus === 'ACTIVE'
+          })
+          await fetchUsers()
+          Swal.fire('成功', `用戶已${actionText}`, 'success')
+        }
       } catch (err) {
-        error.value = `${actionText}用戶失敗`
         console.error('Error toggling user status:', err)
+        Swal.fire('錯誤', `${actionText}用戶失敗`, 'error')
       }
     }
 
     const getRoleBadgeClass = (role) => {
       switch (role) {
-      case 'ADMIN':
-        return 'bg-danger'
-      case 'USER':
-        return 'bg-primary'
-      default:
-        return 'bg-secondary'
+        case 'ROLE_ADMIN':
+          return 'bg-danger'
+        case 'ROLE_USER':
+          return 'bg-primary'
+        default:
+          return 'bg-secondary'
       }
     }
 
     const getRoleText = (role) => {
-      switch (role) {
-      case 'ADMIN':
-        return '管理員'
-      case 'USER':
-        return '一般用戶'
-      default:
-        return '未知'
-      }
+      return role === 'ROLE_ADMIN' ? '管理員' : '一般會員'
     }
 
-    const getStatusBadgeClass = (status) => {
-      switch (status) {
-      case 'ACTIVE':
-        return 'bg-success'
-      case 'INACTIVE':
-        return 'bg-secondary'
-      default:
-        return 'bg-secondary'
-      }
+    const getStatusBadgeClass = (active) => {
+      return active ? 'bg-success' : 'bg-secondary'
     }
 
     const getStatusText = (status) => {
-      switch (status) {
-      case 'ACTIVE':
-        return '啟用'
-      case 'INACTIVE':
-        return '停用'
-      default:
-        return '未知'
-      }
+      return status === 'ACTIVE' ? '啟用' : '停用'
     }
 
     const formatDateTime = (datetime) => {
-      return new Date(datetime).toLocaleString('zh-TW')
+      if (!datetime) return '';
+      return new Date(datetime).toLocaleString('zh-TW', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
     }
 
-    onMounted(() => {
-      fetchUsers()
-    })
+
+    onMounted(async () => {
+      await store.dispatch('user/fetchUsers', {
+        page: currentPage.value,
+        size: pageSize.value
+      });
+    });
 
     return {
-      isLoading,
-      error,
+      users: computed(() => store.state.user.users || []),
+      totalPages: computed(() => store.state.user.totalPages || 1),
+      isLoading: computed(() => store.state.user.loading),
+      error: computed(() => store.state.user.error),
+      pageSize,
+
       isProcessing,
-      users,
+
       searchKeyword,
       selectedRole,
       selectedStatus,
       currentPage,
-      totalPages,
+
       displayedPages,
       editingUser,
       userModal,
@@ -502,11 +509,13 @@ export default {
       getRoleText,
       getStatusBadgeClass,
       getStatusText,
-      formatDateTime
+      formatDateTime,
+      fetchData
     }
   }
 }
 </script>
+
 <style scoped>
 .user-management {
   padding: 2rem 0;
