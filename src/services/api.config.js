@@ -70,6 +70,11 @@ api.interceptors.request.use(
             return config
         }
 
+        // 加入 debug 資訊
+        console.log('當前請求 URL:', config.url)
+        console.log('Token:', TokenManager.getToken())
+        console.log('Headers:', config.headers)
+
         if (TokenManager.isTokenExpiringSoon()) {
             try {
                 const refreshResult = await store.dispatch('auth/refreshToken')
@@ -86,6 +91,8 @@ api.interceptors.request.use(
         const token = TokenManager.getToken()
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
+            // 加入設置 Authorization header 後的 debug 資訊
+            console.log('設置 Authorization 後的 Headers:', config.headers)
         }
 
         if (config.method === 'get') {
@@ -96,7 +103,6 @@ api.interceptors.request.use(
     },
     error => Promise.reject(error)
 )
-
 // 響應攔截器
 api.interceptors.response.use(
     response => {

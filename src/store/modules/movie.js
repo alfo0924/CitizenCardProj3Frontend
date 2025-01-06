@@ -1,4 +1,5 @@
 import axios from 'axios'
+import {TokenManager} from "@/services/api.config";
 
 // 初始狀態
 const state = {
@@ -51,26 +52,23 @@ const actions = {
             throw error
         }
     },
-    async updateMovie({ commit, dispatch }, { id, data }) {
+    async updateMovie({ commit }, { id, data }) {
         try {
-            const response = await axios.put(`/movies/${id}`, data, {
+            // 使用 apiService 而不是直接使用 axios
+            const response = await apiService.put(`/movies/${id}`, data, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Content-Type': 'multipart/form-data'
                 }
-            })
-            return response.data
+            });
+            return response.data;
         } catch (error) {
             if (error.response?.status === 401) {
-                try {
-                    await store.dispatch('auth/handleAuthError', error)
-                    // 重新獲取 token 後重試
-                    return await this.updateMovie({ commit }, { id, data })
-                } catch (authError) {
-                    throw new Error('認證失敗，請重新登入')
-                }
+                // 使用 TokenManager 處理 token 刷新
+                await TokenManager.refreshToken();
+                // 重試請求
+                return await this.updateMovie({ commit }, { id, data });
             }
-            throw error
+            throw error;
         }
     },
     async deleteMovie({ commit }, id) {

@@ -332,6 +332,9 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 import { useRouter } from "vue-router";
 import { debounce } from 'lodash'
+// import { apiService } from '@/services/api.config'
+import apiService from '@/services/api.config'
+
 
 export default {
   name: 'MovieManagement',
@@ -515,19 +518,35 @@ export default {
       }
     }
 
+    const validateFormData = (formData) => {
+      const requiredFields = ['title', 'release_date', 'end_date', 'duration', 'director', 'genre', 'price', 'is_showing']
+      const missingFields = []
+
+      requiredFields.forEach(field => {
+        if (!formData.get(field)) {
+          missingFields.push(field)
+        }
+      })
+
+      if (missingFields.length > 0) {
+        throw new Error(`缺少必要欄位: ${missingFields.join(', ')}`)
+      }
+    }
+
     // 儲存電影
     const saveMovie = async () => {
+      // 將 formData 移到這裡，確保在錯誤處理中也能訪問
+      const formData = new FormData()
+
       try {
         isProcessing.value = true
-        const formData = new FormData()
 
-        // 將編輯資料加入 FormData，使用正確的日期格式
+        // 將編輯資料加入 FormData
         Object.keys(editingMovie.value).forEach(key => {
           if (key === 'release_date' || key === 'end_date') {
-            // 確保日期格式正確
             const dateValue = editingMovie.value[key]
                 ? new Date(editingMovie.value[key]).toISOString().split('T')[0]
-: ''
+                : ''
             formData.append(key, dateValue)
           } else if (key !== 'posterFile' && key !== 'posterUrl') {
             formData.append(key, editingMovie.value[key])
@@ -539,11 +558,16 @@ export default {
           formData.append('poster', editingMovie.value.posterFile)
         }
 
+        // 記錄發送的請求內容
+        console.log('準備發送的請求資料：', {
+          id: editingMovie.value.id,
+          formData: Object.fromEntries(formData.entries())
+        })
+
         let response
         if (editingMovie.value.id) {
-          // 更新現有電影
-          response = await axios.put(
-              `http://localhost:8080/api/movies/${editingMovie.value.id}`,
+          response = await apiService.put(
+              `/movies/${editingMovie.value.id}`,
               formData,
               {
                 headers: {
@@ -557,9 +581,8 @@ export default {
           })
           Swal.fire('成功', '電影資料已更新', 'success')
         } else {
-          // 新增電影
-          response = await axios.post(
-              'http://localhost:8080/api/movies',
+          response = await apiService.post(
+              '/movies',  // 移除重複的 /api
               formData,
               {
                 headers: {
@@ -588,6 +611,15 @@ export default {
         } else if (err.message) {
           errorMessage = err.message
         }
+
+        // 現在可以安全地訪問 formData
+        console.error('詳細錯誤資訊:', {
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          headers: err.response?.headers,
+          data: err.response?.data,
+          formDataContent: Object.fromEntries(formData.entries())
+        })
 
         Swal.fire('錯誤', errorMessage, 'error')
       } finally {
