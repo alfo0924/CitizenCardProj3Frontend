@@ -582,6 +582,7 @@ export default {
       }
     };
 
+
     const confirmDelete = (movie) => {
       Swal.fire({
         title: '確定要刪除嗎？',
