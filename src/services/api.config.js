@@ -91,18 +91,21 @@ api.interceptors.request.use(
         const token = TokenManager.getToken()
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
-            // 加入設置 Authorization header 後的 debug 資訊
             console.log('設置 Authorization 後的 Headers:', config.headers)
         }
 
         if (config.method === 'get') {
-            config.params = { ...config.params, _t: Date.now() }
+            config.params = {
+                ...config.params,
+                _t: Date.now()
+            }
         }
 
         return config
     },
     error => Promise.reject(error)
 )
+
 // 響應攔截器
 api.interceptors.response.use(
     response => {
@@ -113,7 +116,8 @@ api.interceptors.response.use(
         return response
     },
     async error => {
-        if (error.config.url === '/auth/refresh-token') {
+        if (error.config.url === '/auth/refresh-token' ||
+            error.config.url === '/auth/logout') {
             return Promise.reject(error)
         }
 
@@ -121,39 +125,11 @@ api.interceptors.response.use(
             await store.dispatch('auth/handleAuthError', error)
         }
 
-        if (error.response) {
-            await handleErrorResponse(error.response)
-        } else if (error.request) {
-            handleNetworkError(error)
-        } else {
-            handleUnexpectedError(error)
-        }
-
         return Promise.reject(error)
     }
 )
 
 // 錯誤處理函數
-async function handleAuthError() {
-    TokenManager.removeToken()
-    localStorage.removeItem('user')
-    await store.dispatch('auth/logout')
-    if (router.currentRoute.value.name !== 'login') {
-        store.dispatch('setNotification', {
-            type: 'warning',
-            message: '登入已過期，請重新登入',
-            duration: 5000
-        })
-        router.push({
-            name: 'login',
-            query: {
-                redirect: router.currentRoute.value.fullPath,
-                expired: 'true'
-            }
-        })
-    }
-}
-
 async function handleErrorResponse(response) {
     const status = response.status
     const serverMessage = response.data?.message
@@ -166,9 +142,6 @@ async function handleErrorResponse(response) {
     })
 
     switch (status) {
-        case 401:
-            await handleAuthError()
-            break
         case 403:
             if (!router.currentRoute.value.path.includes('/403')) {
                 router.push('/403')
@@ -180,24 +153,6 @@ async function handleErrorResponse(response) {
             }
             break
     }
-}
-
-function handleNetworkError(error) {
-    store.dispatch('setNotification', {
-        type: 'error',
-        message: '無法連接到伺服器，請檢查網路連線',
-        duration: 5000
-    })
-    console.error('Network Error:', error)
-}
-
-function handleUnexpectedError(error) {
-    store.dispatch('setNotification', {
-        type: 'error',
-        message: '發生意外錯誤，請稍後再試',
-        duration: 5000
-    })
-    console.error('Unexpected Error:', error)
 }
 
 // API端點配置
