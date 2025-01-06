@@ -81,35 +81,38 @@ const actions = {
         }
     },
 
-    async createUser({ dispatch }, userData) {
-        try {
-            await api.post('/api/users', userData)
-            await dispatch('fetchUsers', { page: 1, size: 10 })
-            return { success: true }
-        } catch (error) {
-            console.error('Error creating user:', error)
-            throw error
-        }
-    },
-
     async updateUser({ dispatch }, { id, ...userData }) {
         try {
-            await api.put(`/api/users/${id}`, userData)
-            await dispatch('fetchUsers', { page: 1, size: 10 })
+            // 移除重複的 /api 前綴
+            await api.put(`/users/${id}`, userData)
+            await dispatch('fetchUsers')
             return { success: true }
         } catch (error) {
-            console.error('Error updating user:', error)
+            console.error('更新用戶失敗:', error)
             throw error
         }
     },
 
-    async deleteUser({ dispatch }, id) {
+    async createUser({ dispatch }, userData) {
         try {
-            await api.delete(`/api/users/${id}`)
-            await dispatch('fetchUsers', { page: 1, size: 10 })
+            await api.post('/users', userData)
+            await dispatch('fetchUsers')
             return { success: true }
         } catch (error) {
-            console.error('Error deleting user:', error)
+            console.error('創建用戶失敗:', error)
+            throw error
+        }
+    },
+
+    async updateUserStatus({ dispatch }, { id, active }) {
+        try {
+            await api.put(`/users/${id}/status`, null, {
+                params: { active }
+            })
+            await dispatch('fetchUsers')
+            return { success: true }
+        } catch (error) {
+            console.error('更新用戶狀態失敗:', error)
             throw error
         }
     }

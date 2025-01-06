@@ -361,6 +361,7 @@ export default {
       modal.show()
     }
 
+    // UserManagement.vue
     const saveUser = async () => {
       try {
         isProcessing.value = true
@@ -380,16 +381,20 @@ export default {
           await store.dispatch('user/createUser', userData)
         }
 
-        Modal.getInstance(userModal.value).hide()
+        const modal = Modal.getInstance(userModal.value)
+        if (modal) {
+          modal.hide()
+        }
+
         await fetchUsers()
 
         Swal.fire({
           icon: 'success',
           title: '成功',
-          text: `用戶已成功${editingUser.value.id ? '更新' : '創建'}`
+          text: `用戶已${editingUser.value.id ? '更新' : '創建'}成功`
         })
       } catch (err) {
-        console.error('Error saving user:', err)
+        console.error('儲存用戶失敗:', err)
         Swal.fire({
           icon: 'error',
           title: '錯誤',
@@ -399,6 +404,7 @@ export default {
         isProcessing.value = false
       }
     }
+
 
     const toggleUserStatus = async (user) => {
       const newStatus = user.active ? 'INACTIVE' : 'ACTIVE'
