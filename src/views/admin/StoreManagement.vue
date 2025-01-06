@@ -27,58 +27,38 @@
               <span class="input-group-text bg-white">
                 <i class="bi bi-search"></i>
               </span>
-              <input
-                  type="text"
-                  class="form-control"
-                  v-model="searchQuery"
-                  placeholder="搜尋商店名稱或地址..."
-                  @input="handleSearch"
-              >
+              <input type="text" class="form-control" v-model="searchQuery" placeholder="搜尋商店名稱或地址...">
             </div>
           </div>
 
           <!-- 類別篩選 -->
           <div class="col-md-3">
-            <select
-                class="form-select"
-                v-model="selectedCategory"
-                @change="handleFilter"
-            >
+            <select class="form-select" v-model="selectedCategoryType">
               <option value="">所有類別</option>
-              <option
-                  v-for="category in categories"
-                  :key="category.id"
-                  :value="category.id"
-              >
+              <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.name }}
               </option>
             </select>
           </div>
 
-          <!-- 狀態篩選 -->
+          <!-- 區域篩選 -->
           <div class="col-md-3">
-            <select
-                class="form-select"
-                v-model="selectedStatus"
-                @change="handleFilter"
-            >
-              <option value="">所有狀態</option>
-              <option value="active">營業中</option>
-              <option value="inactive">已停業</option>
-              <option value="pending">待審核</option>
+            <select class="form-select" v-model="selectedArea">
+              <option value="">所有區域</option>
+              <option v-for="area in areas" :key="area.id" :value="area.id">
+                {{ area.name }}
+              </option>
             </select>
           </div>
 
           <!-- 排序方式 -->
           <div class="col-md-2">
-            <select
-                class="form-select"
-                v-model="sortBy"
-                @change="handleSort"
-            >
+            <select class="form-select" v-model="sortBy">
               <option value="newest">最新添加</option>
+              <option value="popularity">人氣度</option>
+              <option value="priority">優先權</option>
+              <option value="donation">贊助店家</option>
               <option value="name">店名排序</option>
-              <option value="rating">評分排序</option>
             </select>
           </div>
         </div>
@@ -88,138 +68,101 @@
       <loading-spinner v-if="loading" />
 
       <!-- 錯誤提示 -->
-      <alert-message
-          v-if="error"
-          :message="error"
-          type="danger"
-          @close="error = ''"
-      />
+      <alert-message v-if="error" :message="error" type="danger" @close="error = ''" />
 
       <!-- 商店列表 -->
       <div class="table-responsive" v-if="!loading && !error">
         <table class="table table-hover">
           <thead class="table-light">
-          <tr>
-            <th>商店資訊</th>
-            <th>類別</th>
-            <th>地址</th>
-            <th>聯絡方式</th>
-            <th>狀態</th>
-            <th>操作</th>
-          </tr>
+            <tr>
+              <th>商店資訊</th>
+              <th>區域</th>
+              <th>類別/標籤</th>
+              <th>聯絡資訊</th>
+              <th>優先度</th>
+              <th>活動時間</th>
+              <th>操作</th>
+            </tr>
           </thead>
           <tbody>
-          <tr v-for="store in stores" :key="store.id">
-            <!-- 商店資訊 -->
-            <td>
-              <div class="d-flex align-items-center">
-                <img
-                    :src="store.imageUrl"
-                    class="store-thumbnail me-2"
-                    :alt="store.name"
-                    @error="handleImageError"
-                    @load="handleImageLoad"
-                >
-                <div>
-                  <div class="store-name">{{ store.name }}</div>
-                  <div class="store-rating">
-                    <i class="bi bi-star-fill text-warning"></i>
-                    {{ store.rating }} ({{ store.reviewCount }}評價)
+            <tr v-for="store in stores" :key="store.id">
+              <!-- 商店資訊 -->
+              <td>
+                <div class="d-flex align-items-center">
+                  <div>
+                    <div class="store-name">{{ store.name }}</div>
+                    <div class="store-content text-muted small">{{ store.short_content }}</div>
                   </div>
                 </div>
-              </div>
-            </td>
+              </td>
 
-
-            <!-- 類別 -->
-            <td>
-              <span class="badge bg-secondary">{{ store.category }}</span>
-            </td>
-            <!-- 地址 -->
-            <td>{{ store.address }}</td>
-            <!-- 聯絡方式 -->
-            <td>
-              <div>{{ store.phone }}</div>
-              <div class="small text-muted">{{ store.email }}</div>
-            </td>
-            <!-- 狀態 -->
-            <td>
-                <span
-                    :class="['badge', getStatusClass(store.status)]"
-                >
-                  {{ getStatusText(store.status) }}
+              <!-- 區域 -->
+              <td>{{ store.area }}</td>
+              <!-- 類別和標籤 -->
+              <td>
+                <span class="badge bg-primary me-1">{{ store.category }}</span>
+                <span class="badge bg-secondary">{{ store.tag }}</span>
+              </td>
+              <!-- 聯絡資訊 -->
+              <td>
+                <div>{{ store.phone }}</div>
+                <div class="small text-muted">{{ store.address }}</div>
+                <div class="small">
+                  <a v-if="store.website" :href="store.website" target="_blank" class="text-primary">
+                    <i class="bi bi-link-45deg"></i> 網站連結
+                  </a>
+                </div>
+              </td>
+              <!-- 優先度 -->
+              <td>
+                <span class="badge" :class="getPriorityClass(store.priority)">
+                  {{ store.priority }}
                 </span>
-            </td>
-            <!-- 操作按鈕 -->
-            <td>
-              <div class="btn-group">
-                <button
-                    class="btn btn-sm btn-outline-primary"
-                    @click="editStore(store)"
-                >
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <button
-                    class="btn btn-sm btn-outline-danger"
-                    @click="confirmDelete(store)"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
+                <div class="small" v-if="store.is_donation">
+                  <span class="badge bg-success">贊助商家</span>
+                </div>
+              </td>
+
+              <!-- 活動時間 -->
+              <td>{{ store.time }}</td>
+
+              <!-- 操作按鈕 -->
+              <td>
+                <div class="btn-group">
+                  <button class="btn btn-sm btn-outline-primary" @click="editStore(store)">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="confirmDelete(store)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
           </tbody>
         </table>
 
         <!-- 無資料提示 -->
-        <div
-            v-if="stores.length === 0"
-            class="text-center py-5"
-        >
+        <div v-if="stores.length === 0" class="text-center py-5">
           <i class="bi bi-shop display-1 text-muted"></i>
           <p class="mt-3">暫無商店資料</p>
         </div>
       </div>
 
       <!-- 分頁控制 -->
-      <nav
-          v-if="!loading && totalPages > 1"
-          class="mt-4"
-          aria-label="Store navigation"
-      >
+      <nav v-if="!loading && totalPages > 1" class="mt-4" aria-label="Store navigation">
         <ul class="pagination justify-content-center">
-          <li
-              class="page-item"
-              :class="{ disabled: currentPage === 1 }"
-          >
-            <button
-                class="page-link"
-                @click="changePage(currentPage - 1)"
-            >
+          <li class="page-item" :class="{ disabled: currentPage === 1 }">
+            <button class="page-link" @click="changePage(currentPage - 1)">
               上一頁
             </button>
           </li>
-          <li
-              v-for="page in displayedPages"
-              :key="page"
-              class="page-item"
-              :class="{ active: currentPage === page }"
-          >
-            <button
-                class="page-link"
-                @click="changePage(page)"
-            >
+          <li v-for="page in displayedPages" :key="page" class="page-item" :class="{ active: currentPage === page }">
+            <button class="page-link" @click="changePage(page)">
               {{ page }}
             </button>
           </li>
-          <li
-              class="page-item"
-              :class="{ disabled: currentPage === totalPages }"
-          >
-            <button
-                class="page-link"
-                @click="changePage(currentPage + 1)"
-            >
+          <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+            <button class="page-link" @click="changePage(currentPage + 1)">
               下一頁
             </button>
           </li>
@@ -228,25 +171,14 @@
     </div>
 
     <!-- 新增/編輯商店 Modal -->
-    <div
-        class="modal fade"
-        id="storeModal"
-        tabindex="-1"
-        aria-labelledby="storeModalLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="storeModal" tabindex="-1" aria-labelledby="storeModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-lg">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="storeModalLabel">
               {{ editingStore ? '編輯商店' : '新增商店' }}
             </h5>
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-            ></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveStore">
@@ -254,99 +186,93 @@
               <div class="row g-3">
                 <div class="col-md-6">
                   <label class="form-label">商店名稱</label>
-                  <input
-                      type="text"
-                      class="form-control"
-                      v-model="storeForm.name"
-                      required
-                  >
-                </div><div class="col-12 mb-3">
-                <label class="form-label">商店圖片</label>
-                <div class="d-flex align-items-center gap-3">
-                  <img
-                      :src="storeForm.imagePreview || storeForm.imageUrl || '/images/預設商店圖片.jpg'"
-                      class="store-image-preview"
-                      alt="商店圖片預覽"
-                  >
-                  <div>
-                    <input
-                        type="file"
-                        class="form-control"
-                        accept="image/*"
-                        @change="handleImageChange"
-                        ref="imageInput"
-                    >
-                    <small class="text-muted">建議上傳 500x500 像素的圖片</small>
-                  </div>
+                  <input type="text" class="form-control" v-model="storeForm.name" required>
                 </div>
-              </div>
+
                 <div class="col-md-6">
-                  <label class="form-label">商店類別</label>
-                  <select
-                      class="form-select"
-                      v-model="storeForm.categoryId"
-                      required
-                  >
+                  <label class="form-label">區域</label>
+                  <select class="form-select" v-model="storeForm.area" required>
+                    <option value="">請選擇區域</option>
+                    <option value="西屯區">西屯區</option>
+                    <option value="南屯區">南屯區</option>
+                    <option value="北屯區">北屯區</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">類別</label>
+                  <select class="form-select" v-model="storeForm.category" required>
                     <option value="">請選擇類別</option>
-                    <option
-                        v-for="category in categories"
-                        :key="category.id"
-                        :value="category.id"
-                    >
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
                       {{ category.name }}
                     </option>
                   </select>
                 </div>
-                <div class="col-12">
-                  <label class="form-label">商店地址</label>
-                  <input
-                      type="text"
-                      class="form-control"
-                      v-model="storeForm.address"
-                      required
-                  >
-                </div>
+
                 <div class="col-md-6">
-                  <label class="form-label">聯絡電話</label>
-                  <input
-                      type="tel"
-                      class="form-control"
-                      v-model="storeForm.phone"
-                      required
-                  >
+                  <label class="form-label">標籤</label>
+                  <input type="text" class="form-control" v-model="storeForm.tag" placeholder="請自行輸入酷酷的標籤" required>
                 </div>
-                <div class="col-md-6">
-                  <label class="form-label">電子郵件</label>
-                  <input
-                      type="email"
-                      class="form-control"
-                      v-model="storeForm.email"
-                      required
-                  >
-                </div>
+
                 <div class="col-12">
-                  <label class="form-label">商店描述</label>
-                  <textarea
-                      class="form-control"
-                      v-model="storeForm.description"
-                      rows="3"
-                  ></textarea>
+                  <label class="form-label">詳細內容</label>
+                  <textarea class="form-control" v-model="storeForm.content" rows="4" required></textarea>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">簡短內容</label>
+                  <textarea class="form-control" v-model="storeForm.short_content" rows="2" required></textarea>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">活動時間</label>
+                  <input type="text" class="form-control" v-model="storeForm.time"
+                    placeholder="例：2024/06/01 - 2025/05/31" required>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">地址</label>
+                  <input type="text" class="form-control" v-model="storeForm.address" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">電話</label>
+                  <input type="tel" class="form-control" v-model="storeForm.phone" placeholder="xx-xxxx-xxxx" required>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">優先度</label>
+                  <input type="number" class="form-control" v-model="storeForm.priority" required>
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">網站</label>
+                  <input type="url" class="form-control" v-model="storeForm.website">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">圖片網址</label>
+                  <input type="text" class="form-control" v-model="storeForm.img_url">
+                </div>
+
+                <div class="col-12">
+                  <label class="form-label">Google Maps 嵌入連結</label>
+                  <input type="text" class="form-control" v-model="storeForm.iframe_src"
+                    placeholder="請輸入 Google Maps 的嵌入程式碼 (從分享->嵌入地圖擷取src屬性值即可)" required>
+                </div>
+
+                <div class="col-12">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" v-model="storeForm.is_donation" id="is_donation">
+                    <label class="form-check-label" for="is_donation">是否為贊助商家</label>
+                  </div>
                 </div>
               </div>
+
               <div class="text-end mt-4">
-                <button
-                    type="button"
-                    class="btn btn-secondary me-2"
-                    data-bs-dismiss="modal"
-                >
-                  取消
-                </button>
-                <button
-                    type="submit"
-                    class="btn btn-primary"
-                    :disabled="saving"
-                >
-                  {{ saving ? '儲存中...' : '儲存' }}
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-primary" :disabled="isSubmitting">
+                  {{ isSubmitting ? '儲存中...' : '儲存' }}
                 </button>
               </div>
             </form>
@@ -356,41 +282,21 @@
     </div>
 
     <!-- 刪除確認 Modal -->
-    <div
-        class="modal fade"
-        id="deleteModal"
-        tabindex="-1"
-        aria-labelledby="deleteModalLabel"
-        aria-hidden="true"
-    >
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="deleteModalLabel">確認刪除</h5>
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Close"
-            ></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
             確定要刪除商店 "{{ storeToDelete?.name }}" 嗎？此操作無法復原。
           </div>
           <div class="modal-footer">
-            <button
-                type="button"
-                class="btn btn-secondary"
-                data-bs-dismiss="modal"
-            >
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
               取消
             </button>
-            <button
-                type="button"
-                class="btn btn-danger"
-                @click="deleteStore"
-                :disabled="deleting"
-            >
+            <button type="button" class="btn btn-danger" @click="deleteStore" :disabled="deleting">
               {{ deleting ? '刪除中...' : '確認刪除' }}
             </button>
           </div>
@@ -401,7 +307,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -421,12 +327,12 @@ export default {
     const deleting = ref(false)
     const error = ref('')
     const searchQuery = ref('')
-    const selectedCategory = ref('')
+    const selectedCategoryType = ref('')
+    const selectedArea = ref('')
     const selectedStatus = ref('')
     const sortBy = ref('newest')
     const currentPage = ref(1)
     const stores = ref([])
-    const categories = ref([])
     const totalItems = ref(0)
     const itemsPerPage = 10
     let storeModal = null
@@ -436,44 +342,25 @@ export default {
     const storeForm = ref({
       id: null,
       name: '',
-      categoryId: '',
+      area: '',
+      category: '',
+      tag: '',
+      content: '',
+      short_content: '',
+      time: '',
       address: '',
       phone: '',
-      email: '',
-      description: ''
+      priority: 0,
+      website: '',
+      iframe_src: '',
+      is_donation: false,
+      img_url: '',
+      popularity: 0
     })
-    const handleImageError = (event) => {
-      console.error('圖片載入失敗:', event.target.src);
-      // 修改為使用正確的預設圖片路徑
-      event.target.src = `/api/images/預設商店圖片.jpg`;
-    };
-    const handleImageLoad = (event) => {
-      console.log('圖片載入成功:', event.target.src);
-    };
 
     const editingStore = ref(null)
     const storeToDelete = ref(null)
-    // 商店圖片處理
-    const handleImageChange = (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
 
-      // 驗證文件類型
-      if (!file.type.startsWith('image/')) {
-        error.value = '請上傳圖片文件';
-        return;
-      }
-
-      // 驗證文件大小 (例如最大 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        error.value = '圖片大小不能超過 5MB';
-        return;
-      }
-
-      // 設置預覽
-      storeForm.value.imageFile = file;
-      storeForm.value.imagePreview = URL.createObjectURL(file);
-    };
     // 計算屬性
     const totalPages = computed(() => {
       return Math.ceil(totalItems.value / itemsPerPage)
@@ -483,9 +370,9 @@ export default {
       const delta = 2
       const range = []
       for (
-          let i = Math.max(1, currentPage.value - delta);
-          i <= Math.min(totalPages.value, currentPage.value + delta);
-          i++
+        let i = Math.max(1, currentPage.value - delta);
+        i <= Math.min(totalPages.value, currentPage.value + delta);
+        i++
       ) {
         range.push(i)
       }
@@ -493,7 +380,6 @@ export default {
     })
 
     // 獲取商店列表
-    // StoreManagement.vue
     const fetchStores = async () => {
       loading.value = true;
       error.value = '';
@@ -502,26 +388,23 @@ export default {
           page: currentPage.value - 1,
           size: itemsPerPage,
           ...(searchQuery.value && { keyword: searchQuery.value }),
-          ...(selectedCategory.value && { category: selectedCategory.value }),
-          ...(selectedStatus.value && { status: selectedStatus.value }),
-          sort: sortBy.value === 'newest' ? 'createdAt,desc'
-              : sortBy.value === 'name' ? 'name,asc'
-                  : 'rating,desc'
+          ...(selectedArea.value && { area: selectedArea.value }),
+          ...(selectedCategoryType.value && { category: selectedCategoryType.value }),
+          sort: getSortOption(sortBy.value)
         };
 
-        console.log('發送請求參數:', params);
+        // 移除所有空值參數
+        Object.keys(params).forEach(key => {
+          if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key];
+          }
+        });
 
         const result = await store.dispatch('store/fetchStores', params);
-        console.log('獲取的商店數據:', result);
 
         if (result.success) {
           stores.value = result.data.content;
-          console.log('處理後的商店數據:', stores.value);
           totalItems.value = result.data.totalElements;
-
-          if (stores.value.length === 0) {
-            error.value = '暫無商店資料';
-          }
         } else {
           error.value = result.error || '載入商店資料失敗';
         }
@@ -533,54 +416,52 @@ export default {
       }
     };
 
+    // 排序方法
+    const getSortOption = (sortType) => {
+      switch (sortType) {
+        case 'popularity':
+          return 'popularity,desc';
+        case 'priority':
+          return 'priority,desc';
+        case 'donation':
+          return 'is_donation,desc';
+        case 'name':
+          return 'name,asc';
+        default:
+          return 'id,desc'; // 最新添加，假設 id 越大表示越新
+      }
+    };
+
     // 定義固定的類別列表
     const STORE_CATEGORIES = [
-      '中式麵食',
-      '中式點心',
-      '中式小吃',
-      '中式料理',
-      '台式甜點',
-      '台式小吃',
-      '台式早午餐',
-      '台式點心',
-      '韓式料理',
-      '日式料理',
-      '日式拉麵',
-      '飲品茶點',
-      '川式料理'
-    ]
+      { id: '川式料理', name: '川式料理' },
+      { id: '中式麵食', name: '中式麵食' },
+      { id: '中式小吃', name: '中式小吃' },
+      { id: '台式甜點', name: '台式甜點' },
+      { id: '韓式料理', name: '韓式料理' },
+      { id: '日式料理', name: '日式料理' },
+      { id: '中式點心', name: '中式點心' },
+      { id: '台式早午餐', name: '台式早午餐' },
+      { id: '飲品茶點', name: '飲品茶點' },
+      { id: '中式料理', name: '中式料理' }
+    ];
 
-    // 獲取類別列表
-    const fetchCategories = () => {
-      try {
-        // 使用預定義的類別列表
-        categories.value = STORE_CATEGORIES.map(name => ({
-          id: name,    // 使用類別名稱作為 id
-          name: name   // 類別名稱
-        }))
-        console.log('載入的類別:', categories.value)
-      } catch (err) {
-        console.error('載入類別失敗:', err)
-        error.value = '載入類別失敗'
-      }
-    }
+    const STORE_AREAS = [
+      { id: '西屯區', name: '西屯區' },
+      { id: '南屯區', name: '南屯區' },
+      { id: '北屯區', name: '北屯區' }
+    ];
 
-    // 搜尋處理
-    const handleSearch = debounce(() => {
-      currentPage.value = 1
-      fetchStores()
-    }, 300)
+    // 修改區域列表的引用
+    const areas = ref(STORE_AREAS);
+    const categories = ref(STORE_CATEGORIES);
 
-    // 篩選處理
-    const handleFilter = () => {
-      currentPage.value = 1
-      fetchStores()
-    }
-
-    // 排序處理
-    const handleSort = () => {
-      fetchStores()
-    }
+    // 優先度相關方法
+    const getPriorityClass = (priority) => {
+      if (priority >= 8) return 'bg-danger';
+      if (priority >= 5) return 'bg-warning';
+      return 'bg-info';
+    };
 
     // 換頁
     const changePage = (page) => {
@@ -599,7 +480,6 @@ export default {
         address: '',
         phone: '',
         email: '',
-        description: ''
       }
       editingStore.value = null
       storeModal.show()
@@ -609,86 +489,122 @@ export default {
       storeForm.value = {
         id: store.id,
         name: store.name,
-        categoryId: store.category, // 使用 category 作為 categoryId
+        area: store.area,
+        category: store.category,
+        tag: store.tag,
+        content: store.content,
+        short_content: store.short_content,
+        time: store.time,
         address: store.address,
         phone: store.phone,
-        email: store.email,
-        description: store.description,
-        // 保留原有圖片URL
-        imageUrl: store.imageUrl,
-        website: store.website,
-        openingHours: store.openingHours,
-        discountInfo: store.discountInfo,
-        latitude: store.latitude,
-        longitude: store.longitude
+        priority: store.priority,
+        website: store.website || '',
+        iframe_src: store.iframe_src,
+        img_url: store.img_url,
+        is_donation: store.is_donation || false
       };
 
-      if (categories.value.length === 0) {
-        fetchCategories();
-      }
+      // 設置編輯狀態
       editingStore.value = store;
+
+      // 打開 Modal
       storeModal.show();
     };
 
     // 保存商店
     const saveStore = async () => {
       saving.value = true;
-      error.value = '';
-
       try {
-        // 驗證必要欄位
-        const requiredFields = ['name', 'categoryId', 'address', 'phone', 'email'];
-        const missingFields = requiredFields.filter(field => !storeForm.value[field]);
+        // 驗證必填欄位
+        const requiredFields = {
+          name: '商店名稱',
+          area: '區域',
+          category: '類別',
+          tag: '標籤',
+          content: '詳細內容',
+          short_content: '簡短內容',
+          time: '活動時間',
+          address: '地址',
+          phone: '電話',
+          iframe_src: 'Google Maps 連結'
+        };
 
-        if (missingFields.length > 0) {
-          error.value = `請填寫完整資料：${missingFields.join(', ')}`;
-          return;
+        // 檢查必填欄位
+        for (const [field, label] of Object.entries(requiredFields)) {
+          if (!storeForm.value[field]?.trim()) {
+            throw new Error(`請填寫${label}`);
+          }
+        }
+
+        // 電話格式驗證
+        const phonePattern = /^\d{2,3}-\d{3,4}-\d{4}$/;
+        if (!phonePattern.test(storeForm.value.phone)) {
+          throw new Error('請輸入正確的電話格式 (xx-xxxx-xxxx)');
         }
 
         const formData = {
           ...storeForm.value,
-          imageFile: storeForm.value.imageFile,
-          // 確保 category 欄位正確
-          category: storeForm.value.categoryId
+          priority: parseInt(storeForm.value.priority) || 0,
+          is_donation: Boolean(storeForm.value.is_donation)
         };
 
-        console.log('準備儲存的數據:', formData);
-
-        const action = editingStore.value
-            ? store.dispatch('store/updateStore', {
-              id: storeForm.value.id,
-              storeData: formData
-            })
-            : store.dispatch('store/createStore', formData);
-
-        const result = await action;
-        console.log('保存結果:', result);
+        let result;
+        if (editingStore.value) {
+          // 更新現有商店
+          result = await store.dispatch('store/updateStore', {
+            id: editingStore.value.id,
+            storeData: formData
+          });
+        } else {
+          // 創建新商店
+          result = await store.dispatch('store/createStore', formData);
+        }
 
         if (result.success) {
+          // 關閉 Modal
           storeModal.hide();
+          // 重新獲取商店列表
           await fetchStores();
-          // 清空表單
-          storeForm.value = {
-            id: null,
-            name: '',
-            categoryId: '',
-            address: '',
-            phone: '',
-            email: '',
-            description: '',
-            imageFile: null,
-            imagePreview: null
-          };
+          // 重置表單
+          resetStoreForm();
+          // 清除編輯狀態
+          editingStore.value = null;
+          // 顯示成功提示
+          alert(editingStore.value ? '修改成功！' : '新增成功！');
         } else {
-          error.value = result.error || '儲存失敗';
+          throw new Error(result.error || '儲存失敗');
         }
       } catch (err) {
-        console.error('儲存商店時發生錯誤:', err);
-        error.value = '儲存失敗: ' + (err.message || '未知錯誤');
+        error.value = err.message;
+        console.error('儲存失敗:', err);
+        alert(err.message);
       } finally {
         saving.value = false;
       }
     };
+
+    // 添加重置表單函數
+    const resetStoreForm = () => {
+      storeForm.value = {
+        id: null,
+        name: '',
+        area: '',
+        category: '',
+        tag: '',
+        content: '',
+        short_content: '',
+        time: '',
+        address: '',
+        phone: '',
+        priority: 0,
+        website: '',
+        iframe_src: '',
+        is_donation: false,
+        img_url: '',
+        popularity: 0
+      };
+    };
+
     // 刪除商店
     const confirmDelete = (store) => {
       storeToDelete.value = store
@@ -744,9 +660,20 @@ export default {
     onMounted(() => {
       storeModal = new Modal(document.getElementById('storeModal'))
       deleteModal = new Modal(document.getElementById('deleteModal'))
-      fetchCategories()
       fetchStores()
     })
+
+    // 添加到 setup() 函數中
+    watch([selectedArea, selectedCategoryType, sortBy], () => {
+      currentPage.value = 1; // 重置頁碼
+      fetchStores();
+    }, { immediate: false });
+
+    // 搜索關鍵字使用防抖
+    watch(searchQuery, debounce(() => {
+      currentPage.value = 1;
+      fetchStores();
+    }, 300));
 
     return {
       loading,
@@ -754,20 +681,14 @@ export default {
       deleting,
       error,
       searchQuery,
-      selectedCategory,
       selectedStatus,
-      sortBy,
       currentPage,
       stores,
-      categories,
       storeForm,
       editingStore,
       storeToDelete,
       totalPages,
       displayedPages,
-      handleSearch,
-      handleFilter,
-      handleSort,
       changePage,
       showAddStoreModal,
       editStore,
@@ -776,8 +697,16 @@ export default {
       deleteStore,
       getStatusClass,
       getStatusText,
-      handleImageChange,
-      handleImageError
+      STORE_CATEGORIES,
+      resetStoreForm,
+      isSubmitting: saving,
+      getPriorityClass,
+      areas,
+      categories,
+      selectedArea,
+      selectedCategoryType,
+      sortBy,
+      getSortOption,
     }
   }
 }
@@ -836,7 +765,7 @@ export default {
 .filter-section {
   background-color: #fff;
   border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .store-info {
@@ -864,8 +793,29 @@ export default {
     padding: 1rem;
   }
 
-  .table {
-    font-size: 0.875rem;
+  .store-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+  }
+
+  .badge {
+    font-weight: normal;
+    padding: 0.4em 0.6em;
+  }
+
+  .table td {
+    vertical-align: middle;
+    max-width: 250px;
+    /* 限制欄位最大寬度 */
+  }
+
+  .table td>div {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .store-thumbnail {
@@ -881,6 +831,7 @@ export default {
     font-size: 0.875rem;
   }
 }
+
 .store-image-preview {
   width: 100px;
   height: 100px;
