@@ -346,20 +346,21 @@ export default {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role,
+          role: user.role.replace('ROLE_', ''), // 移除 ROLE_ 前綴
           status: user.active ? 'ACTIVE' : 'INACTIVE'
         }
       } else {
         editingUser.value = {
           name: '',
           email: '',
-          role: 'ROLE_USER',
+          role: 'USER',
           status: 'ACTIVE'
         }
       }
       const modal = new Modal(userModal.value)
       modal.show()
     }
+
 
     // UserManagement.vue
     const saveUser = async () => {
@@ -368,7 +369,7 @@ export default {
         const userData = {
           name: editingUser.value.name,
           email: editingUser.value.email,
-          role: editingUser.value.role,
+          role: editingUser.value.role.replace('ROLE_', ''), // 移除 ROLE_ 前綴
           active: editingUser.value.status === 'ACTIVE'
         }
 
@@ -388,17 +389,21 @@ export default {
 
         await fetchUsers()
 
+        // 使用 SweetAlert2 顯示成功訊息
         Swal.fire({
           icon: 'success',
           title: '成功',
-          text: `用戶已${editingUser.value.id ? '更新' : '創建'}成功`
+          text: `用戶已${editingUser.value.id ? '更新' : '創建'}成功`,
+          confirmButtonText: '確定'
         })
       } catch (err) {
         console.error('儲存用戶失敗:', err)
+        // 使用 SweetAlert2 顯示錯誤訊息
         Swal.fire({
           icon: 'error',
           title: '錯誤',
-          text: '儲存用戶時發生錯誤'
+          text: err.response?.data?.message || '儲存用戶時發生錯誤',
+          confirmButtonText: '確定'
         })
       } finally {
         isProcessing.value = false
