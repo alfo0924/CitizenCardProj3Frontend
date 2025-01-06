@@ -169,21 +169,27 @@ class StoreService {
 
   async updateStore(id, storeData) {
     try {
-      // 如果有新的圖片檔案，先上傳圖片
-      if (storeData.imageFile) {
-        const formData = new FormData();
-        formData.append('file', storeData.imageFile);
+      // 準備要更新的資料
+      const updateData = {
+        name: storeData.name,
+        area: storeData.area,
+        category: storeData.category,
+        tag: storeData.tag,
+        content: storeData.content,
+        shortContent: storeData.shortContent,
+        time: storeData.time,
+        address: storeData.address,
+        phone: storeData.phone,
+        priority: parseInt(storeData.priority) || 0,
+        website: storeData.website || '',
+        iframeSrc: storeData.iframeSrc,
+        isDonation: Boolean(storeData.isDonation),
+        imgUrl: storeData.imgUrl || ''
+      };
 
-        const imageResponse = await api.post('/stores/upload-image', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+      // 發送更新請求
+      const response = await api.put(`/stores/${id}`, updateData);
 
-        storeData.imageUrl = imageResponse.data.imageUrl;
-      }
-
-      const response = await api.put(`/stores/${id}`, storeData);
       return {
         success: true,
         data: response.data

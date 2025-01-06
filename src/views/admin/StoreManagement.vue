@@ -33,7 +33,7 @@
 
           <!-- 類別篩選 -->
           <div class="col-md-3">
-            <select class="form-select" v-model="selectedCategory">
+            <select class="form-select" v-model="selectedCategoryType">
               <option value="">所有類別</option>
               <option v-for="category in categories" :key="category.id" :value="category.id">
                 {{ category.name }}
@@ -41,13 +41,13 @@
             </select>
           </div>
 
-          <!-- 狀態篩選 -->
+          <!-- 區域篩選 -->
           <div class="col-md-3">
-            <select class="form-select" v-model="selectedStatus">
-              <option value="">所有狀態</option>
-              <option value="active">營業中</option>
-              <option value="inactive">已停業</option>
-              <option value="pending">待審核</option>
+            <select class="form-select" v-model="selectedArea">
+              <option value="">所有區域</option>
+              <option v-for="area in areas" :key="area.id" :value="area.id">
+                {{ area.name }}
+              </option>
             </select>
           </div>
 
@@ -55,8 +55,10 @@
           <div class="col-md-2">
             <select class="form-select" v-model="sortBy">
               <option value="newest">最新添加</option>
+              <option value="popularity">人氣度</option>
+              <option value="priority">優先權</option>
+              <option value="donation">贊助店家</option>
               <option value="name">店名排序</option>
-              <option value="rating">評分排序</option>
             </select>
           </div>
         </div>
@@ -87,10 +89,9 @@
               <!-- 商店資訊 -->
               <td>
                 <div class="d-flex align-items-center">
-                  <img :src="store.imgUrl || '/api/images/預設商店圖片.jpg'" class="store-thumbnail me-2" :alt="store.name">
                   <div>
                     <div class="store-name">{{ store.name }}</div>
-                    <div class="store-content text-muted small">{{ store.shortContent }}</div>
+                    <div class="store-content text-muted small">{{ store.short_content }}</div>
                   </div>
                 </div>
               </td>
@@ -117,7 +118,7 @@
                 <span class="badge" :class="getPriorityClass(store.priority)">
                   {{ store.priority }}
                 </span>
-                <div class="small" v-if="store.isDonation">
+                <div class="small" v-if="store.is_donation">
                   <span class="badge bg-success">贊助商家</span>
                 </div>
               </td>
@@ -202,8 +203,8 @@
                   <label class="form-label">類別</label>
                   <select class="form-select" v-model="storeForm.category" required>
                     <option value="">請選擇類別</option>
-                    <option v-for="category in STORE_CATEGORIES" :key="category" :value="category">
-                      {{ category }}
+                    <option v-for="category in categories" :key="category.id" :value="category.id">
+                      {{ category.name }}
                     </option>
                   </select>
                 </div>
@@ -220,7 +221,7 @@
 
                 <div class="col-12">
                   <label class="form-label">簡短內容</label>
-                  <textarea class="form-control" v-model="storeForm.shortContent" rows="2" required></textarea>
+                  <textarea class="form-control" v-model="storeForm.short_content" rows="2" required></textarea>
                 </div>
 
                 <div class="col-12">
@@ -251,19 +252,19 @@
 
                 <div class="col-12">
                   <label class="form-label">圖片網址</label>
-                  <input type="text" class="form-control" v-model="storeForm.imgUrl">
+                  <input type="text" class="form-control" v-model="storeForm.img_url">
                 </div>
 
                 <div class="col-12">
                   <label class="form-label">Google Maps 嵌入連結</label>
-                  <input type="text" class="form-control" v-model="storeForm.iframeSrc"
+                  <input type="text" class="form-control" v-model="storeForm.iframe_src"
                     placeholder="請輸入 Google Maps 的嵌入程式碼 (從分享->嵌入地圖擷取src屬性值即可)" required>
                 </div>
 
                 <div class="col-12">
                   <div class="form-check">
-                    <input class="form-check-input" type="checkbox" v-model="storeForm.isDonation" id="isDonation">
-                    <label class="form-check-label" for="isDonation">是否為贊助商家</label>
+                    <input class="form-check-input" type="checkbox" v-model="storeForm.is_donation" id="is_donation">
+                    <label class="form-check-label" for="is_donation">是否為贊助商家</label>
                   </div>
                 </div>
               </div>
@@ -306,7 +307,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { Modal } from 'bootstrap'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -326,12 +327,12 @@ export default {
     const deleting = ref(false)
     const error = ref('')
     const searchQuery = ref('')
-    const selectedCategory = ref('')
+    const selectedCategoryType = ref('')
+    const selectedArea = ref('')
     const selectedStatus = ref('')
     const sortBy = ref('newest')
     const currentPage = ref(1)
     const stores = ref([])
-    const categories = ref([])
     const totalItems = ref(0)
     const itemsPerPage = 10
     let storeModal = null
@@ -345,15 +346,15 @@ export default {
       category: '',
       tag: '',
       content: '',
-      shortContent: '',
+      short_content: '',
       time: '',
       address: '',
       phone: '',
       priority: 0,
       website: '',
-      iframeSrc: '',
-      isDonation: false,
-      imgUrl: '',
+      iframe_src: '',
+      is_donation: false,
+      img_url: '',
       popularity: 0
     })
 
@@ -387,33 +388,22 @@ export default {
           page: currentPage.value - 1,
           size: itemsPerPage,
           ...(searchQuery.value && { keyword: searchQuery.value }),
-          ...(selectedCategory.value && { category: selectedCategory.value }),
-          ...(selectedStatus.value && { status: selectedStatus.value }),
-          sort: sortBy.value === 'newest' ? 'createdAt,desc'
-            : sortBy.value === 'name' ? 'name,asc'
-              : 'rating,desc'
+          ...(selectedArea.value && { area: selectedArea.value }),
+          ...(selectedCategoryType.value && { category: selectedCategoryType.value }),
+          sort: getSortOption(sortBy.value)
         };
+
+        // 移除所有空值參數
+        Object.keys(params).forEach(key => {
+          if (params[key] === '' || params[key] === null || params[key] === undefined) {
+            delete params[key];
+          }
+        });
 
         const result = await store.dispatch('store/fetchStores', params);
 
         if (result.success) {
-          stores.value = result.data.content.map(store => ({
-            id: store.id,
-            name: store.name,
-            area: store.area,
-            category: store.category,
-            tag: store.tag,
-            content: store.content,
-            shortContent: store.shortContent,
-            time: store.time,
-            address: store.address,
-            phone: store.phone,
-            priority: store.priority,
-            website: store.website || '',
-            isDonation: store.isDonation,
-            imgUrl: store.imgUrl || 'https://placehold.co/50x50?text=No+Image',
-          }));
-
+          stores.value = result.data.content;
           totalItems.value = result.data.totalElements;
         } else {
           error.value = result.error || '載入商店資料失敗';
@@ -426,34 +416,45 @@ export default {
       }
     };
 
+    // 排序方法
+    const getSortOption = (sortType) => {
+      switch (sortType) {
+        case 'popularity':
+          return 'popularity,desc';
+        case 'priority':
+          return 'priority,desc';
+        case 'donation':
+          return 'is_donation,desc';
+        case 'name':
+          return 'name,asc';
+        default:
+          return 'id,desc'; // 最新添加，假設 id 越大表示越新
+      }
+    };
+
     // 定義固定的類別列表
     const STORE_CATEGORIES = [
-      '川式料理',
-      '中式麵食',
-      '中式小吃',
-      '台式甜點',
-      '韓式料理',
-      '日式料理',
-      '中式點心',
-      '台式早午餐',
-      '飲品茶點',
-      '中式料理'
+      { id: '川式料理', name: '川式料理' },
+      { id: '中式麵食', name: '中式麵食' },
+      { id: '中式小吃', name: '中式小吃' },
+      { id: '台式甜點', name: '台式甜點' },
+      { id: '韓式料理', name: '韓式料理' },
+      { id: '日式料理', name: '日式料理' },
+      { id: '中式點心', name: '中式點心' },
+      { id: '台式早午餐', name: '台式早午餐' },
+      { id: '飲品茶點', name: '飲品茶點' },
+      { id: '中式料理', name: '中式料理' }
     ];
 
-    // 獲取類別列表
-    const fetchCategories = () => {
-      try {
-        // 使用預定義的類別列表
-        categories.value = STORE_CATEGORIES.map(name => ({
-          id: name,    // 使用類別名稱作為 id
-          name: name   // 類別名稱
-        }))
-        console.log('載入的類別:', categories.value)
-      } catch (err) {
-        console.error('載入類別失敗:', err)
-        error.value = '載入類別失敗'
-      }
-    }
+    const STORE_AREAS = [
+      { id: '西屯區', name: '西屯區' },
+      { id: '南屯區', name: '南屯區' },
+      { id: '北屯區', name: '北屯區' }
+    ];
+
+    // 修改區域列表的引用
+    const areas = ref(STORE_AREAS);
+    const categories = ref(STORE_CATEGORIES);
 
     // 優先度相關方法
     const getPriorityClass = (priority) => {
@@ -488,23 +489,25 @@ export default {
       storeForm.value = {
         id: store.id,
         name: store.name,
-        categoryId: store.category, // 使用 category 作為 categoryId
+        area: store.area,
+        category: store.category,
+        tag: store.tag,
+        content: store.content,
+        short_content: store.short_content,
+        time: store.time,
         address: store.address,
         phone: store.phone,
-        email: store.email,
-        // 保留原有圖片URL
-        imageUrl: store.imageUrl,
-        website: store.website,
-        openingHours: store.openingHours,
-        discountInfo: store.discountInfo,
-        latitude: store.latitude,
-        longitude: store.longitude
+        priority: store.priority,
+        website: store.website || '',
+        iframe_src: store.iframe_src,
+        img_url: store.img_url,
+        is_donation: store.is_donation || false
       };
 
-      if (categories.value.length === 0) {
-        fetchCategories();
-      }
+      // 設置編輯狀態
       editingStore.value = store;
+
+      // 打開 Modal
       storeModal.show();
     };
 
@@ -519,11 +522,11 @@ export default {
           category: '類別',
           tag: '標籤',
           content: '詳細內容',
-          shortContent: '簡短內容',
+          short_content: '簡短內容',
           time: '活動時間',
           address: '地址',
           phone: '電話',
-          iframeSrc: 'Google Maps 連結'
+          iframe_src: 'Google Maps 連結'
         };
 
         // 檢查必填欄位
@@ -542,23 +545,39 @@ export default {
         const formData = {
           ...storeForm.value,
           priority: parseInt(storeForm.value.priority) || 0,
-          isDonation: Boolean(storeForm.value.isDonation)
+          is_donation: Boolean(storeForm.value.is_donation)
         };
 
-        const result = editingStore.value
-          ? await store.dispatch('store/updateStore', { id: formData.id, storeData: formData })
-          : await store.dispatch('store/createStore', formData);
+        let result;
+        if (editingStore.value) {
+          // 更新現有商店
+          result = await store.dispatch('store/updateStore', {
+            id: editingStore.value.id,
+            storeData: formData
+          });
+        } else {
+          // 創建新商店
+          result = await store.dispatch('store/createStore', formData);
+        }
 
         if (result.success) {
+          // 關閉 Modal
           storeModal.hide();
+          // 重新獲取商店列表
           await fetchStores();
+          // 重置表單
           resetStoreForm();
+          // 清除編輯狀態
+          editingStore.value = null;
+          // 顯示成功提示
+          alert(editingStore.value ? '修改成功！' : '新增成功！');
         } else {
           throw new Error(result.error || '儲存失敗');
         }
       } catch (err) {
         error.value = err.message;
         console.error('儲存失敗:', err);
+        alert(err.message);
       } finally {
         saving.value = false;
       }
@@ -573,15 +592,15 @@ export default {
         category: '',
         tag: '',
         content: '',
-        shortContent: '',
+        short_content: '',
         time: '',
         address: '',
         phone: '',
         priority: 0,
         website: '',
-        iframeSrc: '',
-        isDonation: false,
-        imgUrl: '',
+        iframe_src: '',
+        is_donation: false,
+        img_url: '',
         popularity: 0
       };
     };
@@ -641,9 +660,20 @@ export default {
     onMounted(() => {
       storeModal = new Modal(document.getElementById('storeModal'))
       deleteModal = new Modal(document.getElementById('deleteModal'))
-      fetchCategories()
       fetchStores()
     })
+
+    // 添加到 setup() 函數中
+    watch([selectedArea, selectedCategoryType, sortBy], () => {
+      currentPage.value = 1; // 重置頁碼
+      fetchStores();
+    }, { immediate: false });
+
+    // 搜索關鍵字使用防抖
+    watch(searchQuery, debounce(() => {
+      currentPage.value = 1;
+      fetchStores();
+    }, 300));
 
     return {
       loading,
@@ -651,12 +681,9 @@ export default {
       deleting,
       error,
       searchQuery,
-      selectedCategory,
       selectedStatus,
-      sortBy,
       currentPage,
       stores,
-      categories,
       storeForm,
       editingStore,
       storeToDelete,
@@ -674,6 +701,12 @@ export default {
       resetStoreForm,
       isSubmitting: saving,
       getPriorityClass,
+      areas,
+      categories,
+      selectedArea,
+      selectedCategoryType,
+      sortBy,
+      getSortOption,
     }
   }
 }
