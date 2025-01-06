@@ -393,36 +393,35 @@ export default {
 
     const previousParams = ref(null)
 
-    const fetchMovies = async () => {
+    const fetchMovies = async (forceUpdate = false) => {
       const currentParams = {
         page: currentPage.value - 1,
         size: 10,
         status: selectedStatus.value,
         keyword: searchKeyword.value,
         sort: 'releaseDate,desc'
-      }
+      };
 
-      if (previousParams.value &&
-          JSON.stringify(previousParams.value) === JSON.stringify(currentParams)) {
-        return
-      }
+      // 如果是強制更新或參數有變化才執行請求
+      if (forceUpdate || !previousParams.value ||
+          JSON.stringify(previousParams.value) !== JSON.stringify(currentParams)) {
+        try {
+          isLoading.value = true;
+          error.value = null;
+          previousParams.value = currentParams;
 
-      try {
-        isLoading.value = true
-        error.value = null
-        previousParams.value = currentParams
-
-        const response = await apiService.get('/movies', { params: currentParams })
-        store.commit('movie/setMovies', response.data.content)
-        store.commit('movie/SET_TOTAL_PAGES', response.data.totalPages)
-      } catch (err) {
-        console.error('Error fetching movies:', err)
-        error.value = '載入電影列表失敗'
-        await Swal.fire('錯誤', '載入電影列表失敗', 'error')
-      } finally {
-        isLoading.value = false
+          const response = await apiService.get('/movies', { params: currentParams });
+          store.commit('movie/setMovies', response.data.content);
+          store.commit('movie/SET_TOTAL_PAGES', response.data.totalPages);
+        } catch (err) {
+          console.error('載入電影列表失敗:', err);
+          error.value = '載入電影列表失敗';
+          await Swal.fire('錯誤', '載入電影列表失敗', 'error');
+        } finally {
+          isLoading.value = false;
+        }
       }
-    }
+    };
     const handleSearch = () => {
       currentPage.value = 1
       debouncedSearch()
@@ -478,6 +477,7 @@ export default {
         editingMovie.value.posterUrl = URL.createObjectURL(file)
       }
     }
+    //
 
     const saveMovie = async () => {
       try {
@@ -503,16 +503,17 @@ export default {
 
         let response;
         if (editingMovie.value.id) {
-          // 更新電影
           response = await apiService.put(`/movies/${editingMovie.value.id}`, formData);
         } else {
-          // 新增電影
           response = await apiService.post('/movies', formData);
         }
 
-        await fetchMovies();
-        closeModal();
-        Swal.fire('成功', '電影資料已儲存', 'success');
+        if (response?.data) {
+          await Swal.fire('成功', '電影資料已更新', 'success');
+          // 立即重新獲取最新資料
+          await fetchMovies();
+          closeModal();
+        }
       } catch (error) {
         console.error('儲存電影失敗:', error);
         Swal.fire('錯誤', error.message || '儲存失敗', 'error');
@@ -521,27 +522,28 @@ export default {
       }
     };
 
-    const confirmDelete = (movie) => {
-      Swal.fire({
-        title: '確定要刪除嗎？',
-        text: `即將刪除電影「${movie.title}」`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: '確定刪除',
-        cancelButtonText: '取消'
-      }).then(async (result) => {
+    const confirmDelete = async (movie) => {
+      try {
+        const result = await Swal.fire({
+          title: '確定要刪除嗎？',
+          text: `即將刪除電影「${movie.title}」`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonText: '確定刪除',
+          cancelButtonText: '取消'
+        });
+
         if (result.isConfirmed) {
-          try {
-            await apiService.delete(`/movies/${movie.id}`)
-            await fetchMovies()
-            await Swal.fire('已刪除', '電影已成功刪除', 'success')
-          } catch (err) {
-            console.error('Error deleting movie:', err)
-            await Swal.fire('錯誤', '刪除電影失敗', 'error')
-          }
+          await apiService.delete(`/movies/${movie.id}`);
+          await Swal.fire('成功', '電影已刪除', 'success');
+          // 強制更新電影列表
+          await fetchMovies(true);
         }
-      })
-    }
+      } catch (error) {
+        console.error('刪除電影失敗:', error);
+        await Swal.fire('錯誤', '刪除電影失敗', 'error');
+      }
+    };
 
     const getStatusClass = (isShowing) => {
       return isShowing ? 'bg-success' : 'bg-secondary'
