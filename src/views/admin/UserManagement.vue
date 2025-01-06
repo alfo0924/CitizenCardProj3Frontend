@@ -91,18 +91,24 @@
       </span>
               </td>
               <td>
-      <span class="badge" :class="getStatusBadgeClass(user.status)">
-        {{ getStatusText(user.status) }}
-      </span>
+  <span class="badge" :class="getStatusBadgeClass(user.active)">
+    {{ getStatusText(user.active) }}
+  </span>
               </td>
               <td>{{ formatDateTime(user.createdAt) }}</td>
               <td>
-                <button class="btn btn-sm btn-outline-primary me-2" @click="openUserModal(user)">
+                <button
+                    class="btn btn-sm btn-outline-primary me-2"
+                    @click="openUserModal(user)"
+                >
                   編輯
                 </button>
-                <button class="btn btn-sm" :class="user.status === 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'"
-                        @click="toggleUserStatus(user)">
-                  {{ user.status === 'ACTIVE' ? '停用' : '啟用' }}
+                <button
+                    class="btn btn-sm"
+                    :class="user.active ? 'btn-outline-danger' : 'btn-outline-success'"
+                    @click="toggleUserStatus(user)"
+                >
+                  {{ user.active ? '停用' : '啟用' }}
                 </button>
               </td>
             </tr>
@@ -151,23 +157,14 @@
     </div>
 
     <!-- 會員編輯Modal -->
-    <div
-        class="modal fade"
-        id="userModal"
-        tabindex="-1"
-        ref="userModal"
-    >
+    <div class="modal fade" id="userModal" tabindex="-1" ref="userModal">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">
               {{ editingUser.id ? '編輯會員' : '新增會員' }}
             </h5>
-            <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="modal"
-            ></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
             <form @submit.prevent="saveUser">
@@ -224,10 +221,10 @@
                     class="btn btn-primary"
                     :disabled="isProcessing"
                 >
-                  <span
-                      v-if="isProcessing"
-                      class="spinner-border spinner-border-sm me-2"
-                  ></span>
+                <span
+                    v-if="isProcessing"
+                    class="spinner-border spinner-border-sm me-2"
+                ></span>
                   {{ isProcessing ? '處理中...' : '儲存' }}
                 </button>
               </div>
@@ -236,6 +233,8 @@
         </div>
       </div>
     </div>
+
+
   </div>
 </template>
 <script>
@@ -353,7 +352,7 @@ export default {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.role.replace('ROLE_', ''), // 移除 ROLE_ 前綴
+          role: user.role.replace('ROLE_', ''),
           status: user.active ? 'ACTIVE' : 'INACTIVE'
         }
       } else {
@@ -376,8 +375,8 @@ export default {
         const userData = {
           name: editingUser.value.name,
           email: editingUser.value.email,
-          role: editingUser.value.role.replace('ROLE_', ''), // 移除 ROLE_ 前綴
-          active: editingUser.value.status === 'ACTIVE'
+          role: editingUser.value.role,
+          active: editingUser.value.status === 'ACTIVE'// 確保正確轉換布林值
         }
 
         if (editingUser.value.id) {
@@ -396,21 +395,17 @@ export default {
 
         await fetchUsers()
 
-        // 使用 SweetAlert2 顯示成功訊息
         Swal.fire({
           icon: 'success',
           title: '成功',
-          text: `用戶已${editingUser.value.id ? '更新' : '創建'}成功`,
-          confirmButtonText: '確定'
+          text: `用戶已${editingUser.value.id ? '更新' : '創建'}成功`
         })
       } catch (err) {
         console.error('儲存用戶失敗:', err)
-        // 使用 SweetAlert2 顯示錯誤訊息
         Swal.fire({
           icon: 'error',
           title: '錯誤',
-          text: err.response?.data?.message || '儲存用戶時發生錯誤',
-          confirmButtonText: '確定'
+          text: err.response?.data?.message || '儲存用戶時發生錯誤'
         })
       } finally {
         isProcessing.value = false
@@ -419,10 +414,10 @@ export default {
 
 
     const toggleUserStatus = async (user) => {
-      const newStatus = user.active ? 'INACTIVE' : 'ACTIVE'
-      const actionText = newStatus === 'ACTIVE' ? '啟用' : '停用'
-
       try {
+        const newStatus = !user.active
+        const actionText = newStatus ? '啟用' : '停用'
+
         const result = await Swal.fire({
           title: `確定要${actionText}此用戶嗎？`,
           text: `即將${actionText}用戶「${user.name}」`,
@@ -435,16 +430,17 @@ export default {
         if (result.isConfirmed) {
           await store.dispatch('user/updateUserStatus', {
             id: user.id,
-            active: newStatus === 'ACTIVE'
+            active: newStatus
           })
           await fetchUsers()
           Swal.fire('成功', `用戶已${actionText}`, 'success')
         }
       } catch (err) {
-        console.error('Error toggling user status:', err)
-        Swal.fire('錯誤', `${actionText}用戶失敗`, 'error')
+        console.error('更新用戶狀態失敗:', err)
+        Swal.fire('錯誤', `更新用戶狀態失敗`, 'error')
       }
     }
+
 
     const getRoleBadgeClass = (role) => {
       switch (role) {
@@ -465,8 +461,8 @@ export default {
       return active ? 'bg-success' : 'bg-secondary'
     }
 
-    const getStatusText = (status) => {
-      return status === 'ACTIVE' ? '啟用' : '停用'
+    const getStatusText = (active) => {
+      return active ? '啟用' : '停用'
     }
 
     const formatDateTime = (datetime) => {
