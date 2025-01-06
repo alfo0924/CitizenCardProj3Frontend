@@ -332,8 +332,9 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 import { useRouter } from "vue-router";
 import { debounce } from 'lodash'
-// import { apiService } from '@/services/api.config'
-import apiService from '@/services/api.config'
+
+// import apiService from '@/services/api.config'
+import { apiService } from '@/services/api.config'
 
 
 export default {
@@ -567,7 +568,7 @@ export default {
         let response
         if (editingMovie.value.id) {
           response = await apiService.put(
-              `/movies/${editingMovie.value.id}`,
+              `/api/movies/${editingMovie.value.id}`,
               formData,
               {
                 headers: {
@@ -582,7 +583,7 @@ export default {
           Swal.fire('成功', '電影資料已更新', 'success')
         } else {
           response = await apiService.post(
-              '/movies',  // 移除重複的 /api
+              '/movies',// 移除重複的 /api
               formData,
               {
                 headers: {
