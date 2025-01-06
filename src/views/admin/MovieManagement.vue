@@ -504,24 +504,30 @@ export default {
         let response;
         if (editingMovie.value.id) {
           response = await apiService.put(`/movies/${editingMovie.value.id}`, formData);
+          // 更新本地狀態
+          store.commit('movie/UPDATE_MOVIE', response.data);
         } else {
           response = await apiService.post('/movies', formData);
+          // 新增到本地狀態
+          store.commit('movie/ADD_MOVIE', response.data);
         }
 
-        if (response?.data) {
-          await Swal.fire('成功', '電影資料已更新', 'success');
-          // 立即重新獲取最新資料
-          await fetchMovies();
-          closeModal();
-        }
+        await Swal.fire('成功', '電影資料已更新', 'success');
+        closeModal();
+
+        // 強制重新獲取最新資料
+        await fetchMovies(true);
       } catch (error) {
         console.error('儲存電影失敗:', error);
-        Swal.fire('錯誤', error.message || '儲存失敗', 'error');
+        await Swal.fire('錯誤', error.message || '儲存失敗', 'error');
       } finally {
         isProcessing.value = false;
       }
     };
 
+
+
+    //
     const confirmDelete = async (movie) => {
       try {
         const result = await Swal.fire({
@@ -535,6 +541,8 @@ export default {
 
         if (result.isConfirmed) {
           await apiService.delete(`/movies/${movie.id}`);
+          // 更新本地狀態
+          store.commit('movie/DELETE_MOVIE', movie.id);
           await Swal.fire('成功', '電影已刪除', 'success');
           // 強制更新電影列表
           await fetchMovies(true);
@@ -544,6 +552,7 @@ export default {
         await Swal.fire('錯誤', '刪除電影失敗', 'error');
       }
     };
+
 
     const getStatusClass = (isShowing) => {
       return isShowing ? 'bg-success' : 'bg-secondary'
