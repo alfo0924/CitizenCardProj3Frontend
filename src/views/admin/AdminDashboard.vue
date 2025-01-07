@@ -27,72 +27,72 @@
           </div>
         </div>
 
-        <!-- 統計數據卡片 -->
-        <!-- 統計數據卡片部分修改 -->
-        <div class="row g-4 mb-4">
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-users"></i>
-              </div>
-              <div class="stat-info">
-                <h3>總會員數</h3>
-                <div class="stat-value">{{ stats.totalUsers }}</div>
-                <div class="stat-change" :class="{'positive': stats.newUsers > 0}">
-                  <i :class="stats.newUsers > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-                  {{ stats.newUsers }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-store"></i>
-              </div>
-              <div class="stat-info">
-                <h3>特約商店</h3>
-                <div class="stat-value">{{ stats.totalStores }}</div>
-                <div class="stat-change" :class="{'positive': stats.newStores > 0}">
-                  <i :class="stats.newStores > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-                  {{ stats.newStores }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-film"></i>
-              </div>
-              <div class="stat-info">
-                <h3>上映電影</h3>
-                <div class="stat-value">{{ stats.activeMovies }}</div>
-                <div class="stat-change" :class="{'positive': stats.newMovies > 0}">
-                  <i :class="stats.newMovies > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-                  {{ stats.newMovies }} 新增
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+<!--        &lt;!&ndash; 統計數據卡片 &ndash;&gt;-->
+<!--        &lt;!&ndash; 統計數據卡片部分修改 &ndash;&gt;-->
+<!--        <div class="row g-4 mb-4">-->
+<!--          <div class="col-md-4">-->
+<!--            <div class="stat-card">-->
+<!--              <div class="stat-icon">-->
+<!--                <i class="fas fa-users"></i>-->
+<!--              </div>-->
+<!--              <div class="stat-info">-->
+<!--                <h3>總會員數</h3>-->
+<!--                <div class="stat-value">{{ stats.totalUsers }}</div>-->
+<!--                <div class="stat-change" :class="{'positive': stats.newUsers > 0}">-->
+<!--                  <i :class="stats.newUsers > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>-->
+<!--                  {{ stats.newUsers }} 新增-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--          <div class="col-md-4">-->
+<!--            <div class="stat-card">-->
+<!--              <div class="stat-icon">-->
+<!--                <i class="fas fa-store"></i>-->
+<!--              </div>-->
+<!--              <div class="stat-info">-->
+<!--                <h3>特約商店</h3>-->
+<!--                <div class="stat-value">{{ stats.totalStores }}</div>-->
+<!--                <div class="stat-change" :class="{'positive': stats.newStores > 0}">-->
+<!--                  <i :class="stats.newStores > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>-->
+<!--                  {{ stats.newStores }} 新增-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--          <div class="col-md-4">-->
+<!--            <div class="stat-card">-->
+<!--              <div class="stat-icon">-->
+<!--                <i class="fas fa-film"></i>-->
+<!--              </div>-->
+<!--              <div class="stat-info">-->
+<!--                <h3>上映電影</h3>-->
+<!--                <div class="stat-value">{{ stats.activeMovies }}</div>-->
+<!--                <div class="stat-change" :class="{'positive': stats.newMovies > 0}">-->
+<!--                  <i :class="stats.newMovies > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>-->
+<!--                  {{ stats.newMovies }} 新增-->
+<!--                </div>-->
+<!--              </div>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
 
 
-        <!-- 圖表區塊 -->
-        <div class="row g-4">
-          <div class="col-md-6">
-            <div class="chart-card">
-              <h3>會員分析</h3>
-              <canvas ref="userChartRef"></canvas>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="chart-card">
-              <h3>商店類型分析</h3>
-              <canvas ref="storeChartRef"></canvas>
-            </div>
-          </div>
-        </div>
+<!--        &lt;!&ndash; 圖表區塊 &ndash;&gt;-->
+<!--        <div class="row g-4">-->
+<!--          <div class="col-md-6">-->
+<!--            <div class="chart-card">-->
+<!--              <h3>會員分析</h3>-->
+<!--              <canvas ref="userChartRef"></canvas>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--          <div class="col-md-6">-->
+<!--            <div class="chart-card">-->
+<!--              <h3>商店類型分析</h3>-->
+<!--              <canvas ref="storeChartRef"></canvas>-->
+<!--            </div>-->
+<!--          </div>-->
+<!--        </div>-->
       </div>
     </div>
   </div>
