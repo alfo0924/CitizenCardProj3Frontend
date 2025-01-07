@@ -134,17 +134,17 @@ export default {
     })
 
     // 監聽路由變化
-    watch(
-        () => route.path,
-        () => {
-          store.dispatch('auth/checkAuthStatus')
-        }
-    )
+    // watch(
+    //     () => route.path,
+    //     () => {
+    //       store.dispatch('auth/checkAuthStatus')
+    //     }
+    // )
 
     // 組件掛載時檢查登入狀態
-    onMounted(() => {
-      store.dispatch('auth/checkAuthStatus')
-    })
+    // onMounted(() => {
+    //   store.dispatch('auth/checkAuthStatus')
+    // })
 
     // 導航控制
     const toggleNav = () => {
@@ -165,7 +165,7 @@ export default {
         })
 
         // 強制更新登入狀態
-        await store.dispatch('auth/checkAuthStatus')
+        // await store.dispatch('auth/checkAuthStatus')
       } catch (error) {
         console.error('Logout error:', error)
         store.dispatch('setNotification', {

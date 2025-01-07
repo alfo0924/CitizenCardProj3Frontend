@@ -53,80 +53,80 @@ const routes = [
     {
         path: '/',
         name: 'home',
-        component: Home,
+        component: () => import('@/views/Home.vue'),
         meta: {
             title: '首頁',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/login',
         name: 'login',
-        component: Login,
+        component: () => import('@/views/auth/Login.vue'),
         meta: {
             requiresGuest: true,
             title: '登入',
-            layout: ROUTE_META.LAYOUTS.AUTH
+            // layout: ROUTE_META.LAYOUTS.AUTH
         }
     },
     {
         path: '/register',
         name: 'register',
-        component: Register,
+        component: () => import('@/views/auth/Register.vue'),
         meta: {
             requiresGuest: true,
             title: '註冊',
-            layout: ROUTE_META.LAYOUTS.AUTH
+            // layout: ROUTE_META.LAYOUTS.AUTH
         }
     },
     {
         path: '/profile',
         name: 'profile',
-        component: Profile,
+        component: () => import('@/views/user/Profile.vue'),
         meta: {
             requiresAuth: true,
             title: '個人資料',
-            layout: ROUTE_META.LAYOUTS.USER
+            // layout: ROUTE_META.LAYOUTS.USER
         }
     },
     {
         path: '/movies',
         name: 'movies',
-        component: MovieList,
+        component: () => import('@/views/movie/MovieList.vue'),
         meta: {
             title: '電影列表',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/movies/:id',
         name: 'movie-detail',
-        component: MovieDetail,
+        component: () => import('@/views/movie/MovieDetail.vue'),
         props: true,
         meta: {
             title: '電影詳情',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/booking/:scheduleId',
         name: 'booking',
-        component: Booking,
+        component: () => import('@/views/movie/Booking.vue'),
         props: true,
         meta: {
             requiresAuth: true,
             title: '訂票',
-            layout: ROUTE_META.LAYOUTS.USER
+            // layout: ROUTE_META.LAYOUTS.USER
         }
     },
     {
         path: '/wallet',
         name: 'wallet',
-        component: Wallet,
+        component: import('@/views/user/Wallet.vue'),
         meta: {
             requiresAuth: true,
             title: '電子票夾',
-            layout: ROUTE_META.LAYOUTS.USER
+            // layout: ROUTE_META.LAYOUTS.USER
         },
         children: [
             {
@@ -136,7 +136,7 @@ const routes = [
                 meta: {
                     requiresAuth: true,
                     title: '儲值',
-                    layout: ROUTE_META.LAYOUTS.USER
+                    // layout: ROUTE_META.LAYOUTS.USER
                 }
             },
             {
@@ -146,7 +146,7 @@ const routes = [
                 meta: {
                     requiresAuth: true,
                     title: '交易記錄',
-                    layout: ROUTE_META.LAYOUTS.USER
+                    // layout: ROUTE_META.LAYOUTS.USER
                 }
             }
         ]
@@ -154,141 +154,141 @@ const routes = [
     {
         path: '/discounts',
         name: 'discounts',
-        component: Discounts,
+        component: () => import('@/views/discount/Discounts.vue'),
         meta: {
             title: '優惠券',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/faq',
         name: 'faq',
-        component: FAQ,
+        component: () => import('@/views/other/FAQ.vue'),
         meta: {
             title: '常見問題',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/partner-store',
         name: 'partner-store',
-        component: PartnerStore,
+        component: () => import('@/views/other/PartnerStore.vue'),
         meta: {
             title: '特約商店',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/city-movie',
         name: 'city-movie',
-        component: CityMovie,
+        component: () => import('@/views/other/CityMovie.vue'),
         meta: {
             title: 'CityMovie',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     // 特店優惠路由組
     {
         path: '/discountstore',
         name: 'discountstore',
-        component: DiscountStore,
+        component: () => import('@/views/discountStore/DiscountStore.vue'),
         meta: {
             title: '特店優惠',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/discountstore/overview',
         name: 'storeoverview',
-        component: StoreOverview,
+        component: () => import('@/views/discountStore/StoreOverview.vue'),
         meta: {
             title: '特店優惠總覽',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/store/:id',
         name: 'StoreDetail',
-        component: DiscountStoreDetail,
+        component: () => import('@/views/discountStore/DiscountStoreDetail.vue'),
         props: true,
         meta: {
             title: '特店優惠詳細資訊',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     // 優惠活動路由組
     {
         path: '/promotions',
         name: 'promotions',
-        component: asyncComponents.Promotions,
+        component: () => import('@/views/promotion/Promotions.vue'),
         meta: {
             title: '優惠活動',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     {
         path: '/promotions/:id',
         name: 'promotion-detail',
-        component: asyncComponents.PromotionDetail,
+        component: () => import('@/views/promotion/PromotionDetail.vue'),
         props: true,
         meta: {
             title: '活動詳情',
-            layout: ROUTE_META.LAYOUTS.DEFAULT
+            // layout: ROUTE_META.LAYOUTS.DEFAULT
         }
     },
     // 管理員路由組
     {
         path: '/admin',
         name: 'admin',
-        component: asyncComponents.AdminDashboard,
+        component: () => import('@/views/admin/AdminDashboard.vue'),
         meta: {
             requiresAuth: true,
             requiresAdmin: true,
             title: '管理後台',
-            layout: ROUTE_META.LAYOUTS.ADMIN
+            // layout: ROUTE_META.LAYOUTS.ADMIN
         }
     },
     {
         path: '/admin/movies',
         name: 'admin-movies',
-        component: asyncComponents.MovieManagement,
+        component: () => import('@/views/admin/MovieManagement.vue'),
         meta: {
             requiresAuth: true,
             requiresAdmin: true,
             title: '電影管理',
-            layout: ROUTE_META.LAYOUTS.ADMIN
+            // layout: ROUTE_META.LAYOUTS.ADMIN
         }
     },
     {
         path: '/admin/users',
         name: 'admin-users',
-        component: asyncComponents.UserManagement,
+        component: () => import('@/views/admin/UserManagement.vue'),
         meta: {
             requiresAuth: true,
             requiresAdmin: true,
             title: '會員管理',
-            layout: ROUTE_META.LAYOUTS.ADMIN
+            // layout: ROUTE_META.LAYOUTS.ADMIN
         }
     },
     {
         path: '/admin/stores',
         name: 'admin-stores',
-        component: asyncComponents.StoreManagement,
+        component: () => import('@/views/admin/StoreManagement.vue'),
         meta: {
             requiresAuth: true,
             requiresAdmin: true,
             title: '商店管理',
-            layout: ROUTE_META.LAYOUTS.ADMIN
+            // layout: ROUTE_META.LAYOUTS.ADMIN
         }
     },
     // 錯誤頁面
     {
         path: '/403',
         name: 'forbidden',
-        component: asyncComponents.Forbidden,
+        component: () => import('@/views/error/403.vue'),
         meta: {
             title: '無權限訪問',
-            layout: ROUTE_META.LAYOUTS.ERROR
+            // layout: ROUTE_META.LAYOUTS.ERROR
         }
     },
     {
@@ -297,7 +297,7 @@ const routes = [
         component: NotFound,
         meta: {
             title: '頁面不存在',
-            layout: ROUTE_META.LAYOUTS.ERROR
+            // layout: ROUTE_META.LAYOUTS.ERROR
         }
     },
     {
@@ -306,7 +306,7 @@ const routes = [
         component: asyncComponents.ServerError,
         meta: {
             title: '伺服器錯誤',
-            layout: ROUTE_META.LAYOUTS.ERROR
+            // layout: ROUTE_META.LAYOUTS.ERROR
         }
     },
     {
@@ -390,9 +390,9 @@ router.beforeEach(async (to, from, next) => {
             return next({ name: 'profile' })
         }
 
-        if (to.meta.layout) {
-            store.commit('setLayout', to.meta.layout)
-        }
+        // if (to.meta.layout) {
+        //     store.commit('setLayout', to.meta.layout)
+        // }
 
         next()
     } catch (error) {
@@ -415,9 +415,9 @@ router.beforeEach(async (to, from, next) => {
 router.afterEach((to) => {
     store.dispatch('setLoading', false)
 
-    if (!to.meta.skipHistory) {
-        store.commit('addToHistory', to.fullPath)
-    }
+    // if (!to.meta.skipHistory) {
+    //     store.commit('addToHistory', to.fullPath)
+    // }
 })
 
 // 路由錯誤處理

@@ -86,15 +86,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AlertMessage from '@/components/common/AlertMessage.vue'
 import { apiService } from '@/services/api.config'
 
 const store = useStore()
 const router = useRouter()
+const route = useRoute()
 const activeTab = ref('movie')
 const isLoading = ref(false)
 const error = ref(null)
@@ -112,22 +113,43 @@ const qrCodeData = ref({
 
 // 獲取票券列表
 const fetchTickets = async (page) => {
-  if (page < 0) return
+  if (page < 0) return;
   try {
-    currentPage.value = page
-    isLoading.value = true
-    const response = await apiService.get('/movietickets/user')
+    currentPage.value = page;
+    isLoading.value = true;
+    const response = await apiService.get('/movietickets/user');
     if (response?.data) {
-      movieTickets.value = response.data
-      hasNextPage.value = movieTickets.value.length === pageSize.value
+      // 原始電影票數據
+      movieTickets.value = response.data;
+
+      // 排序邏輯
+      movieTickets.value.sort((a, b) => {
+        const statusOrder = {
+          'VALID': 1,
+          'USED': 2,
+          'CANCELLED': 3
+        };
+
+        // 先按狀態排序
+        if (statusOrder[a.status] !== statusOrder[b.status]) {
+          return statusOrder[a.status] - statusOrder[b.status];
+        }
+
+        // 再按上映時間遞增排序
+        const timeA = new Date(a.show_time).getTime();
+        const timeB = new Date(b.show_time).getTime();
+        return timeA - timeB;
+      });
+
+      hasNextPage.value = movieTickets.value.length === pageSize.value;
     }
   } catch (err) {
-    console.error('獲取票券失敗:', err)
-    error.value = '獲取票券失敗'
+    console.error('獲取票券失敗:', err);
+    error.value = '獲取票券失敗';
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 // 取消訂票
 const cancelTicket = async (ticketId) => {
@@ -182,6 +204,12 @@ const getStatusText = (status) => {
 }
 
 const ticket = ref(null) // 新增此狀態
+watch(route, async (to, from) => {
+  // 檢查當前路徑是否為 wallet 相關路由
+  if (to.name?.startsWith('wallet') || from.name?.startsWith('wallet')) {
+    await fetchTickets(0)
+  }
+}, { immediate: true })
 
 const showQRCode = async (ticketData) => {
   if (!ticketData?.id) return
@@ -230,7 +258,8 @@ const formatDateTime = (datetime) => {
   }
 }
 
-onMounted(() => fetchTickets(0))
+onMounted(() =>
+    fetchTickets(0))
 </script>
 
 <style scoped>

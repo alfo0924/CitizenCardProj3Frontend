@@ -855,18 +855,22 @@ onMounted(async () => {
 
 .expand-button {
   width: 100%;
-  padding: 8px;
-  margin-top: 12px;
-  background: transparent;
-  border: 1px solid #BA0043;
-  color: #BA0043;
+  max-width: 300px;
+  padding: 12px 24px;
+  background-color: #ba004d;
+  color: white;
+  border: none;
   border-radius: 6px;
+  font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
+  margin: 0 auto;
+  display: block;
+
 }
 
 .expand-button:hover {
-  background: rgba(186, 0, 67, 0.1);
+  background: rgba(186, 0, 67, 0.8);
 }
 
 /*按鈕樣式*/
